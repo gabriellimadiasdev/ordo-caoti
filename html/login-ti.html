@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login T.I. - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #0c1119;
+      color: #eef4ff;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .card {
+      width: min(420px, 100%);
+      background: #162132;
+      border: 1px solid #35506f;
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    h1 {
+      margin: 0 0 .9rem;
+      color: #f1bf4b;
+      font-size: 1.35rem;
+    }
+    label {
+      display: block;
+      margin: .3rem 0 .2rem;
+      color: #aecae2;
+      font-size: .9rem;
+    }
+    input, button {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #3d5777;
+      border-radius: 8px;
+      background: #0f1a2a;
+      color: #eef4ff;
+      padding: .65rem;
+    }
+    button {
+      margin-top: .75rem;
+      background: #f1bf4b;
+      color: #271b08;
+      font-weight: 700;
+      border-color: #ce9f3b;
+      cursor: pointer;
+    }
+    .msg {
+      min-height: 20px;
+      margin-top: .6rem;
+      color: #aec5de;
+    }
+    .msg.error { color: #ff8b98; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Acesso Técnico</h1>
+    <form id="tiLoginForm">
+      <label for="email">E-mail</label>
+      <input id="email" type="email" placeholder="g.lima.rocha90@gmail.com" required>
+
+      <label for="senha">Senha</label>
+      <input id="senha" type="password" required>
+
+      <button type="submit">Entrar no Dashboard T.I.</button>
+    </form>
+    <p id="msg" class="msg"></p>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || { apiUrl: (p) => p, appRoute: (_r, f) => `./${f}` };
+    const msg = document.getElementById('msg');
+
+    function setMessage(text, isError = false) {
+      msg.textContent = text || '';
+      msg.className = `msg${isError ? ' error' : ''}`;
+    }
+
+    document.getElementById('tiLoginForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setMessage('');
+
+      const email = String(document.getElementById('email').value || '').trim().toLowerCase();
+      const senha = String(document.getElementById('senha').value || '');
+
+      try {
+        const response = await fetch(runtime.apiUrl('/login'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha, session_type: 'persistent' })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao autenticar.');
+
+        const tipo = String(data?.user?.tipo || data?.user?.tipo_usuario || '').toLowerCase();
+        if (tipo !== 'ti' && tipo !== 'admin') {
+          throw new Error('Perfil sem permissão para painel técnico.');
+        }
+
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+
+        window.location.href = runtime.appRoute('/dashboard-TI', 'dashboard-TI.html');
+      } catch (error) {
+        setMessage(error.message, true);
+      }
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

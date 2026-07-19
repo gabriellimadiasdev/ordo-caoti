@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Loja - Moderacao de Produtos</title>
+  <link rel="stylesheet" href="../css/responsivo.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <style>
+    body { margin: 0; background: #0f1622; color: #eef4ff; font-family: "Segoe UI", Tahoma, sans-serif; }
+    .wrap { width: min(1200px, 96vw); margin: 0 auto; padding: 1rem; }
+    h1 { margin: 0 0 0.4rem; color: #f0c458; }
+    .muted { color: #aac0da; }
+    .toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0.8rem 0; }
+    button, a.btn {
+      border: 1px solid #355478; border-radius: 8px; padding: 0.6rem 0.8rem; background: #1a2a41; color: #edf3ff;
+      text-decoration: none; cursor: pointer; font-weight: 700;
+    }
+    .ok { background: #1e3d2d; border-color: #2e7250; }
+    .bad { background: #4a1f2a; border-color: #7f3a4b; }
+    .table-wrap { overflow-x: auto; border: 1px solid #2b4464; border-radius: 10px; background: #121d2c; }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    th, td { border-bottom: 1px solid #22364f; padding: 0.6rem; text-align: left; vertical-align: top; }
+    th { color: #f0c458; background: #152436; font-size: 0.85rem; text-transform: uppercase; }
+    .msg { margin-top: 0.6rem; padding: 0.6rem; border: 1px solid #2c4667; border-radius: 8px; display: none; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Moderacao de Produtos da Loja</h1>
+    <p class="muted">Somente produtos aprovados aqui vao para a vitrine publica.</p>
+
+    <div class="toolbar">
+      <a class="btn" href="./area-adm-1.html">Voltar para Area Admin 1</a>
+      <button id="btnAtualizar" type="button">Atualizar lista</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Produto</th>
+            <th>Preco</th>
+            <th>Tipo</th>
+            <th>Estoque</th>
+            <th>Vendedor</th>
+            <th>Status</th>
+            <th>Acoes</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyProdutos">
+          <tr><td colspan="8">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="msg" class="msg"></div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = './login.html';
+    }
+
+    if (!['admin', 'ti'].includes(String(user.tipo || '').toLowerCase())) {
+      alert('Acesso permitido apenas para admin/TI.');
+      window.location.href = './login.html';
+    }
+
+    function showMsg(text, isError) {
+      const box = document.getElementById('msg');
+      box.style.display = 'block';
+      box.textContent = text;
+      box.style.background = isError ? '#3b1a23' : '#13283f';
+      box.style.borderColor = isError ? '#7f3a4b' : '#2c4667';
+    }
+
+    async function carregarProdutosPendentes() {
+      const tbody = document.getElementById('tbodyProdutos');
+      tbody.innerHTML = '<tr><td colspan="8">Carregando...</td></tr>';
+
+      const response = await fetch('/admin/loja/produtos-pendentes', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json().catch(() => []);
+
+      if (!response.ok) {
+        tbody.innerHTML = '<tr><td colspan="8">Falha ao carregar lista.</td></tr>';
+        showMsg(data?.erro || 'Erro ao carregar produtos pendentes.', true);
+        return;
+      }
+
+      if (!Array.isArray(data) || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="8">Nenhum produto pendente.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map((item) => `
+        <tr>
+          <td>${item.id}</td>
+          <td><strong>${item.nome || '-'}</strong><br><span class="muted">${item.descricao || '-'}</span></td>
+          <td>R$ ${Number(item.preco || 0).toFixed(2)}</td>
+          <td>${item.tipo || '-'}</td>
+          <td>${item.estoque ?? '-'}</td>
+          <td>${item.vendedor_nome || '-'}<br><span class="muted">${item.vendedor_email || '-'}</span></td>
+          <td>${item.status_moderacao || 'pendente'}</td>
+          <td>
+            <div class="toolbar">
+              <button class="ok" type="button" onclick="aprovarProduto(${item.id})">Aprovar</button>
+              <button class="bad" type="button" onclick="reprovarProduto(${item.id})">Reprovar</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function aprovarProduto(id) {
+      const comentario = prompt('Comentario de aprovacao (opcional):') || '';
+      const response = await fetch(`/admin/loja/produtos/${id}/aprovar`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ comentario })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        showMsg(data?.erro || 'Falha ao aprovar produto.', true);
+        return;
+      }
+      showMsg('Produto aprovado com sucesso.', false);
+      await carregarProdutosPendentes();
+    }
+
+    async function reprovarProduto(id) {
+      const comentario = prompt('Motivo da reprovacao:') || '';
+      if (!comentario.trim()) {
+        showMsg('Motivo obrigatorio para reprovar.', true);
+        return;
+      }
+      const response = await fetch(`/admin/loja/produtos/${id}/reprovar`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ comentario })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        showMsg(data?.erro || 'Falha ao reprovar produto.', true);
+        return;
+      }
+      showMsg('Produto reprovado com sucesso.', false);
+      await carregarProdutosPendentes();
+    }
+
+    window.aprovarProduto = aprovarProduto;
+    window.reprovarProduto = reprovarProduto;
+
+    document.getElementById('btnAtualizar').addEventListener('click', carregarProdutosPendentes);
+    carregarProdutosPendentes();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

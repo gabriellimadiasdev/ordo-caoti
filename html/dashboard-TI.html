@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard TI - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #07101a;
+      --panel: #132232;
+      --line: #35506f;
+      --text: #eef4ff;
+      --muted: #adc4dd;
+      --accent: #f3be49;
+      --ok: #52d17a;
+      --warn: #ffcb6d;
+      --bad: #ff8a96;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 14% 12%, #243954 0%, transparent 42%),
+        radial-gradient(circle at 85% 86%, #29413a 0%, transparent 47%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 1260px;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.8rem;
+    }
+    .top {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .top h1 {
+      margin: 0;
+      color: var(--ok);
+      font-size: 1.5rem;
+    }
+    .actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #18304b;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.55rem 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.warn { background: var(--warn); color: #281f0b; border-color: #d8a84f; }
+    .btn.bad { background: var(--bad); color: #2d1014; border-color: #d96773; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.6rem;
+    }
+    .kpi {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.7rem;
+    }
+    .kpi p {
+      margin: 0 0 0.3rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+    .kpi strong.ok { color: var(--ok); }
+    .kpi strong.warn { color: var(--warn); }
+    .kpi strong.bad { color: var(--bad); }
+    .panels {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 0.7rem;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.8rem;
+    }
+    .panel h2 {
+      margin-top: 0;
+      color: var(--accent);
+      font-size: 1.02rem;
+    }
+    .field {
+      margin-bottom: 0.55rem;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid #3c5778;
+      border-radius: 8px;
+      background: #0f1a2a;
+      color: var(--text);
+      padding: 0.58rem;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .maintenance-item {
+      border: 1px solid #365373;
+      border-radius: 9px;
+      background: #102031;
+      padding: 0.62rem;
+      margin-bottom: 0.45rem;
+    }
+    pre {
+      margin: 0;
+      min-height: 110px;
+      border: 1px solid #355272;
+      border-radius: 9px;
+      background: #0f1a2a;
+      color: #dbeaff;
+      padding: 0.55rem;
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <h1>Dashboard T.I.</h1>
+        <p id="whoami" style="margin:.3rem 0 0;color:var(--muted);">Carregando sessao...</p>
+      </div>
+      <div class="actions">
+        <a data-app-route="/manutencao-ti" data-app-file="manutencao-ti.html" href="./manutencao-ti.html" class="btn">Painel de manutencao</a>
+        <a data-app-route="/login" data-app-file="login.html" href="./login.html" class="btn">Login</a>
+        <button id="refreshBtn" type="button" class="btn">Atualizar</button>
+        <button id="logoutBtn" type="button" class="btn bad">Logout</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="kpi"><p>Modo</p><strong id="kpiMode">-</strong></article>
+      <article class="kpi"><p>Database</p><strong id="kpiDb">-</strong></article>
+      <article class="kpi"><p>Saude geral</p><strong id="kpiHealth">-</strong></article>
+      <article class="kpi"><p>Manutencoes ativas</p><strong id="kpiMaint">0</strong></article>
+      <article class="kpi"><p>Webhooks (7 dias)</p><strong id="kpiWebhook">-</strong></article>
+      <article class="kpi"><p>Atualizado em</p><strong id="kpiUpdated">-</strong></article>
+    </section>
+
+    <section class="panels">
+      <article class="panel">
+        <h2>Pausar site / rota</h2>
+        <div class="field">
+          <label for="mtTitle">Titulo</label>
+          <input id="mtTitle" value="Janela de manutencao planejada">
+        </div>
+        <div class="field">
+          <label for="mtReason">Motivo</label>
+          <input id="mtReason" value="Atualizacao de infraestrutura e seguranca">
+        </div>
+        <div class="field">
+          <label for="mtDescription">Descricao</label>
+          <textarea id="mtDescription" rows="3">Servicos temporariamente indisponiveis durante manutencao tecnica.</textarea>
+        </div>
+        <div class="field">
+          <label for="mtEta">Previsao de retorno</label>
+          <input id="mtEta" type="datetime-local">
+        </div>
+        <div class="actions">
+          <button id="pauseGlobalBtn" type="button" class="btn warn">Pausar site global</button>
+          <button id="createRouteBtn" type="button" class="btn">Criar por rota</button>
+        </div>
+        <div class="field" style="margin-top:.6rem;">
+          <label for="routeTarget">Rota alvo</label>
+          <input id="routeTarget" placeholder="/loja ou /dashboard-aluno">
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Manutencoes ativas</h2>
+        <div id="maintenancesList"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Teste de rota e sessao</h2>
+        <div class="field">
+          <label for="routeCheck">Rota para checagem</label>
+          <input id="routeCheck" value="/loja">
+        </div>
+        <div class="actions">
+          <button id="checkRouteBtn" type="button" class="btn">Consultar rota</button>
+          <button id="sessionDumpBtn" type="button" class="btn">Snapshot sessao</button>
+        </div>
+        <pre id="diagOutput">Aguardando diagnostico...</pre>
+      </article>
+
+      <article class="panel">
+        <h2>Webhook observabilidade</h2>
+        <div class="actions">
+          <button id="refreshWebhookBtn" type="button" class="btn">Atualizar webhooks</button>
+        </div>
+        <pre id="webhookOutput">Aguardando resumo...</pre>
+      </article>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {},
+      clearSession: () => {}
+    };
+    runtime.bindAppRoutes();
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    const user = runtime.getUser ? runtime.getUser() : {};
+    const isLocalMode = token === 'ti-local-mode';
+    const hasJwt = typeof token === 'string' && token.split('.').length === 3;
+
+    const whoami = document.getElementById('whoami');
+    const kpiMode = document.getElementById('kpiMode');
+    const kpiDb = document.getElementById('kpiDb');
+    const kpiHealth = document.getElementById('kpiHealth');
+    const kpiMaint = document.getElementById('kpiMaint');
+    const kpiWebhook = document.getElementById('kpiWebhook');
+    const kpiUpdated = document.getElementById('kpiUpdated');
+    const maintenancesList = document.getElementById('maintenancesList');
+    const diagOutput = document.getElementById('diagOutput');
+    const webhookOutput = document.getElementById('webhookOutput');
+
+
+    async function loadMaintenances() {
+      if (isLocalMode || !hasJwt) {
+        maintenancesList.innerHTML = '<p>Modo local: manutencao online indisponivel.</p>';
+        return;
+      }
+      try {
+        const rows = await safeFetchJson('/ti/manutencoes/ativas', { headers: authHeaders() });
+        if (!Array.isArray(rows) || !rows.length) {
+          maintenancesList.innerHTML = '<p>Nenhuma manutencao ativa.</p>';
+          return;
+        }
+        maintenancesList.innerHTML = rows.map((item) => {
+          const alvos = Array.isArray(item.alvos) ? item.alvos.map((a) => a.rota_alvo).filter(Boolean).join(', ') : '-';
+          return `
+            <article class="maintenance-item">
+              <strong>#${item.id} - ${item.titulo}</strong>
+              <p style="margin:.2rem 0;color:var(--muted);">${item.motivo}</p>
+              <small style="color:var(--muted);">Alvos: ${alvos || '-'}</small><br>
+              <small style="color:var(--muted);">Inicio: ${new Date(item.inicio_em).toLocaleString('pt-BR')}</small><br>
+              <small style="color:var(--muted);">Previsao: ${item.previsao_retorno_em ? new Date(item.previsao_retorno_em).toLocaleString('pt-BR') : '-'}</small>
+              <div class="actions" style="margin-top:.45rem;">
+                <button type="button" class="btn bad" onclick="closeMaintenance(${item.id})">Encerrar</button>
+              </div>
+            </article>
+          `;
+        }).join('');
+      } catch (error) {
+        maintenancesList.innerHTML = `<p>${error.message}</p>`;
+      }
+    }
+
+    async function loadWebhookSummary() {
+      if (isLocalMode || !hasJwt) {
+        webhookOutput.textContent = 'Modo local: resumo de webhook indisponivel.';
+        return;
+      }
+
+      try {
+        const summary = await safeFetchJson('/ti/webhooks/mercadopago/resumo?dias=7', { headers: authHeaders() });
+        kpiWebhook.textContent = `${summary?.resumo?.taxa_sucesso_percentual || 0}%`;
+        webhookOutput.textContent = JSON.stringify(summary, null, 2);
+      } catch (error) {
+        webhookOutput.textContent = error.message;
+      }
+    }
+
+    async function createGlobalMaintenance() {
+      if (isLocalMode || !hasJwt) {
+        alert('Modo local nao aplica manutencao no backend real.');
+        return;
+      }
+      const payload = {
+        titulo: document.getElementById('mtTitle').value.trim(),
+        descricao: document.getElementById('mtDescription').value.trim(),
+        motivo: document.getElementById('mtReason').value.trim(),
+        previsao_retorno_em: document.getElementById('mtEta').value || null
+      };
+      try {
+        const data = await safeFetchJson('/ti/manutencoes/pause-global', {
+          method: 'POST',
+          headers: authHeaders(true),
+          body: JSON.stringify(payload)
+        });
+        writeDiag('Manutencao global criada', data);
+        await refreshAll();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function createRouteMaintenance() {
+      if (isLocalMode || !hasJwt) {
+        alert('Modo local nao aplica manutencao no backend real.');
+        return;
+      }
+      const route = document.getElementById('routeTarget').value.trim();
+      if (!route) {
+        alert('Informe uma rota alvo.');
+        return;
+      }
+      const payload = {
+        titulo: document.getElementById('mtTitle').value.trim() || 'Manutencao de rota',
+        descricao: document.getElementById('mtDescription').value.trim() || 'Manutencao tecnica por rota.',
+        motivo: document.getElementById('mtReason').value.trim() || 'Ajuste tecnico',
+        previsao_retorno_em: document.getElementById('mtEta').value || null,
+        alvos: [route]
+      };
+      try {
+        const data = await safeFetchJson('/ti/manutencoes', {
+          method: 'POST',
+          headers: authHeaders(true),
+          body: JSON.stringify(payload)
+        });
+        writeDiag('Manutencao por rota criada', data);
+        await refreshAll();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function closeMaintenance(id) {
+      if (isLocalMode || !hasJwt) {
+        alert('Modo local nao encerra manutencoes no backend.');
+        return;
+      }
+      try {
+        const data = await safeFetchJson(`/ti/manutencoes/${id}/encerrar`, {
+          method: 'POST',
+          headers: authHeaders(true),
+          body: JSON.stringify({ confirmar: true })
+        });
+        writeDiag(`Manutencao #${id} encerrada`, data);
+        await refreshAll();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    window.closeMaintenance = closeMaintenance;
+
+    async function checkRouteStatus() {
+      const route = document.getElementById('routeCheck').value.trim() || '/';
+      try {
+        const data = await safeFetchJson(`/manutencao/status?rota=${encodeURIComponent(route)}`);
+        writeDiag(`Status da rota ${route}`, data);
+      } catch (error) {
+        writeDiag(`Falha na consulta da rota ${route}`, { erro: error.message, detalhes: error.data || null });
+      }
+    }
+
+    function dumpSession() {
+      writeDiag('Snapshot de sessao', {
+        localStorage: {
+          token: localStorage.getItem('token'),
+          user: localStorage.getItem('user')
+        },
+        sessionStorage: {
+          token: sessionStorage.getItem('token'),
+          user: sessionStorage.getItem('user')
+        }
+      });
+    }
+
+    async function logout() {
+      if (hasJwt && !isLocalMode) {
+        try {
+          await safeFetchJson('/logout', { method: 'POST', headers: authHeaders() });
+        } catch (_) {}
+      }
+      if (runtime.clearSession) runtime.clearSession();
+      window.location.href = runtime.appRoute('/login', 'login.html');
+    }
+
+    async function refreshAll() {
+      await Promise.all([loadHealth(), loadMaintenances(), loadWebhookSummary()]);
+      kpiUpdated.textContent = new Date().toLocaleString('pt-BR');
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+    document.getElementById('pauseGlobalBtn').addEventListener('click', createGlobalMaintenance);
+    document.getElementById('createRouteBtn').addEventListener('click', createRouteMaintenance);
+    document.getElementById('checkRouteBtn').addEventListener('click', checkRouteStatus);
+    document.getElementById('sessionDumpBtn').addEventListener('click', dumpSession);
+    document.getElementById('refreshWebhookBtn').addEventListener('click', loadWebhookSummary);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    refreshAll();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

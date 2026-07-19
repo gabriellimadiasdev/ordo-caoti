@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Manutencao TI - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #09111b;
+      --panel: #142233;
+      --line: #35506f;
+      --text: #edf4ff;
+      --muted: #aac1da;
+      --accent: #f2be49;
+      --ok: #54d17c;
+      --bad: #ff8a96;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 13% 12%, #233953 0%, transparent 43%),
+        radial-gradient(circle at 85% 86%, #2a4139 0%, transparent 47%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.75rem;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.8rem;
+    }
+    h1, h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 0.7rem;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #19314d;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.55rem 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 0.35rem;
+      margin-top: 0.35rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn.primary {
+      background: var(--ok);
+      color: #112413;
+      border-color: #3ca65a;
+    }
+    .btn.bad {
+      background: var(--bad);
+      color: #2a1014;
+      border-color: #d1636f;
+    }
+    label {
+      display: block;
+      margin: 0.3rem 0 0.2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    input {
+      width: 100%;
+      border: 1px solid #3c5678;
+      border-radius: 8px;
+      background: #0f1a2a;
+      color: var(--text);
+      padding: 0.6rem;
+      box-sizing: border-box;
+    }
+    pre {
+      margin: 0;
+      min-height: 130px;
+      border: 1px solid #355170;
+      border-radius: 9px;
+      background: #0f1a2a;
+      color: #daeaff;
+      padding: 0.55rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="panel">
+      <h1>Painel de Manutencao T.I.</h1>
+      <p style="margin:.35rem 0;color:var(--muted);">Use este painel para preparar sessao local, validar status online e acionar manutencao sem sair do ecossistema do site.</p>
+      <a data-app-route="/dashboard-TI" data-app-file="dashboard-TI.html" href="./dashboard-TI.html" class="btn">Abrir Dashboard TI</a>
+      <a data-app-route="/login" data-app-file="login.html" href="./login.html" class="btn">Login</a>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Sessao local TI</h2>
+        <button id="activateLocalBtn" type="button" class="btn primary">Ativar TI local</button>
+        <button id="clearSessionBtn" type="button" class="btn bad">Limpar sessao</button>
+      </article>
+
+      <article class="panel">
+        <h2>Status por rota</h2>
+        <label for="routeInput">Rota alvo</label>
+        <input id="routeInput" value="/loja">
+        <button id="checkRouteBtn" type="button" class="btn">Consultar manutencao</button>
+      </article>
+
+      <article class="panel">
+        <h2>Acoes online rapidas</h2>
+        <label for="etaInput">Previsao de retorno (opcional)</label>
+        <input id="etaInput" type="datetime-local">
+        <button id="pauseGlobalBtn" type="button" class="btn bad">Pausar site global</button>
+        <button id="healthBtn" type="button" class="btn">Consultar saude</button>
+      </article>
+
+      <article class="panel">
+        <h2>Log tecnico</h2>
+        <pre id="logOutput">Aguardando acoes...</pre>
+      </article>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {},
+      clearSession: () => {}
+    };
+    runtime.bindAppRoutes();
+
+    const logOutput = document.getElementById('logOutput');
+
+    function currentToken() {
+      return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    }
+
+    function isLocalMode() {
+      return currentToken() === 'ti-local-mode';
+    }
+
+    function hasJwt() {
+      const token = currentToken();
+      return typeof token === 'string' && token.split('.').length === 3;
+    }
+
+    function writeLog(title, payload) {
+      logOutput.textContent = `${title}\n${JSON.stringify(payload, null, 2)}`;
+    }
+
+    async function safeFetchJson(path, options = {}) {
+      const response = await fetch(runtime.apiUrl(path), options);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data?.erro || `Falha em ${path}`);
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+      return data;
+    }
+
+    function activateLocalMode() {
+      if (runtime.clearSession) runtime.clearSession();
+      localStorage.setItem('token', 'ti-local-mode');
+      localStorage.setItem('user', JSON.stringify({
+        id: 0,
+        nome: 'Equipe TI',
+        tipo: 'ti',
+        tipo_usuario: 'ti'
+      }));
+      writeLog('Modo local TI ativado', { ok: true });
+    }
+
+    function clearSession() {
+      if (runtime.clearSession) runtime.clearSession();
+      writeLog('Sessao limpa', { ok: true });
+    }
+
+    async function checkRoute() {
+      const route = document.getElementById('routeInput').value.trim() || '/';
+      try {
+        const data = await safeFetchJson(`/manutencao/status?rota=${encodeURIComponent(route)}`);
+        writeLog(`Status manutencao para ${route}`, data);
+      } catch (error) {
+        writeLog('Falha na consulta de rota', { erro: error.message, detalhes: error.data || null });
+      }
+    }
+
+    async function pauseGlobal() {
+      if (isLocalMode() || !hasJwt()) {
+        writeLog('Operacao bloqueada', { erro: 'Entre com token TI/Admin real para pausar site no backend.' });
+        return;
+      }
+
+      const eta = document.getElementById('etaInput').value || null;
+      const token = currentToken();
+      try {
+        const data = await safeFetchJson('/ti/manutencoes/pause-global', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            titulo: 'Pausa global de manutencao',
+            descricao: 'Site temporariamente pausado por operacao TI.',
+            motivo: 'Operacao de infraestrutura e seguranca',
+            previsao_retorno_em: eta
+          })
+        });
+        writeLog('Pausa global criada', data);
+      } catch (error) {
+        writeLog('Falha ao pausar site', { erro: error.message, detalhes: error.data || null });
+      }
+    }
+
+    async function checkHealth() {
+      if (isLocalMode() || !hasJwt()) {
+        writeLog('Modo local', { aviso: 'Saude online indisponivel sem token JWT real.' });
+        return;
+      }
+      const token = currentToken();
+      try {
+        const data = await safeFetchJson('/ti/saude', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        writeLog('Saude do sistema', data);
+      } catch (error) {
+        writeLog('Falha ao consultar saude', { erro: error.message, detalhes: error.data || null });
+      }
+    }
+
+    document.getElementById('activateLocalBtn').addEventListener('click', activateLocalMode);
+    document.getElementById('clearSessionBtn').addEventListener('click', clearSession);
+    document.getElementById('checkRouteBtn').addEventListener('click', checkRoute);
+    document.getElementById('pauseGlobalBtn').addEventListener('click', pauseGlobal);
+    document.getElementById('healthBtn').addEventListener('click', checkHealth);
+
+    writeLog('Estado inicial', {
+      mode: isLocalMode() ? 'local' : (hasJwt() ? 'online' : 'sem-sessao'),
+      user: runtime.getUser ? runtime.getUser() : {}
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

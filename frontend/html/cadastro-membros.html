@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro rapido de membros</title>
+  <link rel="stylesheet" href="../css/responsivo.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #0f1623;
+      color: #ecf2ff;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .card {
+      width: min(760px, 100%);
+      border: 1px solid #2e4869;
+      border-radius: 14px;
+      background: #17253a;
+      padding: 1rem;
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      color: #f0c458;
+    }
+    .muted {
+      color: #afc3dd;
+      margin: 0;
+    }
+    .notice {
+      margin-top: 0.8rem;
+      border: 1px solid #35577f;
+      background: #0f1a2b;
+      border-radius: 10px;
+      padding: 0.75rem;
+      color: #cddaf0;
+      font-size: 0.92rem;
+    }
+    .grid {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.7rem;
+    }
+    a.btn {
+      display: block;
+      text-decoration: none;
+      border: 1px solid #35577f;
+      border-radius: 10px;
+      background: #0f1a2b;
+      color: #ecf2ff;
+      padding: 0.8rem;
+      font-weight: 600;
+    }
+    a.btn:hover,
+    a.btn:focus-visible {
+      background: #213651;
+      outline: none;
+    }
+    .actions {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+    .actions a {
+      color: #ffd97c;
+      text-decoration: none;
+      font-size: 0.92rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Cadastro rapido de membros</h1>
+    <p class="muted">Use esta area para criar acesso ao site com e-mail de membro ja aprovado.</p>
+    <div class="notice">
+      Cadastro web habilitado para navegadores. O perfil TI continua exigindo inscricao aprovada.
+    </div>
+
+    <section class="grid">
+      <a class="btn" href="./cadastro-neofitos.html">Cadastro Neofito</a>
+      <a class="btn" href="./cadastro-magos-n1.html">Cadastro Mago N1</a>
+      <a class="btn" href="./cadastro-magos-n2.html">Cadastro Mago N2</a>
+      <a class="btn" href="./cadastro-sabios.html">Cadastro Sabio</a>
+      <a class="btn" href="./cadastro-ti.html">Cadastro TI</a>
+    </section>
+
+    <div class="actions">
+      <a href="./login.html">Ir para login</a>
+      <a href="/">Voltar para inicio</a>
+    </div>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

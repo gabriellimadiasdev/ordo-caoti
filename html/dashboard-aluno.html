@@ -1,0 +1,1265 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard do Aluno - Ordo Caoti</title>
+  <style>
+    :root {
+      --bg: #06080d;
+      --side: #10151f;
+      --card: #171f2c;
+      --line: #2a3950;
+      --text: #eef5ff;
+      --muted: #9fb5cc;
+      --accent: #f3be49;
+      --ok: #4cd137;
+      --warn: #f3be49;
+      --bad: #ff6f79;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .mobile-toggle {
+      display: none;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #142032;
+      color: var(--text);
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+
+    .sidebar {
+      width: 265px;
+      background: var(--side);
+      border-right: 1px solid #1f2a3a;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.25s ease;
+    }
+    .profile {
+      border: 1px solid var(--line);
+      background: #121d2d;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .profile h3 {
+      margin: 0 0 6px;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+    .profile p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .nav button {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: left;
+      background: transparent;
+      color: #b8c9df;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .nav button:hover,
+    .nav button.active {
+      border-color: #3a4b64;
+      background: #1a2738;
+      color: var(--accent);
+    }
+    .logout {
+      color: var(--bad) !important;
+      border-color: #5d3041 !important;
+      background: #2f1822 !important;
+    }
+
+    .main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background:
+        radial-gradient(circle at 12% 14%, #22334b 0%, transparent 36%),
+        radial-gradient(circle at 84% 86%, #2e2238 0%, transparent 42%),
+        #080b10;
+    }
+    .title {
+      font-size: 1.6rem;
+      margin: 0 0 14px;
+      color: var(--accent);
+      border-bottom: 1px solid #27364d;
+      padding-bottom: 8px;
+    }
+
+    .section {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+    .section.active { display: block; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .card h4 {
+      margin: 0 0 8px;
+      color: #fff;
+    }
+    .card p {
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .status {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .status.ok { background: #204d32; color: #d1ffd9; }
+    .status.warn { background: #5f4815; color: #ffe8ae; }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .kpi {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .kpi p {
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .kpi h3 {
+      margin: 0;
+      font-size: 1.08rem;
+    }
+    .ok { color: var(--ok); }
+    .warn-color { color: var(--warn); }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .field label {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+    .btn, button.btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 11px;
+      background: #152235;
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.86rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn.primary, button.btn.primary {
+      background: var(--accent);
+      color: #131313;
+      border-color: #c8a340;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow-x: auto;
+      background: #101822;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 9px;
+      border-bottom: 1px solid #223247;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #142031;
+      color: var(--accent);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .msg {
+      margin-top: 8px;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px solid #2f4764;
+      background: #14273d;
+      color: #d7edff;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 860px) {
+      .mobile-toggle { display: block; }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        height: 100vh;
+        z-index: 99;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main { padding-top: 54px; }
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <button class="mobile-toggle" id="mobileToggle" type="button">Menu</button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="profile">
+      <h3 id="userName">Carregando...</h3>
+      <p id="userType">aluno</p>
+    </div>
+
+    <ul class="nav">
+      <li><button class="active" type="button" data-section="visao-geral">Visao Geral</button></li>
+      <li><button type="button" data-section="conteudos">Conteudo Academico</button></li>
+      <li><button type="button" data-section="gamificacao">Gamificacao</button></li>
+      <li><button type="button" data-section="aulas-vivo">Aulas ao Vivo</button></li>
+      <li><button type="button" data-section="financeiro">Financeiro</button></li>
+      <li><button type="button" data-section="notas">Notas e Faltas</button></li>
+      <li><button type="button" data-section="materias">Materias Isoladas</button></li>
+      <li><button type="button" data-section="rematricula">Rematricula</button></li>
+      <li><button class="logout" type="button" id="logoutBtn">Sair</button></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <section id="visao-geral" class="section active">
+      <h2 class="title">Dashboard do Aluno</h2>
+      <div class="toolbar">
+        <a class="btn primary" href="/grimorio">Abrir Grimorio </a>
+        <a class="btn" href="/diario">Abrir Diario </a>
+      </div>
+      <div class="grid" id="turmasContainer">
+        <p>Carregando turmas...</p>
+      </div>
+    </section>
+
+    <section id="conteudos" class="section">
+      <h2 class="title">Conteudo Academico</h2>
+      <p class="muted">Materiais e avaliacoes liberados nas materias da sua matricula.</p>
+
+      <div class="grid" id="conteudosMateriasContainer">
+        <p>Carregando materias...</p>
+      </div>
+
+      <h3 style="margin: 14px 0 8px; color: #c8a2c8;">Avaliacoes V2 Disponiveis</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Turma / Materia</th>
+              <th>Titulo</th>
+              <th>Tipo</th>
+              <th>Prazo</th>
+              <th>Status</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody id="avaliacoesV2TableBody">
+            <tr><td colspan="6">Carregando avaliacoes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="financeiro" class="section">
+      <h2 class="title">Financeiro e Mensalidade</h2>
+
+      <div class="kpis">
+        <article class="kpi">
+          <p>Mensalidade Atual</p>
+          <h3 id="finMensalidadeRef">-</h3>
+        </article>
+        <article class="kpi">
+          <p>Status Mensalidade</p>
+          <h3 id="finMensalidadeStatus" class="warn-color">Sem dados</h3>
+        </article>
+        <article class="kpi">
+          <p>Total Pago</p>
+          <h3 id="finTotalPago">R$ 0,00</h3>
+        </article>
+        <article class="kpi">
+          <p>Total Pendente</p>
+          <h3 id="finTotalPendente">R$ 0,00</h3>
+        </article>
+        <article class="kpi">
+          <p>Proximo Vencimento</p>
+          <h3 id="finProximoVencimento">-</h3>
+        </article>
+      </div>
+
+      <div class="toolbar">
+        <a id="financeiroPortalLink" href="/financeiro/aluno" class="btn primary">Abrir Area Financeira</a>
+        <button type="button" class="btn" id="refreshFinanceiroBtn">Atualizar Financeiro</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descricao</th>
+              <th>Valor</th>
+              <th>Status</th>
+              <th>Comprovante</th>
+            </tr>
+          </thead>
+          <tbody id="financeiroTableBody">
+            <tr><td colspan="5">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="financeiroMsg" class="msg"></div>
+    </section>
+
+    <section id="gamificacao" class="section">
+      <h2 class="title">Gamificacao e Competicao Interna</h2>
+      <div class="kpis">
+        <article class="kpi">
+          <p>Score da trilha</p>
+          <h3 id="gmScore">0</h3>
+        </article>
+        <article class="kpi">
+          <p>Media de nota</p>
+          <h3 id="gmMediaNota">0</h3>
+        </article>
+        <article class="kpi">
+          <p>Taxa de presenca</p>
+          <h3 id="gmTaxaPresenca">0%</h3>
+        </article>
+        <article class="kpi">
+          <p>Atividades concluidas</p>
+          <h3 id="gmAtividades">0</h3>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Top 10</th>
+              <th>Posicao</th>
+              <th>Nome / Turma</th>
+              <th>Indicador</th>
+            </tr>
+          </thead>
+          <tbody id="gamificacaoTableBody">
+            <tr><td colspan="4">Carregando ranking...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="aulas-vivo" class="section">
+      <h2 class="title">Aulas ao Vivo e Justificativas</h2>
+      <div class="toolbar">
+        <button type="button" class="btn" id="refreshAulasBtn">Atualizar aulas</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Turma / Materia</th>
+              <th>Titulo</th>
+              <th>Status</th>
+              <th>Inicio/Fim</th>
+              <th>Acao</th>
+            </tr>
+          </thead>
+          <tbody id="aulasVivoTableBody">
+            <tr><td colspan="6">Carregando aulas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin: 14px 0 8px; color: #c8a2c8;">Faltas e justificativas</h3>
+      <div class="grid">
+        <article class="card">
+          <h4>Enviar justificativa</h4>
+          <div class="field">
+            <label for="justPresencaId">Falta registrada</label>
+            <select id="justPresencaId">
+              <option value="">Selecione</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="justTipo">Tipo</label>
+            <select id="justTipo">
+              <option value="motivo">Motivo</option>
+              <option value="atestado">Atestado</option>
+              <option value="ambos">Ambos</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="justTexto">Motivo</label>
+            <textarea id="justTexto" placeholder="Descreva a justificativa"></textarea>
+          </div>
+          <div class="field">
+            <label for="justAtestadoUrl">URL do atestado (quando houver)</label>
+            <input id="justAtestadoUrl" placeholder="https://..." />
+          </div>
+          <button type="button" class="btn primary" id="justificarBtn">Enviar justificativa</button>
+          <div id="justificativaMsg" class="msg"></div>
+        </article>
+
+        <article class="card">
+          <h4>Minhas faltas</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Presenca</th>
+                  <th>Aula</th>
+                  <th>Status justificativa</th>
+                </tr>
+              </thead>
+              <tbody id="faltasTableBody">
+                <tr><td colspan="3">Carregando faltas...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="notas" class="section">
+      <h2 class="title">Notas e Faltas</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Turma</th>
+              <th>Avaliacao</th>
+              <th>Nota</th>
+              <th>Situacao</th>
+            </tr>
+          </thead>
+          <tbody id="notasTableBody">
+            <tr><td colspan="4">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="materias" class="section">
+      <h2 class="title">Materias Isoladas Disponiveis</h2>
+      <p class="muted">Solicite matricula em materias fora da grade principal.</p>
+      <div class="grid" id="materiasIsoladasContainer">
+        <p>Carregando materias...</p>
+      </div>
+    </section>
+
+    <section id="rematricula" class="section">
+      <h2 class="title">Rematricula</h2>
+      <div class="card">
+        <span class="status warn">Aguardando abertura</span>
+        <h4>Ciclo 2026.2</h4>
+        <p>O periodo de rematricula ainda nao foi liberado.</p>
+        <p>Previsao de abertura: Junho/2026.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || sessionStorage.getItem("user") || "{}");
+    const isTiLocal = user.tipo === "ti";
+
+    const mockTi = {
+      turmas: [
+        { id: 1, nome: "Turma Obrigatoria - Ritualistica I", progresso: 82 },
+        { id: 2, nome: "Curso Isolado - Simbologia Avancada", progresso: 41 }
+      ],
+      financeiro: [
+        { id: 901, data_pedido: "2026-03-01", descricao: "Mensalidade marco/2026", total: "80.00", status: "pago" },
+        { id: 902, data_pedido: "2026-03-05", descricao: "Curso isolado", total: "120.00", status: "pendente" }
+      ],
+      notas: [
+        { turma: "Ritualistica I", prova: "Teste Inicial", nota_final: 92 },
+        { turma: "Simbologia Avancada", prova: "Exercicio Pratico", nota_final: 74 }
+      ],
+      materiasDisponiveis: [
+        { id: 45, nome: "Leitura de Sigilos Aplicados" },
+        { id: 46, nome: "Etica Operacional em Campo" }
+      ],
+      materiasAluno: [
+        {
+          id: 301,
+          nome: "Fundamentos do Caos",
+          tipo_materia: "obrigatoria",
+          turma_nome: "Turma 2026.1",
+          professor_nome: "Professor Mock",
+          materiais: [
+            { titulo: "Aula 01 em video", tipo_material: "video", arquivo_url: "" },
+            { titulo: "Manual de conduta", tipo_material: "arquivo", arquivo_url: "" }
+          ]
+        },
+        {
+          id: 302,
+          nome: "Laboratorio Isolado",
+          tipo_materia: "isolada",
+          turma_nome: "Isolados 2026",
+          professor_nome: "Mestre Mock",
+          materiais: [
+            { titulo: "Guia textual", tipo_material: "texto", arquivo_url: "" }
+          ]
+        }
+      ],
+      avaliacoesV2: [
+        {
+          turma_nome: "Turma 2026.1",
+          materia_nome: "Fundamentos do Caos",
+          titulo: "Teste V2 #1",
+          tipo_avaliacao: "teste",
+          data_limite: "2026-03-20T22:00:00",
+          minha_submissao_status: "corrigida",
+          minha_nota_final: 89.5
+        },
+        {
+          turma_nome: "Isolados 2026",
+          materia_nome: "Laboratorio Isolado",
+          titulo: "Avaliacao V2 Final",
+          tipo_avaliacao: "avaliacao",
+          data_limite: null,
+          minha_submissao_status: "nao enviada",
+          minha_nota_final: null
+        }
+      ],
+      gamificacao: {
+        progresso: {
+          score_trilha: 76.4,
+          media_nota: 88.2,
+          taxa_presenca: 91.5,
+          atividades_concluidas: 12
+        },
+        top10: {
+          alunos_mais_precisos: [
+            { aluno_nome: "Aluno A", media_nota: 97.2 },
+            { aluno_nome: "Aluno B", media_nota: 95.6 },
+            { aluno_nome: "Aluno C", media_nota: 94.1 }
+          ],
+          turmas_melhor_nota: [
+            { turma_nome: "Turma 2026.1", media_nota: 90.2 },
+            { turma_nome: "Turma 2026.2", media_nota: 88.4 }
+          ],
+          turmas_maior_adesao: [
+            { turma_nome: "Turma 2026.1", indice_adesao: 7.4 },
+            { turma_nome: "Turma Isolada", indice_adesao: 6.1 }
+          ],
+          turmas_menos_faltas: [
+            { turma_nome: "Turma 2026.1", taxa_presenca: 93.5 },
+            { turma_nome: "Turma 2026.2", taxa_presenca: 91.1 }
+          ]
+        }
+      },
+      aulasVivo: [
+        { id: 801, turma_nome: "Turma 2026.1", materia_nome: "Fundamentos", titulo: "Aula ao vivo #1", status: "agendada", inicio_previsto: "2026-03-12T20:00:00", fim_previsto: "2026-03-12T21:30:00", link_sala: "/live/sala/mock-1" },
+        { id: 802, turma_nome: "Turma 2026.1", materia_nome: "Fundamentos", titulo: "Aula ao vivo #2", status: "realizada", inicio_previsto: "2026-03-05T20:00:00", fim_previsto: "2026-03-05T21:30:00", link_sala: "/live/sala/mock-2" }
+      ],
+      faltas: [
+        { presenca_id: 3001, aula_titulo: "Aula ao vivo #2", justificativa_status: "pendente" }
+      ]
+    };
+
+    if (!token) {
+      window.location.href = "/login";
+    }
+    if (!isTiLocal && user.tipo !== "aluno") {
+      alert("Acesso permitido apenas para aluno.");
+      window.location.href = "/dashboard";
+    }
+
+    document.getElementById("userName").textContent = user.nome || "Aluno";
+    document.getElementById("userType").textContent = isTiLocal ? "ti (local) - visao aluno" : "aluno";
+
+    if (isTiLocal) {
+      document.getElementById("financeiroPortalLink").href = "/ti/financeiro/aluno";
+    }
+
+    const sidebar = document.getElementById("sidebar");
+    document.getElementById("mobileToggle").addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      document.cookie = "auth_token=; Max-Age=0; path=/";
+      window.location.href = "/login";
+    });
+
+    document.querySelectorAll(".nav button[data-section]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sectionId = btn.getAttribute("data-section");
+        showSection(sectionId, btn);
+      });
+    });
+
+    document.getElementById("refreshFinanceiroBtn").addEventListener("click", () => {
+      carregarFinanceiro();
+      const msg = document.getElementById("financeiroMsg");
+      msg.style.display = "block";
+      msg.textContent = "Financeiro atualizado com sucesso.";
+      setTimeout(() => {
+        msg.style.display = "none";
+      }, 1800);
+    });
+
+    document.getElementById("refreshAulasBtn").addEventListener("click", () => {
+      carregarAulasAoVivo();
+      carregarFaltas();
+    });
+
+    document.getElementById("justificarBtn").addEventListener("click", () => {
+      enviarJustificativa();
+    });
+
+    function showSection(sectionId, clickedButton) {
+      document.querySelectorAll(".section").forEach((section) => section.classList.remove("active"));
+      document.querySelectorAll(".nav button[data-section]").forEach((button) => button.classList.remove("active"));
+
+      const selected = document.getElementById(sectionId);
+      if (selected) selected.classList.add("active");
+      if (clickedButton) clickedButton.classList.add("active");
+      sidebar.classList.remove("open");
+
+      if (sectionId === "conteudos") carregarConteudoAcademico();
+      if (sectionId === "gamificacao") carregarGamificacao();
+      if (sectionId === "aulas-vivo") {
+        carregarAulasAoVivo();
+        carregarFaltas();
+      }
+      if (sectionId === "financeiro") carregarFinanceiro();
+      if (sectionId === "notas") carregarNotas();
+      if (sectionId === "materias") carregarMateriasIsoladas();
+    }
+
+    function moeda(valor) {
+      return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(valor || 0));
+    }
+
+    function mesAno(dataValue) {
+      if (!dataValue) return "-";
+      return new Date(dataValue).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    }
+
+    function dataBr(dataValue) {
+      return dataValue ? new Date(dataValue).toLocaleDateString("pt-BR") : "-";
+    }
+
+    function atualizarResumoFinanceiro(pedidos) {
+      const lista = Array.isArray(pedidos) ? pedidos : [];
+      const pagos = lista.filter((item) => String(item.status || "").toLowerCase() === "pago");
+      const pendentes = lista.filter((item) => String(item.status || "").toLowerCase() === "pendente");
+      const mensalidade = lista.find((item) => String(item.descricao || "").toLowerCase().includes("mensalidade")) || lista[0];
+
+      const totalPago = pagos.reduce((acc, item) => acc + Number(item.total || 0), 0);
+      const totalPendente = pendentes.reduce((acc, item) => acc + Number(item.total || 0), 0);
+      const proximoVenc = pendentes.sort((a, b) => new Date(a.data_pedido) - new Date(b.data_pedido))[0];
+
+      document.getElementById("finMensalidadeRef").textContent = mensalidade ? mesAno(mensalidade.data_pedido) : "-";
+      document.getElementById("finTotalPago").textContent = moeda(totalPago);
+      document.getElementById("finTotalPendente").textContent = moeda(totalPendente);
+      document.getElementById("finProximoVencimento").textContent = proximoVenc ? dataBr(proximoVenc.data_pedido) : "-";
+
+      const statusEl = document.getElementById("finMensalidadeStatus");
+      if (!mensalidade) {
+        statusEl.textContent = "Sem dados";
+        statusEl.className = "warn-color";
+      } else if (String(mensalidade.status).toLowerCase() === "pago") {
+        statusEl.textContent = "Em dia";
+        statusEl.className = "ok";
+      } else {
+        statusEl.textContent = "Em aberto";
+        statusEl.className = "warn-color";
+      }
+    }
+
+    async function carregarTurmas() {
+      const container = document.getElementById("turmasContainer");
+      if (isTiLocal) {
+        container.innerHTML = mockTi.turmas.map((t) => `
+          <article class="card">
+            <span class="status ok">Modo T.I.</span>
+            <h4>${t.nome}</h4>
+            <p>Progresso simulado: ${t.progresso}%</p>
+            <div style="background:#304158;height:6px;border-radius:6px;">
+              <div style="background:var(--accent);height:6px;border-radius:6px;width:${t.progresso}%;"></div>
+            </div>
+          </article>
+        `).join("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/minhas-turmas", { headers: { Authorization: `Bearer ${token}` } });
+        const turmas = await res.json();
+        if (!Array.isArray(turmas) || !turmas.length) {
+          container.innerHTML = "<p>Voce nao esta matriculado em turmas ativas no momento.</p>";
+          return;
+        }
+        container.innerHTML = turmas.map((t) => `
+          <article class="card">
+            <span class="status ok">Cursando</span>
+            <h4>${t.nome}</h4>
+            <p>Status da matricula: ${t.status || "ativo"}</p>
+          </article>
+        `).join("");
+      } catch (error) {
+        console.error(error);
+        container.innerHTML = "<p>Erro de conexao ao carregar turmas.</p>";
+      }
+    }
+
+    async function carregarFinanceiro() {
+      const tbody = document.getElementById("financeiroTableBody");
+      if (isTiLocal) {
+        atualizarResumoFinanceiro(mockTi.financeiro);
+        tbody.innerHTML = mockTi.financeiro.map((p) => `
+          <tr>
+            <td>${dataBr(p.data_pedido)}</td>
+            <td>${p.descricao}</td>
+            <td>${moeda(p.total)}</td>
+            <td>${String(p.status).toUpperCase()}</td>
+            <td><button class="btn" type="button" onclick="alert('Comprovante local #${p.id}')">Baixar</button></td>
+          </tr>
+        `).join("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/financeiro", { headers: { Authorization: `Bearer ${token}` } });
+        const pedidos = await res.json();
+        if (!res.ok) {
+          throw new Error(pedidos.erro || "Falha ao carregar financeiro.");
+        }
+        atualizarResumoFinanceiro(pedidos);
+        if (!pedidos.length) {
+          tbody.innerHTML = "<tr><td colspan='5'>Nenhum registro encontrado.</td></tr>";
+          return;
+        }
+        tbody.innerHTML = pedidos.map((p) => `
+          <tr>
+            <td>${dataBr(p.data_pedido)}</td>
+            <td>${p.descricao || "Mensalidade / Produto"}</td>
+            <td>${moeda(p.total)}</td>
+            <td>${String(p.status).toUpperCase()}</td>
+            <td><button class="btn" type="button" onclick="alert('Baixando comprovante #${p.id}')">Baixar</button></td>
+          </tr>
+        `).join("");
+      } catch (error) {
+        console.error(error);
+        atualizarResumoFinanceiro([]);
+        tbody.innerHTML = "<tr><td colspan='5'>Erro ao carregar financeiro.</td></tr>";
+      }
+    }
+
+    async function carregarNotas() {
+      const tbody = document.getElementById("notasTableBody");
+      if (isTiLocal) {
+        tbody.innerHTML = mockTi.notas.map((n) => `
+          <tr>
+            <td>${n.turma}</td>
+            <td>${n.prova}</td>
+            <td>${n.nota_final}</td>
+            <td>${n.nota_final >= 70 ? "<span class='ok'>Aprovado</span>" : "<span class='warn-color'>Recuperacao</span>"}</td>
+          </tr>
+        `).join("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/boletim", { headers: { Authorization: `Bearer ${token}` } });
+        const notas = await res.json();
+        if (!Array.isArray(notas) || !notas.length) {
+          tbody.innerHTML = "<tr><td colspan='4'>Nenhuma nota lancada ainda.</td></tr>";
+          return;
+        }
+        tbody.innerHTML = notas.map((n) => `
+          <tr>
+            <td>${n.turma}</td>
+            <td>${n.prova}</td>
+            <td>${n.nota_final}</td>
+            <td>${n.nota_final >= 70 ? "<span class='ok'>Aprovado</span>" : "<span class='warn-color'>Recuperacao</span>"}</td>
+          </tr>
+        `).join("");
+      } catch (error) {
+        console.error(error);
+        tbody.innerHTML = "<tr><td colspan='4'>Erro ao carregar notas.</td></tr>";
+      }
+    }
+
+    async function carregarMateriasIsoladas() {
+      const container = document.getElementById("materiasIsoladasContainer");
+      if (isTiLocal) {
+        container.innerHTML = mockTi.materiasDisponiveis.map((m) => `
+          <article class="card">
+            <span class="status warn">Isolada</span>
+            <h4>${m.nome}</h4>
+            <p>Solicitacao simulada para testes.</p>
+            <button class="btn" type="button" onclick="alert('Solicitacao simulada para ${m.nome}')">Solicitar Matricula</button>
+          </article>
+        `).join("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/materias-disponiveis", { headers: { Authorization: `Bearer ${token}` } });
+        const materias = await res.json();
+        if (!Array.isArray(materias) || !materias.length) {
+          container.innerHTML = "<p>Nao ha materias isoladas disponiveis no momento.</p>";
+          return;
+        }
+        container.innerHTML = materias.map((m) => `
+          <article class="card">
+            <span class="status warn">Isolada</span>
+            <h4>${m.nome}</h4>
+            <p>Disponivel para solicitacao de matricula.</p>
+            <button class="btn" type="button" onclick="alert('Solicitacao enviada para a materia #${m.id}')">Solicitar Matricula</button>
+          </article>
+        `).join("");
+      } catch (error) {
+        console.error(error);
+        container.innerHTML = "<p>Erro ao carregar materias isoladas.</p>";
+      }
+    }
+
+    async function carregarConteudoAcademico() {
+      await Promise.all([carregarMateriasAluno(), carregarAvaliacoesV2()]);
+    }
+
+    async function carregarMateriasAluno() {
+      const container = document.getElementById("conteudosMateriasContainer");
+      if (isTiLocal) {
+        container.innerHTML = mockTi.materiasAluno.map((m) => {
+          const lista = m.materiais.map((item) => `<li><strong>${item.titulo}</strong> (${item.tipo_material})</li>`).join("");
+          return `
+            <article class="card">
+              <span class="status ok">${m.tipo_materia.toUpperCase()}</span>
+              <h4>${m.nome}</h4>
+              <p>Turma: ${m.turma_nome}</p>
+              <p>Professor: ${m.professor_nome}</p>
+              <ul style="margin:0;padding-left:18px;color:#d2e2f5;">${lista}</ul>
+            </article>
+          `;
+        }).join("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/aluno/materias", { headers: { Authorization: `Bearer ${token}` } });
+        const materias = await res.json();
+        if (!res.ok) {
+          container.innerHTML = `<p>${materias.erro || "Falha ao carregar materias."}</p>`;
+          return;
+        }
+        if (!materias.length) {
+          container.innerHTML = "<p>Nenhuma materia vinculada no momento.</p>";
+          return;
+        }
+
+        const cards = await Promise.all(materias.map(async (m) => {
+          const materiaisRes = await fetch(`/aluno/materias/${m.id}/materiais`, { headers: { Authorization: `Bearer ${token}` } });
+          const materiaisData = await materiaisRes.json();
+          const materiais = materiaisData.materiais || [];
+
+          const lista = materiais.slice(0, 5).map((item) => {
+            const link = item.arquivo_url
+              ? `<a class="btn" style="margin-left:6px;" href="${item.arquivo_url}" target="_blank">Abrir</a>`
+              : "";
+            return `<li><strong>${item.titulo}</strong> (${item.tipo_material}) ${link}</li>`;
+          }).join("");
+
+          return `
+            <article class="card">
+              <span class="status ok">${m.tipo_materia.toUpperCase()}</span>
+              <h4>${m.nome}</h4>
+              <p>Turma: ${m.turma_nome}</p>
+              <p>Professor: ${m.professor_nome || "Nao informado"}</p>
+              <ul style="margin:0;padding-left:18px;color:#d2e2f5;">${lista || "<li>Nenhum material aprovado ainda.</li>"}</ul>
+            </article>
+          `;
+        }));
+
+        container.innerHTML = cards.join("");
+      } catch (error) {
+        console.error(error);
+        container.innerHTML = "<p>Erro de conexao ao carregar conteudo academico.</p>";
+      }
+    }
+
+    async function carregarAvaliacoesV2() {
+      const tbody = document.getElementById("avaliacoesV2TableBody");
+      if (isTiLocal) {
+        tbody.innerHTML = mockTi.avaliacoesV2.map((a) => `
+          <tr>
+            <td>${a.turma_nome} / ${a.materia_nome}</td>
+            <td>${a.titulo}</td>
+            <td>${a.tipo_avaliacao}</td>
+            <td>${a.data_limite ? new Date(a.data_limite).toLocaleString("pt-BR") : "Sem prazo"}</td>
+            <td>${a.minha_submissao_status || "nao enviada"}</td>
+            <td>${a.minha_nota_final ?? "-"}</td>
+          </tr>
+        `).join("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/aluno/avaliacoes-v2", { headers: { Authorization: `Bearer ${token}` } });
+        const avaliacoes = await res.json();
+        if (!res.ok) {
+          tbody.innerHTML = `<tr><td colspan="6">${avaliacoes.erro || "Falha ao carregar avaliacoes."}</td></tr>`;
+          return;
+        }
+        if (!avaliacoes.length) {
+          tbody.innerHTML = "<tr><td colspan='6'>Nenhuma avaliacao V2 disponivel.</td></tr>";
+          return;
+        }
+        tbody.innerHTML = avaliacoes.map((a) => `
+          <tr>
+            <td>${a.turma_nome} / ${a.materia_nome}</td>
+            <td>${a.titulo}</td>
+            <td>${a.tipo_avaliacao}</td>
+            <td>${a.data_limite ? new Date(a.data_limite).toLocaleString("pt-BR") : "Sem prazo"}</td>
+            <td>${a.minha_submissao_status || "nao enviada"}</td>
+            <td>${a.minha_nota_final ?? "-"}</td>
+          </tr>
+        `).join("");
+      } catch (error) {
+        console.error(error);
+        tbody.innerHTML = "<tr><td colspan='6'>Erro de conexao ao carregar avaliacoes.</td></tr>";
+      }
+    }
+
+    function preencherFaltasSelect(faltas) {
+      const select = document.getElementById("justPresencaId");
+      if (!faltas.length) {
+        select.innerHTML = "<option value=''>Sem faltas registradas</option>";
+        return;
+      }
+      select.innerHTML = `<option value=''>Selecione</option>${faltas.map((f) =>
+        `<option value="${f.presenca_id}">#${f.presenca_id} - ${f.aula_titulo || "Aula"}</option>`
+      ).join("")}`;
+    }
+
+    function mensagem(id, text) {
+      const el = document.getElementById(id);
+      el.style.display = "block";
+      el.textContent = text;
+      setTimeout(() => {
+        el.style.display = "none";
+      }, 2400);
+    }
+
+    async function carregarGamificacao() {
+      if (isTiLocal) {
+        const progresso = mockTi.gamificacao.progresso;
+        document.getElementById("gmScore").textContent = String(progresso.score_trilha);
+        document.getElementById("gmMediaNota").textContent = String(progresso.media_nota);
+        document.getElementById("gmTaxaPresenca").textContent = `${progresso.taxa_presenca}%`;
+        document.getElementById("gmAtividades").textContent = String(progresso.atividades_concluidas);
+        renderTop10(mockTi.gamificacao.top10);
+        return;
+      }
+
+      try {
+        const [progressoRes, top10Res] = await Promise.all([
+          fetch("/aluno/gamificacao/progresso", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/aluno/gamificacao/top10", { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        const progressoData = await progressoRes.json();
+        const top10Data = await top10Res.json();
+
+        if (!progressoRes.ok) {
+          throw new Error(progressoData.erro || "Falha ao carregar progresso.");
+        }
+        if (!top10Res.ok) {
+          throw new Error(top10Data.erro || "Falha ao carregar ranking.");
+        }
+
+        const progresso = progressoData.progresso || {};
+        document.getElementById("gmScore").textContent = String(progresso.score_trilha ?? 0);
+        document.getElementById("gmMediaNota").textContent = String(progresso.media_nota ?? 0);
+        document.getElementById("gmTaxaPresenca").textContent = `${progresso.taxa_presenca ?? 0}%`;
+        document.getElementById("gmAtividades").textContent = String(progresso.atividades_concluidas ?? 0);
+        renderTop10(top10Data.top10 || {});
+      } catch (error) {
+        console.error(error);
+        document.getElementById("gamificacaoTableBody").innerHTML = `<tr><td colspan='4'>${error.message}</td></tr>`;
+      }
+    }
+
+    function renderTop10(top10) {
+      const tbody = document.getElementById("gamificacaoTableBody");
+      const linhas = [];
+
+      (top10.alunos_mais_precisos || []).forEach((item, idx) => {
+        linhas.push(`<tr><td>Alunos mais precisos</td><td>${idx + 1}</td><td>${item.aluno_nome || "-"}</td><td>Media ${item.media_nota ?? "-"}</td></tr>`);
+      });
+      (top10.turmas_melhor_nota || []).forEach((item, idx) => {
+        linhas.push(`<tr><td>Turmas melhor nota</td><td>${idx + 1}</td><td>${item.turma_nome || "-"}</td><td>Media ${item.media_nota ?? "-"}</td></tr>`);
+      });
+      (top10.turmas_maior_adesao || []).forEach((item, idx) => {
+        linhas.push(`<tr><td>Turmas maior adesao</td><td>${idx + 1}</td><td>${item.turma_nome || "-"}</td><td>Indice ${item.indice_adesao ?? "-"}</td></tr>`);
+      });
+      (top10.turmas_menos_faltas || []).forEach((item, idx) => {
+        linhas.push(`<tr><td>Turmas menos faltas</td><td>${idx + 1}</td><td>${item.turma_nome || "-"}</td><td>Presenca ${item.taxa_presenca ?? "-"}%</td></tr>`);
+      });
+
+      tbody.innerHTML = linhas.length ? linhas.join("") : "<tr><td colspan='4'>Sem dados de ranking.</td></tr>";
+    }
+
+    async function carregarAulasAoVivo() {
+      const tbody = document.getElementById("aulasVivoTableBody");
+      if (isTiLocal) {
+        tbody.innerHTML = mockTi.aulasVivo.map((a) => `
+          <tr>
+            <td>${a.id}</td>
+            <td>${a.turma_nome} / ${a.materia_nome}</td>
+            <td>${a.titulo}</td>
+            <td>${a.status}</td>
+            <td>${new Date(a.inicio_previsto).toLocaleString("pt-BR")}<br>${new Date(a.fim_previsto).toLocaleString("pt-BR")}</td>
+            <td><button class="btn" type="button" onclick="abrirSalaOuReplay(${a.id}, '${a.status}')">Abrir</button></td>
+          </tr>
+        `).join("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/live/salas", { headers: { Authorization: `Bearer ${token}` } });
+        const aulas = await res.json();
+        if (!res.ok) {
+          throw new Error(aulas.erro || "Falha ao carregar aulas ao vivo.");
+        }
+        if (!aulas.length) {
+          tbody.innerHTML = "<tr><td colspan='6'>Nenhuma aula ao vivo cadastrada.</td></tr>";
+          return;
+        }
+        tbody.innerHTML = aulas.map((a) => `
+          <tr>
+            <td>${a.id}</td>
+            <td>${a.turma_nome || "-"} / ${a.materia_nome || "-"}</td>
+            <td>${a.titulo}</td>
+            <td>${a.status}</td>
+            <td>${a.inicio_previsto ? new Date(a.inicio_previsto).toLocaleString("pt-BR") : "-"}<br>${a.fim_previsto ? new Date(a.fim_previsto).toLocaleString("pt-BR") : "-"}</td>
+            <td><button class="btn" type="button" onclick="abrirSalaOuReplay(${a.id}, '${a.status}')">Abrir</button></td>
+          </tr>
+        `).join("");
+      } catch (error) {
+        console.error(error);
+        tbody.innerHTML = `<tr><td colspan='6'>${error.message}</td></tr>`;
+      }
+    }
+
+    async function carregarFaltas() {
+      const tbody = document.getElementById("faltasTableBody");
+      if (isTiLocal) {
+        preencherFaltasSelect(mockTi.faltas);
+        tbody.innerHTML = mockTi.faltas.map((f) => `
+          <tr>
+            <td>${f.presenca_id}</td>
+            <td>${f.aula_titulo}</td>
+            <td>${f.justificativa_status}</td>
+          </tr>
+        `).join("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/aluno/faltas/minhas", { headers: { Authorization: `Bearer ${token}` } });
+        const faltas = await res.json();
+        if (!res.ok) {
+          throw new Error(faltas.erro || "Falha ao carregar faltas.");
+        }
+
+        preencherFaltasSelect(faltas);
+
+        if (!faltas.length) {
+          tbody.innerHTML = "<tr><td colspan='3'>Sem faltas pendentes.</td></tr>";
+          return;
+        }
+
+        tbody.innerHTML = faltas.map((f) => `
+          <tr>
+            <td>${f.presenca_id}</td>
+            <td>${f.aula_titulo || "-"}</td>
+            <td>${f.justificativa_status || "sem justificativa"}</td>
+          </tr>
+        `).join("");
+      } catch (error) {
+        console.error(error);
+        tbody.innerHTML = `<tr><td colspan='3'>${error.message}</td></tr>`;
+      }
+    }
+
+    async function enviarJustificativa() {
+      const presencaId = Number(document.getElementById("justPresencaId").value);
+      const tipo = document.getElementById("justTipo").value;
+      const texto = document.getElementById("justTexto").value.trim();
+      const atestado = document.getElementById("justAtestadoUrl").value.trim();
+
+      if (!presencaId) {
+        mensagem("justificativaMsg", "Selecione uma falta para justificar.");
+        return;
+      }
+
+      try {
+        if (isTiLocal) {
+          mensagem("justificativaMsg", "Justificativa registrada no modo local.");
+          return;
+        }
+
+        const res = await fetch(`/aluno/faltas/${presencaId}/justificar`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            tipo_justificativa: tipo,
+            texto_motivo: texto,
+            atestado_url: atestado
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.erro || "Falha ao enviar justificativa.");
+        }
+
+        mensagem("justificativaMsg", "Justificativa enviada com sucesso.");
+        document.getElementById("justTexto").value = "";
+        document.getElementById("justAtestadoUrl").value = "";
+        await carregarFaltas();
+      } catch (error) {
+        mensagem("justificativaMsg", error.message);
+      }
+    }
+
+    async function abrirSalaOuReplay(aulaId, status) {
+      try {
+        if (isTiLocal) {
+          alert(`Acao simulada para aula #${aulaId}`);
+          return;
+        }
+        if (["agendada", "ao_vivo"].includes(String(status).toLowerCase())) {
+          const res = await fetch(`/live/salas/${aulaId}/entrar`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({})
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.erro || "Nao foi possivel entrar na sala.");
+          const linkSala = String(data?.sala?.link_sala || "").trim();
+          if (/^https?:\/\//i.test(linkSala)) {
+            window.open(linkSala, "_blank", "noopener,noreferrer");
+            alert(`Entrada liberada na sala #${aulaId} via ${data?.sala?.provedor_sala || "provedor externo"}.`);
+          } else {
+            alert(`Entrada liberada na sala #${aulaId}.`);
+          }
+          return;
+        }
+
+        const replayRes = await fetch(`/aluno/aulas/${aulaId}/replay`, { headers: { Authorization: `Bearer ${token}` } });
+        const replayData = await replayRes.json();
+        if (!replayRes.ok) throw new Error(replayData.erro || "Replay indisponivel.");
+        if (replayData.gravacao?.url) {
+          window.open(replayData.gravacao.url, "_blank");
+        } else {
+          alert("Replay liberado, aguardando URL de gravacao.");
+        }
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    window.abrirSalaOuReplay = abrirSalaOuReplay;
+
+    carregarTurmas();
+    carregarFinanceiro();
+    carregarGamificacao();
+    carregarAulasAoVivo();
+    carregarFaltas();
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

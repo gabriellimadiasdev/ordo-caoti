@@ -1,0 +1,1704 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Area Suprema dos Fundadores</title>
+  <style>
+    :root {
+      --bg: #0e131b;
+      --panel: #111a25;
+      --panel-2: #172436;
+      --text: #f0f4f8;
+      --muted: #9eb1c7;
+      --gold: #f4bc3a;
+      --mint: #29c993;
+      --red: #ff5a5f;
+      --cyan: #39d0ff;
+      --line: #243447;
+      --shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 20%, #1b2a40 0%, transparent 44%),
+        radial-gradient(circle at 90% 80%, #2f1b33 0%, transparent 48%),
+        var(--bg);
+      min-height: 100vh;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: linear-gradient(180deg, #0d151f 0%, #0a1118 100%);
+      padding: 22px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 18px;
+    }
+
+    .brand h1 {
+      font-size: 1.2rem;
+      margin: 0;
+      color: var(--gold);
+      letter-spacing: 0.4px;
+    }
+
+    .brand p {
+      margin: 8px 0 0;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu a,
+    .menu button {
+      width: 100%;
+      text-align: left;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 0.93rem;
+      transition: transform 0.18s ease, border-color 0.2s ease;
+    }
+
+    .menu a:hover,
+    .menu button:hover {
+      transform: translateX(4px);
+      border-color: var(--gold);
+    }
+
+    .menu .warn {
+      color: #ffd1d2;
+      border-color: #55282a;
+      background: #2a1518;
+    }
+
+    .main {
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: 1.65rem;
+      color: #ffffff;
+    }
+
+    .topbar p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .chip {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger {
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      padding: 10px 14px;
+    }
+
+    .btn-primary {
+      background: var(--gold);
+      color: #111;
+    }
+
+    .btn-secondary {
+      background: #27405f;
+      color: #d8eaff;
+      border: 1px solid #35537a;
+    }
+
+    .btn-danger {
+      background: #4f1a24;
+      border: 1px solid #803040;
+      color: #ffdce3;
+      padding: 7px 10px;
+      font-size: 0.82rem;
+    }
+
+    .btn-primary:hover,
+    .btn-secondary:hover,
+    .btn-danger:hover {
+      opacity: 0.85;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .kpi {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .kpi .label {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin: 0;
+    }
+
+    .kpi .value {
+      margin: 7px 0 0;
+      font-size: 1.75rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .kpi .value.gold {
+      color: var(--gold);
+    }
+
+    .kpi .value.mint {
+      color: var(--mint);
+    }
+
+    .kpi .value.red {
+      color: var(--red);
+    }
+
+    .kpi .value.cyan {
+      color: var(--cyan);
+    }
+
+    .section {
+      background: rgba(17, 26, 37, 0.95);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section h3 {
+      margin: 0 0 10px;
+      font-size: 1.06rem;
+      color: #fefefe;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .mini-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mini-list li {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #101722;
+    }
+
+    .mini-list b {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 10px;
+    }
+
+    .action-card {
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #121e2f;
+      text-decoration: none;
+      color: var(--text);
+      padding: 12px;
+    }
+
+    .action-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #ffffff;
+    }
+
+    .action-card span {
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    select,
+    textarea,
+    input[type="datetime-local"] {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #0f1620;
+      color: var(--text);
+      padding: 10px;
+      font-family: inherit;
+      font-size: 0.92rem;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+
+    .preset-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .preset-group label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.84rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      min-width: 680px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #0f1722;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #1d2a3a;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      background: #111b29;
+    }
+
+    .tag {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.76rem;
+      font-weight: bold;
+    }
+
+    .tag.regular,
+    .tag.aplicada,
+    .tag.expirada {
+      color: #b8c7d8;
+      background: #1d2a3b;
+    }
+
+    .tag.advertencia {
+      background: #5f4b16;
+      color: #ffe39b;
+    }
+
+    .tag.suspensao,
+    .tag.ativa {
+      background: #5a3416;
+      color: #ffd2a4;
+    }
+
+    .tag.expulsao,
+    .tag.revogada {
+      background: #4a1d28;
+      color: #ffd4de;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .status-msg {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #27405f;
+      background: #11243a;
+      color: #d0e8ff;
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .main {
+        padding: 16px;
+      }
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Area Suprema</h1>
+        <p>Comando total dos Mestres Fundadores</p>
+      </div>
+
+      <nav class="menu">
+        <a href="#resumo">Resumo Geral</a>
+        <a href="#pendencias">Pendencias</a>
+        <a href="#suprema">Setores da Ordem</a>
+        <a href="#rastreio">Rastreio de Acessos</a>
+        <a href="#disciplinar">Disciplina Escolar</a>
+        <a href="./admin-inscricoes-ordem.html">Inscricoes da Ordem</a>
+        <a href="./area-professor-anexos.html">Avaliacoes Simples</a>
+        <a href="./aprovacao-de-registro.html">Aprovar Inscricoes</a>
+        <a href="./admin-financeiro.html">Gestao Financeira</a>
+        <a href="./aprovacao-financeira.html">Aprovacao Financeira</a>
+        <a href="./area-financeira-adm.html">Area Financeira ADM</a>
+        <a href="./gerar-descontos.html">Gerar Descontos</a>
+        <a href="./area-adm-2.html">Operacoes Avancadas</a>
+        <a href="./dashboard-TI.html">Voltar ao Dashboard</a>
+        <button class="warn" id="logoutBtn" type="button">Encerrar Sessao</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar" id="resumo">
+        <div>
+          <h2>Comando Central Administrativo</h2>
+          <p id="whoami">Carregando perfil...</p>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <span class="chip" id="updatedAt">Atualizando...</span>
+          <button class="btn-secondary" id="refreshBtn" type="button">Atualizar Agora</button>
+        </div>
+      </header>
+
+      <section class="kpi-grid" aria-label="KPIs">
+        <article class="kpi">
+          <p class="label">Inscricoes Pendentes</p>
+          <p class="value gold" id="kpiInscricoes">0</p>
+        </article>
+        <article class="kpi">
+          <p class="label">Pagamentos Pendentes</p>
+          <p class="value cyan" id="kpiPagamentos">0</p>
+        </article>
+        <article class="kpi">
+          <p class="label">Alunos Ativos</p>
+          <p class="value mint" id="kpiAtivos">0</p>
+        </article>
+        <article class="kpi">
+          <p class="label">Alunos Bloqueados</p>
+          <p class="value red" id="kpiBloqueados">0</p>
+        </article>
+        <article class="kpi">
+          <p class="label">Punicoes Ativas</p>
+          <p class="value red" id="kpiPunicoes">0</p>
+        </article>
+        <article class="kpi">
+          <p class="label">Logins (24h)</p>
+          <p class="value cyan" id="kpiLogin24h">0</p>
+        </article>
+        <article class="kpi">
+          <p class="label">Sessoes Ativas</p>
+          <p class="value mint" id="kpiSessoesAtivas">0</p>
+        </article>
+      </section>
+
+      <section class="section" id="pendencias">
+        <div class="section-head">
+          <h3>Fila de Pendencias Criticas</h3>
+          <span class="muted">Acompanhe os 5 itens mais antigos</span>
+        </div>
+        <div class="split">
+          <div>
+            <h3>Inscricoes em Analise</h3>
+            <ul class="mini-list" id="pendInscricoes">
+              <li>Nenhum registro encontrado.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Pagamentos Pendentes</h3>
+            <ul class="mini-list" id="pendPagamentos">
+              <li>Nenhum registro encontrado.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="aprovacao-acessos">
+        <div class="section-head">
+          <h3>Aprovacao de Acessos Pendentes</h3>
+          <span class="muted">Cadastros internos de membros e TI aguardando liberacao</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Nivel</th>
+                <th>Data</th>
+                <th>Acao</th>
+              </tr>
+            </thead>
+            <tbody id="membrosPendentesBody">
+              <tr><td colspan="6">Carregando acessos pendentes...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="suprema">
+        <div class="section-head">
+          <h3>Area Suprema por Setor</h3>
+          <span class="muted">Tesouraria, secretaria, administrativo, membros e loja</span>
+        </div>
+        <div class="split">
+          <div>
+            <h3>Tesouraria</h3>
+            <ul class="mini-list" id="setorTesouraria">
+              <li>Carregando dados...</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Secretaria</h3>
+            <ul class="mini-list" id="setorSecretaria">
+              <li>Carregando dados...</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Administrativo</h3>
+            <ul class="mini-list" id="setorAdministrativo">
+              <li>Carregando dados...</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Membros</h3>
+            <ul class="mini-list" id="setorMembros">
+              <li>Carregando dados...</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Loja</h3>
+            <ul class="mini-list" id="setorLoja">
+              <li>Carregando dados...</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="rastreio">
+        <div class="section-head">
+          <h3>Rastreio de Login e Logout</h3>
+          <span class="muted">Visao de acessos, sessoes ativas e monitoramento de membros/clientes</span>
+        </div>
+
+        <div class="table-wrap" style="margin-bottom: 12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Acao</th>
+                <th>Usuario</th>
+                <th>Perfil Login</th>
+                <th>Sessao</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <tr><td colspan="6">Carregando rastreio...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap" style="margin-bottom: 12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Email</th>
+                <th>Tipo</th>
+                <th>Sessao</th>
+                <th>Criada em</th>
+                <th>Expira em</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody id="sessoesTableBody">
+              <tr><td colspan="7">Carregando sessoes ativas...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Ultimo Login</th>
+                <th>IP Ultimo Login</th>
+              </tr>
+            </thead>
+            <tbody id="monitoramentoTableBody">
+              <tr><td colspan="6">Carregando monitoramento...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h3>Acesso aos Modulos da Administracao</h3>
+          <span class="muted">Operacional e em construcao no mesmo painel</span>
+        </div>
+        <div class="actions-grid">
+          <a class="action-card" href="./admin-inscricoes-ordem.html">
+            <strong>Inscricao e Aprovacao da Ordem</strong>
+            <span>Fluxo simples para cadastro interno e aprovacao em poucos cliques.</span>
+          </a>
+          <a class="action-card" href="./area-professor-anexos.html">
+            <strong>Avaliacoes Sem JSON</strong>
+            <span>Criar questoes, pesos e estrutura da prova sem programacao.</span>
+          </a>
+          <a class="action-card" href="./aprovacao-de-registro.html">
+            <strong>Aprovacao de Registro</strong>
+            <span>Visualizar e decidir inscricoes de novos candidatos.</span>
+          </a>
+          <a class="action-card" href="./admin-financeiro.html">
+            <strong>Financeiro Admin</strong>
+            <span>Bloqueio de acesso por inadimplencia, historico e cupons.</span>
+          </a>
+          <a class="action-card" href="./aprovacao-financeira.html">
+            <strong>Aprovacao Financeira</strong>
+            <span>Pagina minima pronta para evolucao de workflow financeiro.</span>
+          </a>
+          <a class="action-card" href="./area-anexar-arquivos.html">
+            <strong>Anexar Arquivos</strong>
+            <span>Painel academico para turmas, materias e moderacao de anexos.</span>
+          </a>
+          <a class="action-card" href="./area-financeira-adm.html">
+            <strong>Area Financeira ADM</strong>
+            <span>Direcionamentos taticos de cobranca e acompanhamento.</span>
+          </a>
+          <a class="action-card" href="./gerar-descontos.html">
+            <strong>Descontos e Bolsas</strong>
+            <span>Espaco minimo para politica de descontos da escola.</span>
+          </a>
+          <a class="action-card" href="./reembolso-e-logistica.html">
+            <strong>Reembolsos</strong>
+            <span>Canal de governanca para pedidos de reembolso.</span>
+          </a>
+          <a class="action-card" href="./vendas.html">
+            <strong>Vendas e Loja</strong>
+            <span>Area preparatoria para analise comercial da ordem.</span>
+          </a>
+          <a class="action-card" href="./admin-loja-produtos.html">
+            <strong>Moderacao de Produtos</strong>
+            <span>Aprovar/reprovar produtos de lojistas antes de publicar na loja.</span>
+          </a>
+          <a class="action-card" href="./admin-biblioteca.html">
+            <strong>Biblioteca de Livros</strong>
+            <span>Gerenciar acervo de livros esotéricos e temas educacionais.</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="section" id="disciplinar">
+        <div class="section-head">
+          <h3>Gestao Disciplinar Escolar</h3>
+          <span class="muted">Advertencia, suspensao e expulsao com auditoria</span>
+        </div>
+
+        <form id="disciplinarForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="alunoSelect">Aluno</label>
+              <select id="alunoSelect" required>
+                <option value="">Selecione um aluno</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="tipoSelect">Tipo de Punicao</label>
+              <select id="tipoSelect" required>
+                <option value="advertencia">Advertencia</option>
+                <option value="suspensao">Suspensao</option>
+                <option value="expulsao">Expulsao</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="suspensaoPresetWrap" style="display: none;">
+              <label>Prazo de Suspensao</label>
+              <div class="preset-group">
+                <label><input type="radio" name="presetSuspensao" value="3" checked> 3 dias</label>
+                <label><input type="radio" name="presetSuspensao" value="7"> 7 dias</label>
+                <label><input type="radio" name="presetSuspensao" value="30"> 30 dias</label>
+                <label><input type="radio" name="presetSuspensao" value="custom"> Data custom</label>
+              </div>
+            </div>
+
+            <div class="form-group" id="customDateWrap" style="display: none;">
+              <label for="customDate">Fim da Suspensao (custom)</label>
+              <input type="datetime-local" id="customDate" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <label for="motivoInput">Motivo e contexto disciplinar</label>
+            <textarea id="motivoInput" required placeholder="Descreva a ocorrencia e a justificativa da medida..."></textarea>
+          </div>
+
+          <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-primary" type="submit">Aplicar Punicao</button>
+            <button class="btn-secondary" type="button" id="reloadCases">Recarregar Casos</button>
+          </div>
+
+          <div class="status-msg" id="formMsg"></div>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h3>Alunos e Status Disciplinar Atual</h3>
+          <span class="muted">Somente alunos</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Aluno</th>
+                <th>E-mail</th>
+                <th>Status Conta</th>
+                <th>Status Disciplinar</th>
+                <th>Bloqueio Ate</th>
+              </tr>
+            </thead>
+            <tbody id="alunosTableBody">
+              <tr><td colspan="5">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h3>Historico de Acoes Disciplinares</h3>
+          <span class="muted">Auditoria completa e revogacao controlada</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Aluno</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Inicio</th>
+                <th>Fim</th>
+                <th>Aplicado por</th>
+                <th>Motivo</th>
+                <th>Acao</th>
+              </tr>
+            </thead>
+            <tbody id="casosTableBody">
+              <tr><td colspan="9">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const FOUNDERS_EMAILS = ['contatocaiozanoni@gmail.com', 'dayeekennedy@gmail.com'];
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+    const isTiLocal = user.tipo === 'ti';
+    const normalizedUserEmail = String(user.email || '').trim().toLowerCase();
+    const isFounderAccount = FOUNDERS_EMAILS.includes(normalizedUserEmail);
+    const gateSessionKey = 'adminGateValidatedAt';
+
+    if (!token && !window.location.hostname.includes('localhost')) {
+      window.location.href = './login.html';
+    }
+
+    if (!isTiLocal && (user.tipo !== 'admin' || !isFounderAccount)) {
+      alert('Acesso permitido apenas aos dois Mestres Fundadores da Ordem.');
+      window.location.href = './dashboard-TI.html';
+    }
+
+    document.getElementById('whoami').textContent = isTiLocal
+      ? `Sessao ativa: ${user.nome || 'Equipe T.I.'} (ti local - painel mestre)`
+      : `Sessao ativa: ${user.nome || 'Mestre Fundador'} (area suprema)`;
+
+    if (isTiLocal) {
+      document.querySelectorAll('a[href="/admin/aprovacao-registro"]').forEach((anchor) => {
+        anchor.href = '/ti/admin/aprovacao-registro';
+      });
+      document.querySelectorAll('a[href="/admin/financeiro"]').forEach((anchor) => {
+        anchor.href = '/ti/admin/financeiro';
+      });
+      document.querySelectorAll('a[href="/admin/anexos"]').forEach((anchor) => {
+        anchor.href = '/ti/admin/anexos';
+      });
+    }
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    async function enforceAdminGate() {
+      if (isTiLocal) return true;
+
+      const alreadyValidated = Number(sessionStorage.getItem(gateSessionKey) || 0);
+      if (alreadyValidated && Date.now() - alreadyValidated < 6 * 60 * 60 * 1000) {
+        return true;
+      }
+
+      const senhaAcesso = prompt('Senha adicional da Area Administrativa:');
+      if (!senhaAcesso) {
+        alert('Senha administrativa obrigatoria para abrir o painel.');
+        window.location.href = './login.html';
+        return false;
+      }
+
+      const response = await fetch('/auth/admin-gate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ senha_acesso: senhaAcesso })
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        alert(data.erro || 'Senha administrativa invalida.');
+        window.location.href = './login.html';
+        return false;
+      }
+
+      sessionStorage.setItem(gateSessionKey, String(Date.now()));
+      return true;
+    }
+
+    const mockAdmin = {
+      pendencias: {
+        inscricoes: [
+          { id: 1001, nome: 'Maria de Teste', email: 'maria@mock.local', data_inscricao: '2026-03-05T14:10:00' },
+          { id: 1002, nome: 'Joao de Teste', email: 'joao@mock.local', data_inscricao: '2026-03-06T09:22:00' }
+        ],
+        pagamentos: [
+          { id: 7001, aluno_nome: 'Aluno Financeiro', total: 170.0, data_pedido: '2026-03-01T10:00:00' },
+          { id: 7002, aluno_nome: 'Aluno Isolado', total: 120.0, data_pedido: '2026-03-03T17:30:00' }
+        ]
+      },
+      alunos: [
+        { id: 201, nome: 'Aluno Mock 1', email: 'aluno1@mock.local', ativo: true, status_disciplinar: 'regular', bloqueio_ate: null },
+        { id: 202, nome: 'Aluno Mock 2', email: 'aluno2@mock.local', ativo: false, status_disciplinar: 'suspensao', bloqueio_ate: '2026-03-15T23:59:59' },
+        { id: 203, nome: 'Aluno Mock 3', email: 'aluno3@mock.local', ativo: false, status_disciplinar: 'expulsao', bloqueio_ate: null }
+      ],
+      casos: [
+        {
+          id: 501,
+          aluno_id: 202,
+          aluno_nome: 'Aluno Mock 2',
+          tipo: 'suspensao',
+          status: 'ativa',
+          data_inicio: '2026-03-08T09:00:00',
+          data_fim: '2026-03-15T23:59:59',
+          aplicado_por_nome: 'Admin Mock',
+          motivo: 'Ocorrencia disciplinar grave',
+          motivo_revogacao: null
+        },
+        {
+          id: 502,
+          aluno_id: 203,
+          aluno_nome: 'Aluno Mock 3',
+          tipo: 'expulsao',
+          status: 'ativa',
+          data_inicio: '2026-02-20T09:00:00',
+          data_fim: null,
+          aplicado_por_nome: 'Admin Mock',
+          motivo: 'Reincidencia critica',
+          motivo_revogacao: null
+        }
+      ]
+    };
+
+    function mockKpis() {
+      return {
+        inscricoes_pendentes: mockAdmin.pendencias.inscricoes.length,
+        pagamentos_pendentes: mockAdmin.pendencias.pagamentos.length,
+        alunos_ativos: mockAdmin.alunos.filter((aluno) => aluno.ativo).length,
+        alunos_bloqueados: mockAdmin.alunos.filter((aluno) => !aluno.ativo).length,
+        punicoes_ativas: mockAdmin.casos.filter((caso) => caso.status === 'ativa').length
+      };
+    }
+
+    function buildMockSuprema() {
+      return {
+        setores: {
+          tesouraria: {
+            receita_confirmada: 840,
+            receita_pendente: 290,
+            cobrancas_abertas: mockAdmin.pendencias.pagamentos.length,
+            movimentacoes_30d: 12
+          },
+          secretaria: {
+            inscricoes_em_analise: mockAdmin.pendencias.inscricoes.length,
+            inscricoes_aprovadas: 3,
+            tentativas_30d: 8,
+            novos_membros_30d: 5
+          },
+          administrativa: {
+            total_usuarios: mockAdmin.alunos.length + 4,
+            usuarios_ativos: mockAdmin.alunos.filter((item) => item.ativo).length + 4,
+            usuarios_inativos: mockAdmin.alunos.filter((item) => !item.ativo).length,
+            admins: 2,
+            ti: 1
+          },
+          membros: {
+            membros_total: mockAdmin.alunos.length,
+            membros_ativos: mockAdmin.alunos.filter((item) => item.ativo).length,
+            membros_bloqueados: mockAdmin.alunos.filter((item) => !item.ativo).length,
+            casos_disciplinares_ativos: mockAdmin.casos.filter((item) => item.status === 'ativa').length
+          },
+          loja: {
+            produtos_ativos: 6,
+            pedidos_30d: 11,
+            pedidos_pendentes: mockAdmin.pendencias.pagamentos.length,
+            lojistas_ativos: 2
+          }
+        },
+        rastreio: {
+          resumo_24h: {
+            login_sucesso: 9,
+            logout: 7,
+            usuarios_unicos: 6
+          },
+          eventos_login_logout: [
+            {
+              criado_em: new Date().toISOString(),
+              acao: 'login_sucesso',
+              usuario_nome: 'Aluno Mock 1',
+              usuario_email: 'aluno1@mock.local',
+              usuario_tipo: 'aluno',
+              perfil_login: 'neofito',
+              session_type: 'persistent',
+              ip_origem: '127.0.0.1'
+            },
+            {
+              criado_em: new Date(Date.now() - 3600000).toISOString(),
+              acao: 'logout',
+              usuario_nome: 'Cliente Mock',
+              usuario_email: 'cliente@mock.local',
+              usuario_tipo: 'cliente',
+              perfil_login: 'cliente',
+              session_type: 'session',
+              ip_origem: '127.0.0.1'
+            }
+          ],
+          sessoes_ativas: [
+            {
+              nome: 'Aluno Mock 1',
+              email: 'aluno1@mock.local',
+              tipo_usuario: 'aluno',
+              session_type: 'persistent',
+              criado_em: new Date(Date.now() - 5400000).toISOString(),
+              expira_em: new Date(Date.now() + 86400000).toISOString(),
+              ip_origem: '127.0.0.1'
+            }
+          ]
+        },
+        membros_monitoramento: mockAdmin.alunos.map((aluno) => ({
+          nome: aluno.nome,
+          email: aluno.email,
+          tipo_usuario: 'aluno',
+          ativo: aluno.ativo,
+          ultimo_login_em: new Date(Date.now() - 7200000).toISOString(),
+          ultimo_login_ip: '127.0.0.1'
+        }))
+      };
+    }
+
+    function recalculateAlunoStatus(alunoId) {
+      const aluno = mockAdmin.alunos.find((item) => item.id === Number(alunoId));
+      if (!aluno) return;
+
+      const ativos = mockAdmin.casos.filter((caso) => caso.aluno_id === aluno.id && caso.status === 'ativa');
+      const expulsaoAtiva = ativos.find((caso) => caso.tipo === 'expulsao');
+      const suspensaoAtiva = ativos.find((caso) => caso.tipo === 'suspensao');
+      const advertenciaAtiva = ativos.find((caso) => caso.tipo === 'advertencia');
+
+      if (expulsaoAtiva) {
+        aluno.ativo = false;
+        aluno.status_disciplinar = 'expulsao';
+        aluno.bloqueio_ate = null;
+        return;
+      }
+
+      if (suspensaoAtiva) {
+        aluno.ativo = false;
+        aluno.status_disciplinar = 'suspensao';
+        aluno.bloqueio_ate = suspensaoAtiva.data_fim || null;
+        return;
+      }
+
+      if (advertenciaAtiva) {
+        aluno.ativo = true;
+        aluno.status_disciplinar = 'advertencia';
+        aluno.bloqueio_ate = null;
+        return;
+      }
+
+      aluno.ativo = true;
+      aluno.status_disciplinar = 'regular';
+      aluno.bloqueio_ate = null;
+    }
+
+    const form = document.getElementById('disciplinarForm');
+    const formMsg = document.getElementById('formMsg');
+    const tipoSelect = document.getElementById('tipoSelect');
+    const suspensaoPresetWrap = document.getElementById('suspensaoPresetWrap');
+    const customDateWrap = document.getElementById('customDateWrap');
+    const customDateInput = document.getElementById('customDate');
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/login';
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      loadAll();
+    });
+
+    document.getElementById('reloadCases').addEventListener('click', () => {
+      loadCasos();
+    });
+
+    tipoSelect.addEventListener('change', toggleSuspensaoFields);
+
+    document.querySelectorAll('input[name="presetSuspensao"]').forEach((radio) => {
+      radio.addEventListener('change', () => {
+        customDateWrap.style.display = radio.value === 'custom' && radio.checked ? 'block' : 'none';
+      });
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const alunoId = document.getElementById('alunoSelect').value;
+      const tipo = tipoSelect.value;
+      const motivo = document.getElementById('motivoInput').value.trim();
+
+      if (!alunoId || !tipo || !motivo) {
+        showFormMessage('Preencha aluno, tipo e motivo.', true);
+        return;
+      }
+
+      const payload = {
+        aluno_id: Number(alunoId),
+        tipo,
+        motivo
+      };
+
+      if (tipo === 'suspensao') {
+        const preset = document.querySelector('input[name="presetSuspensao"]:checked')?.value || '3';
+        if (preset === 'custom') {
+          if (!customDateInput.value) {
+            showFormMessage('Informe a data final custom para suspensao.', true);
+            return;
+          }
+          payload.data_fim = customDateInput.value;
+        } else {
+          payload.duracao_dias = Number(preset);
+        }
+      }
+
+      if (isTiLocal) {
+        const aluno = mockAdmin.alunos.find((item) => item.id === Number(alunoId));
+        if (!aluno) {
+          showFormMessage('Aluno nao encontrado no modo local.', true);
+          return;
+        }
+
+        let dataFim = null;
+        if (tipo === 'suspensao') {
+          if (payload.data_fim) {
+            dataFim = new Date(payload.data_fim).toISOString();
+          } else {
+            const dias = Number(payload.duracao_dias || 3);
+            const dt = new Date();
+            dt.setDate(dt.getDate() + dias);
+            dataFim = dt.toISOString();
+          }
+        }
+
+        const lastId = mockAdmin.casos.reduce((acc, item) => Math.max(acc, Number(item.id) || 0), 500);
+        mockAdmin.casos.unshift({
+          id: lastId + 1,
+          aluno_id: aluno.id,
+          aluno_nome: aluno.nome,
+          tipo,
+          status: 'ativa',
+          data_inicio: new Date().toISOString(),
+          data_fim: dataFim,
+          aplicado_por_nome: user.nome || 'Equipe T.I.',
+          motivo,
+          motivo_revogacao: null
+        });
+        recalculateAlunoStatus(aluno.id);
+
+        form.reset();
+        toggleSuspensaoFields();
+        customDateWrap.style.display = 'none';
+        showFormMessage('Punicao simulada com sucesso no modo T.I.', false);
+        await loadAll();
+        return;
+      }
+
+      try {
+        const response = await fetch('/admin/disciplinar/aplicar', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showFormMessage(data.erro || 'Falha ao aplicar punicao.', true);
+          return;
+        }
+
+        form.reset();
+        toggleSuspensaoFields();
+        customDateWrap.style.display = 'none';
+        showFormMessage('Punicao aplicada com sucesso.', false);
+        await loadAll();
+      } catch (error) {
+        console.error(error);
+        showFormMessage('Erro de conexao ao aplicar punicao.', true);
+      }
+    });
+
+    function toggleSuspensaoFields() {
+      const isSuspensao = tipoSelect.value === 'suspensao';
+      suspensaoPresetWrap.style.display = isSuspensao ? 'block' : 'none';
+      if (!isSuspensao) {
+        customDateWrap.style.display = 'none';
+      }
+    }
+
+    function showFormMessage(message, isError) {
+      formMsg.style.display = 'block';
+      formMsg.textContent = message;
+      formMsg.style.borderColor = isError ? '#7f2d34' : '#27405f';
+      formMsg.style.background = isError ? '#37161b' : '#11243a';
+      formMsg.style.color = isError ? '#ffd4dc' : '#d0e8ff';
+    }
+
+    function toDate(value) {
+      if (!value) return '-';
+      return new Date(value).toLocaleString('pt-BR');
+    }
+
+    function renderTag(value) {
+      const safe = String(value || '').toLowerCase();
+      return `<span class="tag ${safe}">${safe || 'regular'}</span>`;
+    }
+
+    async function loadMembrosPendentes() {
+      const tbody = document.getElementById('membrosPendentesBody');
+
+      if (isTiLocal) {
+        tbody.innerHTML = `
+          <tr>
+            <td>9001</td>
+            <td>TI Mock</td>
+            <td>ti.mock@local</td>
+            <td>ti</td>
+            <td>${toDate(new Date().toISOString())}</td>
+            <td><span class="muted">Modo local</span></td>
+          </tr>
+        `;
+        return;
+      }
+
+      const response = await fetch('/admin/membros-pendentes', { headers: { Authorization: `Bearer ${token}` } });
+      const rows = await response.json().catch(() => []);
+
+      if (!response.ok) {
+        throw new Error(rows?.erro || 'Falha ao carregar membros pendentes.');
+      }
+
+      if (!Array.isArray(rows) || !rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6">Nenhum acesso pendente no momento.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map((item) => `
+        <tr>
+          <td>${item.id}</td>
+          <td>${item.nome || '-'}</td>
+          <td>${item.email || '-'}</td>
+          <td>${item.nivel_codigo || 'neofito'}</td>
+          <td>${toDate(item.data_cadastro)}</td>
+          <td><button class="btn-secondary" type="button" onclick="aprovarMembroAcesso(${item.id})">Aprovar</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function aprovarMembroAcesso(id) {
+      if (!id) return;
+
+      if (!confirm('Confirma aprovacao deste acesso?')) {
+        return;
+      }
+
+      if (isTiLocal) {
+        alert('Aprovacao simulada em modo local.');
+        await loadMembrosPendentes();
+        return;
+      }
+
+      try {
+        const response = await fetch('/admin/aprovar-membro', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ id })
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data?.erro || 'Nao foi possivel aprovar o acesso.');
+        }
+
+        await loadMembrosPendentes();
+        await loadResumo();
+      } catch (error) {
+        alert(error.message || 'Erro ao aprovar acesso.');
+      }
+    }
+
+    window.aprovarMembroAcesso = aprovarMembroAcesso;
+
+    function toMoney(value) {
+      return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function renderMiniList(listId, lines) {
+      const listEl = document.getElementById(listId);
+      if (!Array.isArray(lines) || !lines.length) {
+        listEl.innerHTML = '<li>Sem dados no momento.</li>';
+        return;
+      }
+
+      listEl.innerHTML = lines.map((line) => `<li><b>${line.label}</b><span class="muted">${line.value}</span></li>`).join('');
+    }
+
+    function renderSetores(setores) {
+      const tesouraria = setores?.tesouraria || {};
+      const secretaria = setores?.secretaria || {};
+      const administrativa = setores?.administrativa || {};
+      const membros = setores?.membros || {};
+      const loja = setores?.loja || {};
+
+      renderMiniList('setorTesouraria', [
+        { label: 'Receita confirmada', value: toMoney(tesouraria.receita_confirmada) },
+        { label: 'Receita pendente', value: toMoney(tesouraria.receita_pendente) },
+        { label: 'Cobrancas abertas', value: Number(tesouraria.cobrancas_abertas || 0) },
+        { label: 'Movimentacoes (30d)', value: Number(tesouraria.movimentacoes_30d || 0) }
+      ]);
+
+      renderMiniList('setorSecretaria', [
+        { label: 'Inscricoes em analise', value: Number(secretaria.inscricoes_em_analise || 0) },
+        { label: 'Inscricoes aprovadas', value: Number(secretaria.inscricoes_aprovadas || 0) },
+        { label: 'Tentativas (30d)', value: Number(secretaria.tentativas_30d || 0) },
+        { label: 'Novos membros (30d)', value: Number(secretaria.novos_membros_30d || 0) }
+      ]);
+
+      renderMiniList('setorAdministrativo', [
+        { label: 'Usuarios totais', value: Number(administrativa.total_usuarios || 0) },
+        { label: 'Usuarios ativos', value: Number(administrativa.usuarios_ativos || 0) },
+        { label: 'Usuarios inativos', value: Number(administrativa.usuarios_inativos || 0) },
+        { label: 'Admins / TI', value: `${Number(administrativa.admins || 0)} / ${Number(administrativa.ti || 0)}` }
+      ]);
+
+      renderMiniList('setorMembros', [
+        { label: 'Membros total', value: Number(membros.membros_total || 0) },
+        { label: 'Membros ativos', value: Number(membros.membros_ativos || 0) },
+        { label: 'Membros bloqueados', value: Number(membros.membros_bloqueados || 0) },
+        { label: 'Casos disciplinares ativos', value: Number(membros.casos_disciplinares_ativos || 0) }
+      ]);
+
+      renderMiniList('setorLoja', [
+        { label: 'Produtos ativos', value: Number(loja.produtos_ativos || 0) },
+        { label: 'Pedidos (30d)', value: Number(loja.pedidos_30d || 0) },
+        { label: 'Pedidos pendentes', value: Number(loja.pedidos_pendentes || 0) },
+        { label: 'Lojistas ativos', value: Number(loja.lojistas_ativos || 0) }
+      ]);
+    }
+
+    function renderRastreio(rastreio, monitoramento) {
+      const resumo = rastreio?.resumo_24h || {};
+      const eventos = Array.isArray(rastreio?.eventos_login_logout) ? rastreio.eventos_login_logout : [];
+      const sessoes = Array.isArray(rastreio?.sessoes_ativas) ? rastreio.sessoes_ativas : [];
+      const membrosMonitoramento = Array.isArray(monitoramento) ? monitoramento : [];
+
+      document.getElementById('kpiLogin24h').textContent = Number(resumo.login_sucesso || 0);
+      document.getElementById('kpiSessoesAtivas').textContent = sessoes.length;
+
+      const auditBody = document.getElementById('auditTableBody');
+      if (!eventos.length) {
+        auditBody.innerHTML = '<tr><td colspan="6">Sem eventos de login/logout.</td></tr>';
+      } else {
+        auditBody.innerHTML = eventos.map((item) => `
+          <tr>
+            <td>${toDate(item.criado_em)}</td>
+            <td>${renderTag(item.acao)}</td>
+            <td>${item.usuario_nome || '-'}<br><span class="muted">${item.usuario_email || '-'} (${item.usuario_tipo || '-'})</span></td>
+            <td>${item.perfil_login || '-'}</td>
+            <td>${item.session_type || '-'}</td>
+            <td>${item.ip_origem || '-'}</td>
+          </tr>
+        `).join('');
+      }
+
+      const sessoesBody = document.getElementById('sessoesTableBody');
+      if (!sessoes.length) {
+        sessoesBody.innerHTML = '<tr><td colspan="7">Sem sessoes ativas no momento.</td></tr>';
+      } else {
+        sessoesBody.innerHTML = sessoes.map((item) => `
+          <tr>
+            <td>${item.nome || '-'}</td>
+            <td>${item.email || '-'}</td>
+            <td>${item.tipo_usuario || '-'}</td>
+            <td>${item.session_type || '-'}</td>
+            <td>${toDate(item.criado_em)}</td>
+            <td>${toDate(item.expira_em)}</td>
+            <td>${item.ip_origem || '-'}</td>
+          </tr>
+        `).join('');
+      }
+
+      const monitorBody = document.getElementById('monitoramentoTableBody');
+      if (!membrosMonitoramento.length) {
+        monitorBody.innerHTML = '<tr><td colspan="6">Sem dados de monitoramento.</td></tr>';
+      } else {
+        monitorBody.innerHTML = membrosMonitoramento.map((item) => `
+          <tr>
+            <td>${item.nome || '-'}</td>
+            <td>${item.email || '-'}</td>
+            <td>${item.tipo_usuario || '-'}</td>
+            <td>${item.ativo ? '<span class="tag aplicada">ativo</span>' : '<span class="tag revogada">inativo</span>'}</td>
+            <td>${toDate(item.ultimo_login_em)}</td>
+            <td>${item.ultimo_login_ip || '-'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function loadResumo() {
+      if (isTiLocal) {
+        const kpis = mockKpis();
+        const mockSuprema = buildMockSuprema();
+        document.getElementById('kpiInscricoes').textContent = kpis.inscricoes_pendentes || 0;
+        document.getElementById('kpiPagamentos').textContent = kpis.pagamentos_pendentes || 0;
+        document.getElementById('kpiAtivos').textContent = kpis.alunos_ativos || 0;
+        document.getElementById('kpiBloqueados').textContent = kpis.alunos_bloqueados || 0;
+        document.getElementById('kpiPunicoes').textContent = kpis.punicoes_ativas || 0;
+        document.getElementById('kpiLogin24h').textContent = Number(mockSuprema.rastreio.resumo_24h.login_sucesso || 0);
+        document.getElementById('kpiSessoesAtivas').textContent = mockSuprema.rastreio.sessoes_ativas.length;
+
+        const listaInscricoes = document.getElementById('pendInscricoes');
+        const listaPagamentos = document.getElementById('pendPagamentos');
+
+        if (!mockAdmin.pendencias.inscricoes.length) {
+          listaInscricoes.innerHTML = '<li>Nenhuma inscricao pendente.</li>';
+        } else {
+          listaInscricoes.innerHTML = mockAdmin.pendencias.inscricoes.map((item) => `
+            <li>
+              <b>#${item.id} - ${item.nome}</b>
+              <span class="muted">${item.email}</span><br>
+              <span class="muted">Desde ${toDate(item.data_inscricao)}</span>
+            </li>
+          `).join('');
+        }
+
+        if (!mockAdmin.pendencias.pagamentos.length) {
+          listaPagamentos.innerHTML = '<li>Nenhum pagamento pendente.</li>';
+        } else {
+          listaPagamentos.innerHTML = mockAdmin.pendencias.pagamentos.map((item) => `
+            <li>
+              <b>#${item.id} - ${item.aluno_nome}</b>
+              <span class="muted">Valor: R$ ${Number(item.total).toFixed(2)}</span><br>
+              <span class="muted">Desde ${toDate(item.data_pedido)}</span>
+            </li>
+          `).join('');
+        }
+
+        renderSetores(mockSuprema.setores);
+        renderRastreio(mockSuprema.rastreio, mockSuprema.membros_monitoramento);
+
+        return;
+      }
+
+      const response = await fetch('/admin/suprema/painel', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.erro || 'Falha ao carregar resumo');
+      }
+
+      document.getElementById('kpiInscricoes').textContent = data.kpis.inscricoes_pendentes || 0;
+      document.getElementById('kpiPagamentos').textContent = data.kpis.pagamentos_pendentes || 0;
+      document.getElementById('kpiAtivos').textContent = data.kpis.alunos_ativos || 0;
+      document.getElementById('kpiBloqueados').textContent = data.kpis.alunos_bloqueados || 0;
+      document.getElementById('kpiPunicoes').textContent = data.kpis.punicoes_ativas || 0;
+
+      const listaInscricoes = document.getElementById('pendInscricoes');
+      const listaPagamentos = document.getElementById('pendPagamentos');
+
+      if (!data.pendencias.inscricoes.length) {
+        listaInscricoes.innerHTML = '<li>Nenhuma inscricao pendente.</li>';
+      } else {
+        listaInscricoes.innerHTML = data.pendencias.inscricoes.map((item) => `
+          <li>
+            <b>#${item.id} - ${item.nome}</b>
+            <span class="muted">${item.email}</span><br>
+            <span class="muted">Desde ${toDate(item.data_inscricao)}</span>
+          </li>
+        `).join('');
+      }
+
+      if (!data.pendencias.pagamentos.length) {
+        listaPagamentos.innerHTML = '<li>Nenhum pagamento pendente.</li>';
+      } else {
+        listaPagamentos.innerHTML = data.pendencias.pagamentos.map((item) => `
+          <li>
+            <b>#${item.id} - ${item.aluno_nome}</b>
+            <span class="muted">Valor: R$ ${Number(item.total).toFixed(2)}</span><br>
+            <span class="muted">Desde ${toDate(item.data_pedido)}</span>
+          </li>
+        `).join('');
+      }
+
+      renderSetores(data.setores || {});
+      renderRastreio(data.rastreio || {}, data.membros_monitoramento || []);
+    }
+
+    async function loadAlunos() {
+      if (isTiLocal) {
+        const alunos = mockAdmin.alunos;
+        const tbody = document.getElementById('alunosTableBody');
+        const select = document.getElementById('alunoSelect');
+
+        if (!alunos.length) {
+          tbody.innerHTML = '<tr><td colspan="5">Nenhum aluno cadastrado.</td></tr>';
+          select.innerHTML = '<option value="">Nenhum aluno encontrado</option>';
+          return;
+        }
+
+        tbody.innerHTML = alunos.map((aluno) => `
+          <tr>
+            <td>${aluno.nome}</td>
+            <td>${aluno.email}</td>
+            <td>${aluno.ativo ? '<span class="tag aplicada">ativo</span>' : '<span class="tag revogada">bloqueado</span>'}</td>
+            <td>${renderTag(aluno.status_disciplinar)}</td>
+            <td>${toDate(aluno.bloqueio_ate)}</td>
+          </tr>
+        `).join('');
+
+        select.innerHTML = '<option value="">Selecione um aluno</option>' + alunos.map((aluno) =>
+          `<option value="${aluno.id}">${aluno.nome} (${aluno.email})</option>`
+        ).join('');
+        return;
+      }
+
+      const response = await fetch('/admin/disciplinar/alunos', { headers: { Authorization: `Bearer ${token}` } });
+      const alunos = await response.json();
+
+      if (!response.ok) {
+        throw new Error(alunos.erro || 'Falha ao carregar alunos');
+      }
+
+      const tbody = document.getElementById('alunosTableBody');
+      const select = document.getElementById('alunoSelect');
+
+      if (!alunos.length) {
+        tbody.innerHTML = '<tr><td colspan="5">Nenhum aluno cadastrado.</td></tr>';
+        select.innerHTML = '<option value="">Nenhum aluno encontrado</option>';
+        return;
+      }
+
+      tbody.innerHTML = alunos.map((aluno) => `
+        <tr>
+          <td>${aluno.nome}</td>
+          <td>${aluno.email}</td>
+          <td>${aluno.ativo ? '<span class="tag aplicada">ativo</span>' : '<span class="tag revogada">bloqueado</span>'}</td>
+          <td>${renderTag(aluno.status_disciplinar)}</td>
+          <td>${toDate(aluno.bloqueio_ate)}</td>
+        </tr>
+      `).join('');
+
+      select.innerHTML = '<option value="">Selecione um aluno</option>' + alunos.map((aluno) =>
+        `<option value="${aluno.id}">${aluno.nome} (${aluno.email})</option>`
+      ).join('');
+    }
+
+    async function loadCasos() {
+      if (isTiLocal) {
+        const casos = mockAdmin.casos;
+        const tbody = document.getElementById('casosTableBody');
+
+        if (!casos.length) {
+          tbody.innerHTML = '<tr><td colspan="9">Nenhum caso disciplinar registrado.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = casos.map((caso) => {
+          const podeRevogar = caso.status === 'ativa';
+          return `
+            <tr>
+              <td>${caso.id}</td>
+              <td>${caso.aluno_nome}</td>
+              <td>${renderTag(caso.tipo)}</td>
+              <td>${renderTag(caso.status)}</td>
+              <td>${toDate(caso.data_inicio)}</td>
+              <td>${toDate(caso.data_fim)}</td>
+              <td>${caso.aplicado_por_nome || '-'}</td>
+              <td>
+                ${caso.motivo}
+                ${caso.motivo_revogacao ? `<div class="muted">Revogacao: ${caso.motivo_revogacao}</div>` : ''}
+              </td>
+              <td>
+                ${podeRevogar ? `<button type="button" class="btn-danger" onclick="revogarCaso(${caso.id})">Revogar</button>` : '<span class="muted">-</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+        return;
+      }
+
+      const response = await fetch('/admin/disciplinar/casos', { headers: { Authorization: `Bearer ${token}` } });
+      const casos = await response.json();
+
+      if (!response.ok) {
+        throw new Error(casos.erro || 'Falha ao carregar casos');
+      }
+
+      const tbody = document.getElementById('casosTableBody');
+
+      if (!casos.length) {
+        tbody.innerHTML = '<tr><td colspan="9">Nenhum caso disciplinar registrado.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = casos.map((caso) => {
+        const podeRevogar = caso.status === 'ativa';
+        return `
+          <tr>
+            <td>${caso.id}</td>
+            <td>${caso.aluno_nome}</td>
+            <td>${renderTag(caso.tipo)}</td>
+            <td>${renderTag(caso.status)}</td>
+            <td>${toDate(caso.data_inicio)}</td>
+            <td>${toDate(caso.data_fim)}</td>
+            <td>${caso.aplicado_por_nome || '-'}</td>
+            <td>
+              ${caso.motivo}
+              ${caso.motivo_revogacao ? `<div class="muted">Revogacao: ${caso.motivo_revogacao}</div>` : ''}
+            </td>
+            <td>
+              ${podeRevogar ? `<button type="button" class="btn-danger" onclick="revogarCaso(${caso.id})">Revogar</button>` : '<span class="muted">-</span>'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function revogarCaso(id) {
+      const motivo = prompt('Informe o motivo da revogacao:');
+      if (!motivo || !motivo.trim()) return;
+
+      if (isTiLocal) {
+        const caso = mockAdmin.casos.find((item) => Number(item.id) === Number(id));
+        if (!caso) {
+          alert('Caso nao encontrado no modo local.');
+          return;
+        }
+        caso.status = 'revogada';
+        caso.motivo_revogacao = motivo.trim();
+        recalculateAlunoStatus(caso.aluno_id);
+        await loadAll();
+        return;
+      }
+
+      try {
+        const response = await fetch(`/admin/disciplinar/revogar/${id}`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ motivo_revogacao: motivo.trim() })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.erro || 'Nao foi possivel revogar.');
+          return;
+        }
+
+        await loadAll();
+      } catch (error) {
+        console.error(error);
+        alert('Erro de conexao ao revogar caso.');
+      }
+    }
+
+    window.revogarCaso = revogarCaso;
+
+    async function loadAll() {
+      try {
+        await Promise.all([loadResumo(), loadAlunos(), loadCasos(), loadMembrosPendentes()]);
+        document.getElementById('updatedAt').textContent = `Atualizado em ${new Date().toLocaleString('pt-BR')}`;
+      } catch (error) {
+        console.error(error);
+        alert('Falha ao carregar dados do painel mestre.');
+      }
+    }
+
+    toggleSuspensaoFields();
+    enforceAdminGate().then((ok) => {
+      if (ok) {
+        loadAll();
+      }
+    });
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

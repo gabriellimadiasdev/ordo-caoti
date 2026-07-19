@@ -1,0 +1,149 @@
+:root {
+  --oc-radius-sm: 6px;
+  --oc-radius-md: 8px;
+  --oc-radius-lg: 12px;
+  --oc-gap-sm: 0.5rem;
+  --oc-gap-md: 0.85rem;
+  --oc-gap-lg: 1.2rem;
+  --oc-motion-fast: 170ms;
+  --oc-motion-base: 260ms;
+  --oc-motion-slow: 420ms;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, "Trebuchet MS", sans-serif;
+  line-height: 1.45;
+}
+
+.oc-page-wrap {
+  width: min(1180px, calc(100% - 1.2rem));
+  margin: 0 auto;
+}
+
+.oc-grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--oc-gap-lg);
+}
+
+.oc-card {
+  border-radius: var(--oc-radius-md);
+  border: 1px solid var(--oc-border, #2e2e2e);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+}
+
+.oc-pill {
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.oc-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity var(--oc-motion-base) ease,
+    transform var(--oc-motion-base) ease;
+}
+
+.oc-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.oc-fade-in {
+  animation: ocFadeIn var(--oc-motion-slow) ease both;
+}
+
+@keyframes ocFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+button,
+.btn,
+a.btn,
+input[type="submit"],
+input[type="button"] {
+  min-height: 44px;
+  border-radius: var(--oc-radius-sm);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--oc-motion-fast) ease,
+    filter var(--oc-motion-fast) ease,
+    box-shadow var(--oc-motion-fast) ease;
+}
+
+button:hover,
+.btn:hover,
+a.btn:hover,
+input[type="submit"]:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+button:focus-visible,
+.btn:focus-visible,
+a.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--app-focus-outline, #f5c84b);
+  outline-offset: 2px;
+}
+
+button:disabled,
+.btn[aria-disabled="true"],
+input[type="submit"]:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+  opacity: 0.58;
+  transform: none;
+}
+
+@media (hover: none) {
+  button:hover,
+  .btn:hover,
+  a.btn:hover,
+  input[type="submit"]:hover {
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .oc-page-wrap {
+    width: min(100%, calc(100% - 0.9rem));
+  }
+}
+
+@media (max-width: 540px) {
+  body {
+    font-size: 15px;
+  }
+
+  .oc-card {
+    padding: 0.85rem;
+  }
+}

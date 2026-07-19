@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Center - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #081019;
+      --panel: #142334;
+      --line: #355170;
+      --text: #edf4ff;
+      --muted: #adc4de;
+      --accent: #f3be49;
+      --ok: #49cc86;
+      --bad: #ff8d9a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 13% 13%, #233950 0%, transparent 42%),
+        radial-gradient(circle at 84% 84%, #2e263f 0%, transparent 46%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.8rem;
+    }
+    .top {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .top h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.45rem;
+    }
+    .actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #19314b;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.55rem 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #2a1d08;
+      border-color: #d2a03e;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 0.8rem;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 0.85rem;
+    }
+    .panel h2 {
+      margin: 0 0 0.7rem;
+      color: var(--accent);
+      font-size: 1.04rem;
+    }
+    .field {
+      margin-bottom: 0.55rem;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid #3c5778;
+      border-radius: 8px;
+      background: #0f1a2a;
+      color: var(--text);
+      padding: 0.58rem;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .field textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.6rem;
+    }
+    .status {
+      min-height: 20px;
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+    }
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: auto;
+      background: #101c2b;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border-bottom: 1px solid #243750;
+      padding: 0.55rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #17293d;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.25px;
+    }
+    .tag {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+    .tag.pendente { background: #5a4718; color: #ffe8af; }
+    .tag.agendada { background: #1b4563; color: #caedff; }
+    .tag.ao_vivo { background: #1b553e; color: #c8ffe2; }
+    .tag.realizada { background: #274f2b; color: #d9ffd9; }
+    .tag.rejeitada { background: #4d2029; color: #ffd7de; }
+    .small {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    @media (max-width: 1000px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <h1>Live Center</h1>
+        <div id="whoami" class="small">Carregando sessao...</div>
+      </div>
+      <div class="actions">
+        <a class="btn" data-app-route="/dashboard-professor" data-app-file="dashboard-professor.html" href="./dashboard-professor.html">Dashboard professor</a>
+        <a class="btn" data-app-route="/central-operacoes" data-app-file="central-operacoes.html" href="./central-operacoes.html">Central de operacoes</a>
+        <button id="refreshBtn" class="btn primary" type="button">Atualizar</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Criar nova aula ao vivo</h2>
+        <form id="formSala">
+          <div class="field">
+            <label for="titulo">Titulo</label>
+            <input id="titulo" required placeholder="Ex: Aula ao vivo - Modulo 1" />
+          </div>
+          <div class="field">
+            <label for="descricao">Descricao</label>
+            <textarea id="descricao" placeholder="Objetivo da aula e roteiro resumido"></textarea>
+          </div>
+          <div class="field">
+            <label for="materiaId">Materia ID (opcional)</label>
+            <input id="materiaId" type="number" min="1" placeholder="41" />
+          </div>
+          <div class="field">
+            <label for="turmaId">Turma ID (opcional)</label>
+            <input id="turmaId" type="number" min="1" placeholder="5" />
+          </div>
+          <div class="field">
+            <label for="inicioPrevisto">Inicio previsto</label>
+            <input id="inicioPrevisto" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label for="fimPrevisto">Fim previsto</label>
+            <input id="fimPrevisto" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label for="provider">Provider</label>
+            <select id="provider">
+              <option value="interno">interno</option>
+              <option value="zoom">zoom</option>
+              <option value="google_meet">google_meet</option>
+              <option value="microsoft_teams">microsoft_teams</option>
+            </select>
+          </div>
+          <button class="btn primary" type="submit">Criar sala</button>
+        </form>
+        <p id="formStatus" class="status"></p>
+      </article>
+
+      <article class="panel">
+        <h2>Salas cadastradas</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Titulo</th>
+                <th>Turma / Materia</th>
+                <th>Status</th>
+                <th>Provider</th>
+                <th>Horario</th>
+                <th>Acoes</th>
+              </tr>
+            </thead>
+            <tbody id="roomsBody">
+              <tr><td colspan="7">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p id="listStatus" class="status"></p>
+      </article>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {},
+      getUser: () => ({}),
+      getToken: () => localStorage.getItem("token") || sessionStorage.getItem("token") || ""
+    };
+    runtime.bindAppRoutes();
+
+    const token = runtime.getToken();
+    const user = runtime.getUser ? runtime.getUser() : JSON.parse(localStorage.getItem("user") || sessionStorage.getItem("user") || "{}");
+    const isLocalMode = token === "ti-local-mode";
+    const tipoUsuario = String(user?.tipo || user?.tipo_usuario || "").toLowerCase();
+
+    const form = document.getElementById("formSala");
+    const roomsBody = document.getElementById("roomsBody");
+    const formStatus = document.getElementById("formStatus");
+    const listStatus = document.getElementById("listStatus");
+    const providerEl = document.getElementById("provider");
+
+    const state = {
+      rooms: [],
+      localSequence: 910
+    };
+
+    if (!token) {
+      window.location.href = runtime.appRoute("/login", "login.html");
+    }
+
+    if (!isLocalMode && !["professor", "admin", "ti"].includes(tipoUsuario)) {
+      listStatus.textContent = "Seu perfil pode nao ter acesso para criar aulas ao vivo.";
+    }
+
+    document.getElementById("whoami").textContent = `Sessao: ${user?.nome || "Usuario"} (${tipoUsuario || "nao informado"})`;
+
+    function authHeaders(withJson = false) {
+      const headers = { Authorization: `Bearer ${token}` };
+      if (withJson) headers["Content-Type"] = "application/json";
+      return headers;
+    }
+
+    function toTag(status) {
+      const normalized = String(status || "pendente").toLowerCase();
+      const klass = ["pendente", "agendada", "ao_vivo", "realizada", "rejeitada"].includes(normalized) ? normalized : "pendente";
+      return `<span class="tag ${klass}">${normalized}</span>`;
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleString("pt-BR");
+    }
+
+    function setFormStatus(text) {
+      formStatus.textContent = text || "";
+    }
+
+    function setListStatus(text) {
+      listStatus.textContent = text || "";
+    }
+
+    function renderRooms() {
+      if (!state.rooms.length) {
+        roomsBody.innerHTML = "<tr><td colspan='7'>Nenhuma sala cadastrada.</td></tr>";
+        return;
+      }
+
+      roomsBody.innerHTML = state.rooms.map((room) => `
+        <tr>
+          <td>${room.id}</td>
+          <td><strong>${room.titulo || "-"}</strong><br><span class="small">${room.descricao || ""}</span></td>
+          <td>${room.turma_nome || room.turma_id || "-"} / ${room.materia_nome || room.materia_id || "-"}</td>
+          <td>${toTag(room.status)}</td>
+          <td>${room.provedor_sala || "-"}</td>
+          <td>${formatDate(room.inicio_previsto)}<br>${formatDate(room.fim_previsto)}</td>
+          <td>
+            <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
+              <button class="btn" type="button" data-enter="${room.id}">Entrar</button>
+              <button class="btn" type="button" data-link="${room.id}">Gerar link</button>
+              <button class="btn" type="button" data-close="${room.id}">Encerrar</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      roomsBody.querySelectorAll("[data-enter]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const id = Number(button.getAttribute("data-enter"));
+          await enterRoom(id);
+        });
+      });
+
+      roomsBody.querySelectorAll("[data-link]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const id = Number(button.getAttribute("data-link"));
+          await regenerateLink(id);
+        });
+      });
+
+      roomsBody.querySelectorAll("[data-close]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const id = Number(button.getAttribute("data-close"));
+          await closeRoom(id);
+        });
+      });
+    }
+
+    async function loadRooms() {
+      if (isLocalMode) {
+        state.rooms = [
+          {
+            id: 801,
+            titulo: "Aula ao vivo #1",
+            descricao: "Mock local",
+            turma_id: 5,
+            turma_nome: "Turma 2026.1",
+            materia_id: 41,
+            materia_nome: "Fundamentos",
+            status: "agendada",
+            provedor_sala: "interno",
+            inicio_previsto: "2026-05-01T20:00:00",
+            fim_previsto: "2026-05-01T21:30:00",
+            link_sala: "/live/sala/mock-1"
+          }
+        ];
+        renderRooms();
+        setListStatus("Modo local ativo: dados simulados.");
+        return;
+      }
+
+      try {
+        const response = await fetch(runtime.apiUrl("/live/salas"), { headers: authHeaders() });
+        const data = await response.json().catch(() => []);
+        if (!response.ok) throw new Error(data?.erro || "Falha ao carregar salas.");
+        state.rooms = Array.isArray(data) ? data : [];
+        renderRooms();
+        setListStatus(`Total: ${state.rooms.length} sala(s).`);
+      } catch (error) {
+        setListStatus(error.message);
+      }
+    }
+
+    async function createRoom(payload) {
+      if (isLocalMode) {
+        state.localSequence += 1;
+        state.rooms.unshift({
+          id: state.localSequence,
+          titulo: payload.titulo,
+          descricao: payload.descricao,
+          turma_id: payload.turma_id,
+          materia_id: payload.materia_id,
+          status: "pendente",
+          provedor_sala: payload.provider,
+          inicio_previsto: payload.inicio_previsto || null,
+          fim_previsto: payload.fim_previsto || null,
+          link_sala: "/live/sala/mock-local"
+        });
+        renderRooms();
+        setFormStatus("Sala criada em modo local.");
+        return;
+      }
+
+      const response = await fetch(runtime.apiUrl("/live/salas"), {
+        method: "POST",
+        headers: authHeaders(true),
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.erro || "Falha ao criar sala.");
+      setFormStatus(`Sala #${data.id} criada.`);
+      await loadRooms();
+    }
+
+    async function enterRoom(id) {
+      try {
+        if (isLocalMode) {
+          setListStatus(`Entrada local simulada na sala #${id}.`);
+          return;
+        }
+
+        const response = await fetch(runtime.apiUrl(`/live/salas/${id}/entrar`), {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify({
+            microfone_liberado: true,
+            camera_liberada: true,
+            tela_liberada: true
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || "Falha ao entrar na sala.");
+        const link = String(data?.sala?.link_sala || "").trim();
+        if (/^https?:\/\//i.test(link)) {
+          window.open(link, "_blank", "noopener,noreferrer");
+        }
+        setListStatus(`Entrada autorizada na sala #${id}. Papel: ${data?.permissao?.papel || "-"}.`);
+        await loadRooms();
+      } catch (error) {
+        setListStatus(error.message);
+      }
+    }
+
+    async function regenerateLink(id) {
+      try {
+        if (isLocalMode) {
+          setListStatus(`Link regenerado localmente para sala #${id}.`);
+          return;
+        }
+
+        const response = await fetch(runtime.apiUrl(`/live/salas/${id}/gerar-link`), {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify({ provider: providerEl.value })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || "Falha ao gerar link.");
+        setListStatus(`Link atualizado para sala #${id}. Provider: ${data?.provedor_sala || providerEl.value}.`);
+        await loadRooms();
+      } catch (error) {
+        setListStatus(error.message);
+      }
+    }
+
+    async function closeRoom(id) {
+      const titulo = window.prompt("Titulo da gravacao:", "Gravacao da aula");
+      if (titulo === null) return;
+      const descricao = window.prompt("Descricao da gravacao:", "Registro automatico");
+      if (descricao === null) return;
+
+      try {
+        if (isLocalMode) {
+          state.rooms = state.rooms.map((room) => Number(room.id) === Number(id) ? { ...room, status: "realizada" } : room);
+          renderRooms();
+          setListStatus(`Sala #${id} encerrada em modo local.`);
+          return;
+        }
+
+        const response = await fetch(runtime.apiUrl(`/live/salas/${id}/encerrar`), {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify({ titulo, descricao })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || "Falha ao encerrar sala.");
+        setListStatus(`Sala #${id} encerrada. Duracao: ${data?.duracao_segundos ?? "-"}s.`);
+        await loadRooms();
+      } catch (error) {
+        setListStatus(error.message);
+      }
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const payload = {
+        titulo: document.getElementById("titulo").value.trim(),
+        descricao: document.getElementById("descricao").value.trim() || null,
+        materia_id: document.getElementById("materiaId").value ? Number(document.getElementById("materiaId").value) : null,
+        turma_id: document.getElementById("turmaId").value ? Number(document.getElementById("turmaId").value) : null,
+        inicio_previsto: document.getElementById("inicioPrevisto").value || null,
+        fim_previsto: document.getElementById("fimPrevisto").value || null,
+        provider: providerEl.value
+      };
+
+      if (!payload.titulo) {
+        setFormStatus("Titulo e obrigatorio.");
+        return;
+      }
+
+      try {
+        await createRoom(payload);
+        form.reset();
+        providerEl.value = "interno";
+      } catch (error) {
+        setFormStatus(error.message);
+      }
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", loadRooms);
+
+    loadRooms();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

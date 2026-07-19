@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordo Caoti - A magia do Caos pro CLT</title>
+    <script src="/js/compat-legacy.js" defer></script>
+    <style>
+        /* === CONFIGURAÇÕES GLOBAIS E VARIÁVEIS === */
+        :root {
+            --color-black: #050505;
+            --color-dark-grey: #111111;
+            --color-mid-grey: #222222;
+            --color-light-grey: #a9a9a9;
+            --color-white: #f0f0f0;
+            --color-yellow: #ffc400;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--color-black);
+            color: var(--color-white);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden; /* Evita rolagem lateral indesejada */
+        }
+
+        /* === HEADER === */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 3rem;
+            background-color: rgba(5, 5, 5, 0.8);
+            border-bottom: 1px solid var(--color-mid-grey);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+            
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            
+        }
+
+        .logo {
+            height: 45px;
+            transition: transform 0.3s ease;
+        }
+        .logo:hover {
+            transform: rotate(45deg);
+        }
+
+        header h1 {
+            font-size: 4rem;
+            margin: 0;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* === BOTÕES DE NAVEGAÇÃO === */
+        nav a {
+            display: inline-block;
+            background-color: transparent;
+            color: var(--color-white);
+            text-decoration: none;
+            margin: 0 0.5rem;
+            padding: 0.7rem 1.5rem;
+            border: 2px solid var(--color-white);
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover, .cta-button:hover {
+            background-color: var(--color-yellow);
+            color: var(--color-black);
+            border-color: var(--color-yellow);
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 5px 20px rgb(140, 0, 255);
+        }
+
+        /* === ESTRUTURA PRINCIPAL E SEÇÕES === */
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            box-sizing: border-box;
+        }
+
+        section {
+            padding: 6rem 0;
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 4rem;
+            color: var(--color-yellow);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--color-light-grey);
+            max-width: 700px;
+            margin: 0 auto 4rem auto;
+        }
+
+        /* === SEÇÃO HERO === */
+        .hero {
+            padding: 8rem 0;
+            text-align: center;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('./frontend/img/ordo-caoti-icon.jpeg'); /* ATENÇÃO: Verifique o caminho da imagem */
+            background-size: contain;
+            background-position: center top;
+            background-repeat: no-repeat;
+            min-height: 78vh;
+            display: flex;
+            align-items: center;
+        }
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin: 0 0 1rem 0;
+            color: var(--color-yellow);
+            white-space: nowrap;
+        }
+        .hero .highlight {
+            color: var(--color-yellow);
+        }
+        .hero p {
+            font-size: 1.5rem;
+            color: var(--color-light-grey);
+            max-width: 700px;
+            margin: 0 auto 2rem auto;
+        }
+        .cta-button {
+            font-size: 1.1rem;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+            background: var(--color-yellow);
+            color: var(--color-black);
+            border: 2px solid var(--color-yellow);
+            transition: all 0.3s ease;
+        }
+
+        /* === SEÇÃO DE BENEFÍCIOS (FEATURES) === */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            text-align: left;
+        }
+        .feature-card {
+            position: relative; /* Necessário para posicionar o pseudo-elemento */
+            overflow: hidden; /* Garante que o conteúdo não vaze */
+            background-color: var(--color-dark-grey); /* Cor de fundo de fallback */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--color-mid-grey);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(17, 17, 17, 0.85), rgba(17, 17, 17, 0.95)); /* Overlay escuro */
+            transition: opacity 0.3s ease;
+            z-index: 0; /* Fica abaixo do conteúdo do card */
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--color-yellow);
+            box-shadow: 0 5px 20px rgba(255, 196, 0, 0.2); /* Adiciona um brilho sutil */
+        }
+        .feature-card:hover::before {
+            opacity: 0.5; /* Reduz a opacidade do overlay no hover para "revelar" mais a imagem de fundo */
+        }
+        /* Garante que o texto e outros elementos do card fiquem visíveis acima do overlay */
+        .feature-card h3, .feature-card p {
+            position: relative;
+            z-index: 1;
+        }
+        .feature-card h3 {
+            font-size: 1.3rem;
+            color: var(--color-white);
+            margin: 0 0 0.5rem 0;
+        }
+        .feature-card p {
+            margin: 0;
+            color: var(--color-light-grey);
+        }
+
+        /* === SEÇÃO DE EVOLUÇÃO (HIERARQUIA) === */
+        .evolution-path {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .evolution-path::before { /* A linha do tempo */
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 10px;
+            bottom: 10px;
+            width: 3px;
+            background-color: var(--color-mid-grey);
+        }
+        .evolution-step {
+            padding-left: 60px;
+            position: relative;
+        }
+        .evolution-step::before { /* O cÃ­rculo na linha do tempo */
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--color-yellow);
+            border: 3px solid var(--color-black);
+            z-index: 1;
+        }
+        .evolution-step h3 {
+            font-size: 1.8rem;
+            color: var(--color-yellow);
+            margin: 0;
+        }
+        .evolution-step p {
+            margin: 0.5rem 0 0 0;
+            color: var(--color-light-grey);
+        }
+
+        /* === SEÇÃO DE FILOSOFIA === */
+        .philosophy-core article {
+            max-width: 750px;
+            margin: 0 auto 4rem auto;
+            text-align: center;
+        }
+        .philosophy-core h3 {
+            font-size: 2rem;
+            color: var(--color-white);
+            margin-bottom: 1rem;
+            text-wrap: balance;
+        }
+        .philosophy-core p {
+            color: var(--color-light-grey);
+            font-size: 1.1rem;
+        }
+
+        /* === FOOTER === */
+        footer {
+            padding: 4rem 2rem;
+            color: var(--color-light-grey);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--color-mid-grey);
+            text-align: center;
+        }
+        .footer-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        #relogio-tempo-real {
+            cursor: default;
+            user-select: none;
+        }
+        @media (max-width: 768px) {
+            .footer-flex {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+        .social-media {
+            margin-bottom: 1.5rem;
+        }
+        .social-media a {
+            color: var(--color-white);
+            margin: 0 1rem;
+            font-weight: bold;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .social-media a:hover {
+            color: var(--color-yellow);
+            text-decoration: underline;
+        }
+
+        /* === NOVA SEÇÃO DE REDES SOCIAIS === */
+        .social-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+        .social-card {
+            background-color: var(--color-dark-grey);
+            border: 1px solid var(--color-mid-grey);
+            border-radius: 12px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            text-decoration: none;
+            color: var(--color-white);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .social-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--color-yellow);
+            box-shadow: 0 10px 30px rgba(255, 196, 0, 0.15);
+        }
+        .social-card svg {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 1rem;
+            color: var(--color-yellow);
+        }
+        .social-card h3 {
+            font-size: 1.5rem;
+            margin: 0 0 0.5rem 0;
+            color: var(--color-white);
+        }
+        .social-card p {
+            color: var(--color-light-grey);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* === MÍDIA EM DESTAQUE (VÍDEOS) === */
+        .featured-media {
+            margin-top: 6rem;
+        }
+        .featured-media-title {
+            font-size: 2rem;
+            color: var(--color-white);
+            margin-bottom: 2rem;
+        }
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            justify-items: center;
+        }
+        .media-item {
+            width: 100%;
+            max-width: 550px; /* Largura ajustada para acomodar embeds do Instagram */
+            background-color: var(--color-dark-grey);
+            border: 1px solid var(--color-mid-grey);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .youtube-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* Proporção 16:9 */
+            height: 0;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        .youtube-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+  <link rel="stylesheet" href="/css/responsivo.css">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="stylesheet" href="/css/app-shell.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <img src="frontend/img/ordo-caoti-icon.jpeg" alt="Logo Ordo Caoti" class="logo"> <!-- ATENÇÃO: Verifique o caminho da imagem -->
+            <h1>Ordo Caoti </h1>
+        </div>
+        <nav>
+            <a href="./frontend/html/nosssos-mestres.html" data-i18n="nav.about">A ordem</a>
+            <a href="./frontend/html/loja.html" data-i18n="nav.products">Loja</a>
+            <a href="./frontend/html/regras.html" data-i18n="nav.signup">Inscreva-se</a>
+            <a href="./frontend/html/login.html" data-i18n="nav.login">Login</a>
+           
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>JUNTE-SE A NOSSA EGRÉGORA</h1>
+                <p>A Ordo Caoti É uma ordem de Magia do Caos dedicada ao estudo, prática e manifestação consciente do Caos, da Magia e da Criação.</p> 
+                   <p>Mais do que um grupo, somos um círculo estruturado de desenvolvimento mágico e espiritual, que une autonomia, ética, conhecimento e evolução prática.</p>
+                <p> Bem-vindo à Ordo Caoti.</p>
+                <a href="./frontend/html/regras.html" class="cta-button">Inicie sua Jornada</a>
+            </div>
+        </section>
+
+        <section class="features" style="background-color: var(--color-dark-grey);">
+            <div class="container">
+                <h2 class="section-title">O Que Você Recebe</h2>
+                <p class="section-subtitle">Ao se juntar á Ordem, você ganha acesso a um ecossistema completo de desenvolvimento mágico e espiritual.</p>
+                <div class="features-grid">
+                    <div class="feature-card"><h3>Rituais Coletivos</h3><p>Participe de rituais mensais para fortalecer sua prática e conectar-se à egrégora.</p></div>
+                    <div class="feature-card"><h3>Aulas Estruturadas</h3><p>Siga a Trilha de Neófitos com um currículo claro para construir sua base mágica.</p></div>
+                    <div class="feature-card"><h3>Cursos e Workshops</h3><p>Aulas complementares sobre diversos assuntos de magia para expandir seu conhecimento.</p></div>
+                    <div class="feature-card"><h3>Caminho do Místico</h3><p>Um mergulho profundo em shadow work e autoconhecimento para seu desenvolvimento interno.</p></div>
+                    <div class="feature-card"><h3>Acesso ao Grimório</h3><p>Um acervo exclusivo com rituais, servidores e conhecimento prático dos membros.</p></div>
+                    <div class="feature-card"><h3>Comunidade Engajada</h3><p>Um espaço plural e ativo para trocar experiências, tirar dúvidas e crescer em conjunto.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="evolution">
+            <div class="container">
+                <h2 class="section-title">Estrutura de Evolução</h2>
+                <p class="section-subtitle">A Ordo Caoti possui um caminho de progressão interna baseado em estudo, prática e mérito. Cada grau representa um novo nível de maturidade mágica.</p>
+                <div class="evolution-path">
+                    <div class="evolution-step"><h3>Neófito</h3><p>O explorador inicial. Aprende as bases da Magia do Caos, gnose, sigilos e desenvolve a percepção energética.</p></div>
+                    <div class="evolution-step"><h3>Mago</h3><p>O praticante autônomo. Já alterou sua realidade com magia, cria rituais próprios e sabe manipular energia com intenção.</p></div>
+                    <div class="evolution-step"><h3>Mentor</h3><p> Autorizado a lecionar dentro da Ordem, compartilha seu conhecimento e orienta os neófitos.</p></div>
+                    <div class="evolution-step"><h3>Sábio</h3><p>O orientador. Domina teoria e prática, possuindo estabilidade para guiar neófitos e participar das decisões da Ordem.</p></div>
+                    <div class="evolution-step"><h3>Mestre</h3><p>A liderança. Reconhecido pela comunidade, sustenta a egrégora, protege o conhecimento e inspira o caminho dos outros.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="philosophy-core" style="background-color: var(--color-dark-grey);">
+            <div class="container">
+                <h2 class="section-title">O Caos Não é Inimigo</h2>
+                <p class="section-subtitle">A maior distorção moderna é a ideia de que "caos" significa desgraça. No centro de todas as tradições, a verdade é uma só: antes da ordem, havia o Caos.</p>
+
+                <article>
+                    <h3>Ordem é Temporária. Caos é Eterno.</h3>
+                    <p>A Ordem é a fotografia de um instante. O Caos é o filme inteiro. Civilizações ruem, corpos envelhecem, sistemas entram em colapso. Quem teme o Caos teme o que não pode evitar. Quem o aceita, aprende a navegar a mudança.</p>
+                </article>
+                <article>
+                    <h3>O Caos Não Destrói, Ele Muda.</h3>
+                    <p>É como a maré: recolhe o velho e devolve algo novo. É o artista que apaga linhas para desenhar melhor. A torre do tarô que cai porque sua estrutura era velha demais. O Caos não busca destruir. Ele busca libertar.</p>
+                </article>
+                <article>
+                    <h3>O Medo do Caos é o Medo de Viver.</h3>
+                    <p>Viver é arriscar, adaptar-se, perder e renascer. Quem tenta controlar tudo, sofre. Nós honramos o movimento, a mudança e o desconhecido. Porque sabemos que é ali que a vida pulsa.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="final-cta">
+            <div class="container">
+                <h2 class="section-title">Junte-se à nossa egrégora</h2>
+                <p class="section-subtitle">Se você sentiu o chamado, se busca liberdade espiritual e poder de criação, seu lugar é aqui. A egrégora da Ordo Caoti espera por você.</p>
+                <a href="./frontend/html/regras.html" class="cta-button" data-i18n="landing.cta">Inscreva-se</a>
+            </div>
+        </section>
+
+        <section class="socials">
+            <div class="container">
+                <h2 class="section-title">Nossas Redes Sociais</h2>
+                <p class="section-subtitle">Siga-nos para conteúdo exclusivo, rituais, bastidores e uma comunidade ativa de praticantes.</p>
+                
+                <div class="social-grid">
+                    <a href="https://youtube.com/ordocaoti" target="_blank" class="social-card">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.267,4,12,4,12,4S5.733,4,4.186,4.418 c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.733,2,12,2,12s0,4.267,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768 C5.733,20,12,20,12,20s6.267,0,7.814-0.418c0.861-0.23,1.538-0.908,1.768-1.768C22,16.267,22,12,22,12S22,7.733,21.582,6.186z M10,15.464V8.536L16,12L10,15.464z"/></svg>
+                        <h3>YouTube</h3>
+                        <p>Aulas profundas, rituais gravados e debates filosóficos sobre Magia do Caos.</p>
+                    </a>
+                    <a href="https://www.instagram.com/ordocaoti/" target="_blank" class="social-card">
+                        <img width="48" height="48" src="./frontend/img/instagram-icon.png" alt="Instagram"/>
+                        <h3>Instagram</h3>
+                        <p>Conteúdo diário, insights rápidos, bastidores da Ordem e interação com a comunidade.</p>
+                    </a>
+                    <a href="https://www.tiktok.com/@ordo.caoti" target="_blank" class="social-card">
+                        <img width="48" height="48" src="https://img.icons8.com/sf-regular-filled/48/FAB005/tiktok.png" alt="tiktok"/>
+                        <h3>TikTok</h3>
+                        <p>Pílulas de conhecimento, desmistificação de conceitos e a magia do caos de forma rápida e direta.</p>
+                    </a>
+                </div>
+
+                <div class="featured-media">
+                    <h3 class="featured-media-title">Destaques da Ordem</h3>
+                    
+                    <div class="media-grid">
+                        <!-- YouTube -->
+                        <div class="media-item">
+                            <div class="youtube-wrapper">
+                                <iframe src="https://www.youtube.com/embed/hFQMyevCWyM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        </div>
+
+                        <!-- Instagram Reel -->
+                        <div class="media-item">
+                            <blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="https://www.instagram.com/reel/DRagI7fEZDk/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:540px; min-width:326px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"></blockquote> 
+                            <script async src="//www.instagram.com/embed.js"></script>
+                        </div>
+
+                        <!-- Instagram Post -->
+                        <div class="media-item">
+                            <blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="https://www.instagram.com/p/DU0m5SRDZyS/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:540px; min-width:326px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"></blockquote> 
+                            <script async src="//www.instagram.com/embed.js"></script>
+                        </div>
+
+                        <!-- TikTok 1 -->
+                        <div class="media-item">
+                            <blockquote class="tiktok-embed" cite="https://www.tiktok.com/@ordo.caoti/video/7594833789956705543" data-video-id="7594833789956705543" style="max-width: 605px;min-width: 325px;" > <section> <a target="_blank" title="@ordo.caoti" href="https://www.tiktok.com/@ordo.caoti?refer=embed">@ordo.caoti</a> </section> </blockquote> <script async src="https://www.tiktok.com/embed.js"></script>
+                        </div>
+
+                        <!-- TikTok 2 -->
+                        <div class="media-item">
+                            <blockquote class="tiktok-embed" cite="https://www.tiktok.com/@ordo.caoti/video/7597975538556357896" data-video-id="7597975538556357896" style="max-width: 605px;min-width: 325px;" > <section> <a target="_blank" title="@ordo.caoti" href="https://www.tiktok.com/@ordo.caoti?refer=embed">@ordo.caoti</a> </section> </blockquote> <script async src="https://www.tiktok.com/embed.js"></script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="ja-e-membro">
+            <div class="container">
+                <h2>Ja é membro?</h2>
+                <p>Crie suas credenciais para acessar sua conta.</p>
+                <a href="./frontend/html/cadastro-neofitos.html" class="btn btn-primary">Já sou neófito</a>
+                <a href="./frontend/html/cadastro-magos-n1.html" class="btn btn-primary">Já sou Mago N1</a>
+                <a href="./frontend/html/cadastro-magos-n2.html" class="btn btn-primary">Já sou Mago N2</a>
+                <a href="./frontend/html/cadastro-sabios.html" class="btn btn-primary">Já sou Sabio</a>
+                <a href="./frontend/html/cadastro-mestres.html" class="btn btn-primary">Já sou Mestre</a>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-flex">
+                <div>Ordo Caoti.&copy;</div>
+                <div>Todos os direitos reservados.</div>
+                <div id="relogio-tempo-real">--/--/---- --:--:--</div>
+            </div>
+            <div style="margin-top: 1rem; display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+                <a href="/legal/politica-privacidade" style="color:#ffc400;">Política de Privacidade</a>
+                <a href="/legal/termos-de-uso" style="color:#ffc400;">Termos de Uso</a>
+                <a href="/legal/acessibilidade" style="color:#ffc400;">Acessibilidade</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function atualizarRelogio() {
+            const agora = new Date();
+            const opcoesData = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            const data = agora.toLocaleDateString('pt-BR', opcoesData);
+            const hora = agora.toLocaleTimeString('pt-BR');
+            document.getElementById('relogio-tempo-real').textContent = `${data} - ${hora}`;
+        }
+        let relogioClickCount = 0;
+        let relogioFirstClickAt = 0;
+
+        function registrarAtalhoRelogio() {
+            const relogio = document.getElementById('relogio-tempo-real');
+            if (!relogio) return;
+            relogio.addEventListener('click', () => {
+                const agora = Date.now();
+                if (!relogioFirstClickAt || (agora - relogioFirstClickAt) > 12000) {
+                    relogioFirstClickAt = agora;
+                    relogioClickCount = 0;
+                }
+                relogioClickCount += 1;
+                if (relogioClickCount >= 7) {
+                    window.location.href = '/login-ti';
+                }
+            });
+        }
+
+        setInterval(atualizarRelogio, 1000);
+        atualizarRelogio(); // Chama imediatamente ao carregar
+        registrarAtalhoRelogio();
+    </script>
+
+  <script src="/js/app-shell.js" defer></script>
+</body>
+</html>

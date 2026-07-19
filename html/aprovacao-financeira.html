@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aprovacao Financeira - Ordo Caoti</title>
+  <style>
+    :root {
+      --bg: #0f131a;
+      --card: #181f2b;
+      --line: #2a3548;
+      --text: #eff5ff;
+      --muted: #9ab0cb;
+      --accent: #f3be49;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, #24344f 0%, transparent 42%),
+        radial-gradient(circle at 80% 80%, #3a2530 0%, transparent 48%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+    .card {
+      width: min(760px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 1.7rem;
+    }
+    p { margin: 0 0 12px; line-height: 1.45; }
+    .muted { color: var(--muted); }
+    .tag {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #22324b;
+      border: 1px solid #324969;
+      color: #d5e6ff;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 14px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .btn {
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      background: #141c27;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .btn.primary {
+      background: var(--accent);
+      border-color: #d2a63f;
+      color: #161616;
+    }
+    ul {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    li { margin-bottom: 6px; }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <main class="card">
+    <span class="tag">Uso prioritario: Administracao</span>
+    <h1>Aprovacao Financeira</h1>
+    <p>Modulo base para validacao de pagamentos, conciliacao e liberacao de acesso financeiro.</p>
+    <p class="muted">Status atual: estrutura minima criada para evitar links quebrados e permitir evolucao incremental do modulo.</p>
+
+    <div class="actions">
+      <a class="btn primary" href="/admin/master">Voltar ao Painel Mestre</a>
+      <a class="btn" href="/dashboard">Ir para Dashboard</a>
+      <a class="btn" href="/">Pagina Inicial</a>
+    </div>
+
+    <ul>
+      <li>Pagina preparada para receber regras, validacoes e integracao de API.</li>
+      <li>Navegacao funcional mantida para continuidade operacional.</li>
+      <li>Conteudo de negocio pode ser implementado sem reestruturar a base.</li>
+    </ul>
+  </main>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

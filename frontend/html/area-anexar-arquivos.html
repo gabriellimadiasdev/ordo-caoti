@@ -1,0 +1,811 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | Area de Anexos Academicos</title>
+  <style>
+    :root {
+      --bg: #0c1118;
+      --panel: #121b28;
+      --panel-2: #172434;
+      --line: #2b3c50;
+      --text: #edf2fa;
+      --muted: #9fb4ca;
+      --accent: #f3be49;
+      --ok: #29c993;
+      --bad: #ff6c78;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 15%, #1d2f46 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, #3e1f30 0%, transparent 50%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .wrapper {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.6rem;
+    }
+    .muted { color: var(--muted); }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .field label {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #0f1824;
+      color: var(--text);
+      padding: 9px;
+      font-family: inherit;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    button, .btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 12px;
+      cursor: pointer;
+      background: var(--panel-2);
+      color: var(--text);
+      font-weight: bold;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    button.accent, .btn.accent {
+      background: var(--accent);
+      color: #111;
+      border-color: #c89f42;
+    }
+    button.ok {
+      background: #123224;
+      border-color: #1f6a4a;
+      color: #beffe0;
+    }
+    button.bad {
+      background: #3a1720;
+      border-color: #7a2f43;
+      color: #ffd8de;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .msg {
+      margin-top: 8px;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px solid #2f4663;
+      background: #13263a;
+      color: #d7edff;
+      display: none;
+      font-size: 0.9rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #101923;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      font-size: 0.89rem;
+    }
+    th, td {
+      border-bottom: 1px solid #213042;
+      padding: 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--accent);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      background: #142132;
+      letter-spacing: 0.4px;
+    }
+    .tag {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .tag.obrigatoria { background: #26412c; color: #c9f9d2; }
+    .tag.isolada { background: #4f3c1b; color: #ffe3ac; }
+    .tag.pendente { background: #5c4614; color: #ffe8ae; }
+    .tag.aprovado { background: #224a2f; color: #bdf8d0; }
+    .tag.reprovado { background: #4a1f2a; color: #ffd6de; }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <div class="wrapper">
+    <div class="top">
+      <div>
+        <h1>Area de Anexos Academicos (Admin)</h1>
+        <div class="muted" id="whoami">Carregando sessao...</div>
+      </div>
+      <div class="toolbar">
+        <a class="btn" id="linkPainelMestre" href="/admin/master">Painel Mestre</a>
+        <a class="btn" id="linkVisaoProfessor" href="/professor/area-anexos">Visao Professor</a>
+        <button id="refreshBtn" type="button">Atualizar dados</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <section class="card">
+        <h2>Criar Turma</h2>
+        <form id="formTurma">
+          <div class="field">
+            <label for="turmaNome">Nome da turma</label>
+            <input id="turmaNome" required placeholder="Ex: Turma 2026.1" />
+          </div>
+          <div class="field">
+            <label for="turmaProfessor">Professor responsavel (opcional)</label>
+            <select id="turmaProfessor">
+              <option value="">Selecionar depois</option>
+            </select>
+          </div>
+          <button class="accent" type="submit">Criar turma</button>
+          <div class="msg" id="msgTurma"></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Criar Materia</h2>
+        <form id="formMateria">
+          <div class="field">
+            <label for="materiaTurma">Turma</label>
+            <select id="materiaTurma" required>
+              <option value="">Selecione</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="materiaProfessor">Professor responsavel</label>
+            <select id="materiaProfessor" required>
+              <option value="">Selecione</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="materiaNome">Nome da materia</label>
+            <input id="materiaNome" required placeholder="Ex: Fundamentos do Caos" />
+          </div>
+          <div class="field">
+            <label for="materiaTipo">Tipo da materia</label>
+            <select id="materiaTipo" required>
+              <option value="obrigatoria">Obrigatoria</option>
+              <option value="isolada">Isolada</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="materiaDescricao">Descricao</label>
+            <textarea id="materiaDescricao" placeholder="Detalhes da materia"></textarea>
+          </div>
+          <button class="accent" type="submit">Criar materia</button>
+          <div class="msg" id="msgMateria"></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Reatribuir Professor da Materia</h2>
+        <form id="formReatribuir">
+          <div class="field">
+            <label for="reMateria">Materia</label>
+            <select id="reMateria" required>
+              <option value="">Selecione</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="reProfessor">Novo professor</label>
+            <select id="reProfessor" required>
+              <option value="">Selecione</option>
+            </select>
+          </div>
+          <button type="submit">Atualizar professor</button>
+          <div class="msg" id="msgReatribuir"></div>
+        </form>
+      </section>
+    </div>
+
+    <section class="card" style="margin-bottom: 12px;">
+      <h2>Materias cadastradas</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Turma</th>
+              <th>Materia</th>
+              <th>Tipo</th>
+              <th>Professor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyMaterias">
+            <tr><td colspan="6">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Fila de moderacao (anexos pendentes)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Turma / Materia</th>
+              <th>Autor</th>
+              <th>Tipo</th>
+              <th>Titulo</th>
+              <th>Arquivo</th>
+              <th>Criado em</th>
+              <th>Acao</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPendentes">
+            <tr><td colspan="8">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="msg" id="msgModeracao"></div>
+    </section>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+    const isTiLocal = user.tipo === 'ti';
+
+    if (!token) {
+      window.location.href = '/login';
+    }
+    if (!isTiLocal && user.tipo !== 'admin') {
+      alert('Acesso permitido apenas para administracao.');
+      window.location.href = '/dashboard';
+    }
+
+    document.getElementById('whoami').textContent = isTiLocal
+      ? `Sessao: ${user.nome || 'Equipe T.I.'} (ti local - visao admin)`
+      : `Sessao: ${user.nome || 'Admin'} (admin)`;
+
+    if (isTiLocal) {
+      document.getElementById('linkPainelMestre').href = '/ti/admin/master';
+      document.getElementById('linkVisaoProfessor').href = '/ti/professor/anexos';
+    }
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    const state = {
+      professores: [],
+      materias: [],
+      turmas: [],
+      pendentes: [],
+      mockSeq: {
+        turma: 900,
+        materia: 1400
+      }
+    };
+
+    if (isTiLocal) {
+      state.professores = [
+        { id: 31, nome: 'Prof. Helena', email: 'helena@mock.local' },
+        { id: 32, nome: 'Prof. Victor', email: 'victor@mock.local' }
+      ];
+      state.turmas = [
+        { id: 201, nome: 'Turma Obrigatoria 2026', professor_id: 31, professor_nome: 'Prof. Helena' },
+        { id: 202, nome: 'Turma Isolada 2026', professor_id: 32, professor_nome: 'Prof. Victor' }
+      ];
+      state.materias = [
+        {
+          id: 301,
+          turma_id: 201,
+          turma_nome: 'Turma Obrigatoria 2026',
+          professor_id: 31,
+          professor_nome: 'Prof. Helena',
+          professor_email: 'helena@mock.local',
+          nome: 'Fundamentos Obrigatorios',
+          tipo_materia: 'obrigatoria',
+          ativa: true
+        },
+        {
+          id: 302,
+          turma_id: 202,
+          turma_nome: 'Turma Isolada 2026',
+          professor_id: 32,
+          professor_nome: 'Prof. Victor',
+          professor_email: 'victor@mock.local',
+          nome: 'Laboratorio Isolado',
+          tipo_materia: 'isolada',
+          ativa: true
+        }
+      ];
+      state.pendentes = [
+        {
+          id: 8101,
+          turma_nome: 'Turma Obrigatoria 2026',
+          materia_nome: 'Fundamentos Obrigatorios',
+          autor_nome: 'Prof. Helena',
+          autor_email: 'helena@mock.local',
+          tipo_material: 'video',
+          titulo: 'Aula 01',
+          arquivo_url: '',
+          arquivo_nome: '',
+          data_criacao: new Date().toISOString()
+        },
+        {
+          id: 8102,
+          turma_nome: 'Turma Isolada 2026',
+          materia_nome: 'Laboratorio Isolado',
+          autor_nome: 'Prof. Victor',
+          autor_email: 'victor@mock.local',
+          tipo_material: 'texto',
+          titulo: 'Guia pratico',
+          arquivo_url: '',
+          arquivo_nome: '',
+          data_criacao: new Date().toISOString()
+        }
+      ];
+    }
+
+    function setMsg(id, text, isError = false) {
+      const el = document.getElementById(id);
+      el.style.display = 'block';
+      el.textContent = text;
+      el.style.background = isError ? '#391a21' : '#13263a';
+      el.style.borderColor = isError ? '#7e3445' : '#2f4663';
+      el.style.color = isError ? '#ffd7df' : '#d7edff';
+    }
+
+    function formatDate(value) {
+      return value ? new Date(value).toLocaleString('pt-BR') : '-';
+    }
+
+    function optionsHtml(items, getValue, getLabel, empty = '<option value="">Selecione</option>') {
+      return empty + items.map((item) => `<option value="${getValue(item)}">${getLabel(item)}</option>`).join('');
+    }
+
+    async function fetchProfessores() {
+      if (isTiLocal) {
+        const data = state.professores;
+        const html = optionsHtml(
+          data,
+          (p) => p.id,
+          (p) => `${p.nome} (${p.email})`,
+          '<option value="">Selecionar depois</option>'
+        );
+        document.getElementById('turmaProfessor').innerHTML = html;
+
+        const htmlReq = optionsHtml(data, (p) => p.id, (p) => `${p.nome} (${p.email})`);
+        document.getElementById('materiaProfessor').innerHTML = htmlReq;
+        document.getElementById('reProfessor').innerHTML = htmlReq;
+        return;
+      }
+
+      const res = await fetch('/admin/professores', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Falha ao carregar professores');
+      state.professores = data;
+
+      const html = optionsHtml(
+        data,
+        (p) => p.id,
+        (p) => `${p.nome} (${p.email})`,
+        '<option value="">Selecionar depois</option>'
+      );
+      document.getElementById('turmaProfessor').innerHTML = html;
+
+      const htmlReq = optionsHtml(data, (p) => p.id, (p) => `${p.nome} (${p.email})`);
+      document.getElementById('materiaProfessor').innerHTML = htmlReq;
+      document.getElementById('reProfessor').innerHTML = htmlReq;
+    }
+
+    async function fetchTurmas() {
+      if (isTiLocal) {
+        const data = state.turmas;
+        const select = document.getElementById('materiaTurma');
+        select.innerHTML = optionsHtml(
+          data,
+          (t) => t.id,
+          (t) => t.professor_nome ? `${t.nome} (Resp: ${t.professor_nome})` : t.nome
+        );
+        return;
+      }
+
+      const res = await fetch('/admin/turmas', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Falha ao carregar turmas');
+      state.turmas = data;
+      const select = document.getElementById('materiaTurma');
+      select.innerHTML = optionsHtml(
+        data,
+        (t) => t.id,
+        (t) => t.professor_nome ? `${t.nome} (Resp: ${t.professor_nome})` : t.nome
+      );
+    }
+
+    async function fetchMaterias() {
+      if (isTiLocal) {
+        const data = state.materias;
+
+        document.getElementById('reMateria').innerHTML = optionsHtml(
+          data,
+          (m) => m.id,
+          (m) => `${m.turma_nome} - ${m.nome}`
+        );
+
+        const tbody = document.getElementById('tbodyMaterias');
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="6">Nenhuma materia cadastrada.</td></tr>';
+        } else {
+          tbody.innerHTML = data.map((m) => `
+            <tr>
+              <td>${m.id}</td>
+              <td>${m.turma_nome}</td>
+              <td>${m.nome}</td>
+              <td><span class="tag ${m.tipo_materia}">${m.tipo_materia}</span></td>
+              <td>${m.professor_nome}<br><span class="muted">${m.professor_email}</span></td>
+              <td>${m.ativa ? 'ativa' : 'inativa'}</td>
+            </tr>
+          `).join('');
+        }
+        return;
+      }
+
+      const res = await fetch('/admin/materias', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Falha ao carregar materias');
+      state.materias = data;
+
+      document.getElementById('reMateria').innerHTML = optionsHtml(
+        data,
+        (m) => m.id,
+        (m) => `${m.turma_nome} - ${m.nome}`
+      );
+
+      const tbody = document.getElementById('tbodyMaterias');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="6">Nenhuma materia cadastrada.</td></tr>';
+      } else {
+        tbody.innerHTML = data.map((m) => `
+          <tr>
+            <td>${m.id}</td>
+            <td>${m.turma_nome}</td>
+            <td>${m.nome}</td>
+            <td><span class="tag ${m.tipo_materia}">${m.tipo_materia}</span></td>
+            <td>${m.professor_nome}<br><span class="muted">${m.professor_email}</span></td>
+            <td>${m.ativa ? 'ativa' : 'inativa'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function fetchPendentes() {
+      if (isTiLocal) {
+        const data = state.pendentes;
+        const tbody = document.getElementById('tbodyPendentes');
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="8">Nenhum anexo pendente no momento.</td></tr>';
+        } else {
+          tbody.innerHTML = data.map((item) => {
+            const arquivo = item.arquivo_url
+              ? `<a href="${item.arquivo_url}" target="_blank">${item.arquivo_nome || 'Abrir arquivo'}</a>`
+              : '<span class="muted">Sem arquivo</span>';
+
+            return `
+              <tr>
+                <td>${item.id}</td>
+                <td>${item.turma_nome}<br><span class="muted">${item.materia_nome}</span></td>
+                <td>${item.autor_nome}<br><span class="muted">${item.autor_email}</span></td>
+                <td><span class="tag pendente">${item.tipo_material}</span></td>
+                <td>${item.titulo}</td>
+                <td>${arquivo}</td>
+                <td>${formatDate(item.data_criacao)}</td>
+                <td>
+                  <button class="ok" type="button" onclick="aprovar(${item.id})">Aprovar</button>
+                  <button class="bad" type="button" onclick="reprovar(${item.id})">Reprovar</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+        return;
+      }
+
+      const res = await fetch('/admin/anexos/pendentes', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Falha ao carregar pendentes');
+
+      const tbody = document.getElementById('tbodyPendentes');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="8">Nenhum anexo pendente no momento.</td></tr>';
+      } else {
+        tbody.innerHTML = data.map((item) => {
+          const arquivo = item.arquivo_url
+            ? `<a href="${item.arquivo_url}" target="_blank">${item.arquivo_nome || 'Abrir arquivo'}</a>`
+            : '<span class="muted">Sem arquivo</span>';
+
+          return `
+            <tr>
+              <td>${item.id}</td>
+              <td>${item.turma_nome}<br><span class="muted">${item.materia_nome}</span></td>
+              <td>${item.autor_nome}<br><span class="muted">${item.autor_email}</span></td>
+              <td><span class="tag pendente">${item.tipo_material}</span></td>
+              <td>${item.titulo}</td>
+              <td>${arquivo}</td>
+              <td>${formatDate(item.data_criacao)}</td>
+              <td>
+                <button class="ok" type="button" onclick="aprovar(${item.id})">Aprovar</button>
+                <button class="bad" type="button" onclick="reprovar(${item.id})">Reprovar</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    async function aprovar(id) {
+      if (isTiLocal) {
+        state.pendentes = state.pendentes.filter((item) => item.id !== id);
+        setMsg('msgModeracao', `Material #${id} aprovado (simulacao local).`);
+        await fetchPendentes();
+        return;
+      }
+
+      const comentario = prompt('Comentario de aprovacao (opcional):') || '';
+      const res = await fetch(`/admin/anexos/${id}/aprovar`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ comentario })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg('msgModeracao', data.erro || 'Falha ao aprovar material.', true);
+        return;
+      }
+      setMsg('msgModeracao', `Material #${id} aprovado com sucesso.`);
+      fetchPendentes();
+    }
+
+    async function reprovar(id) {
+      if (isTiLocal) {
+        state.pendentes = state.pendentes.filter((item) => item.id !== id);
+        setMsg('msgModeracao', `Material #${id} reprovado (simulacao local).`);
+        await fetchPendentes();
+        return;
+      }
+
+      const comentario = prompt('Motivo da reprovacao (opcional):') || '';
+      const res = await fetch(`/admin/anexos/${id}/reprovar`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ comentario })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg('msgModeracao', data.erro || 'Falha ao reprovar material.', true);
+        return;
+      }
+      setMsg('msgModeracao', `Material #${id} reprovado.`);
+      fetchPendentes();
+    }
+
+    window.aprovar = aprovar;
+    window.reprovar = reprovar;
+
+    document.getElementById('formTurma').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const nome = document.getElementById('turmaNome').value.trim();
+      const professorId = document.getElementById('turmaProfessor').value;
+
+      if (isTiLocal) {
+        if (!nome) {
+          setMsg('msgTurma', 'Informe o nome da turma.', true);
+          return;
+        }
+        state.mockSeq.turma += 1;
+        const professor = state.professores.find((p) => Number(p.id) === Number(professorId));
+        const novaTurma = {
+          id: state.mockSeq.turma,
+          nome,
+          professor_id: professor ? professor.id : null,
+          professor_nome: professor ? professor.nome : null
+        };
+        state.turmas.push(novaTurma);
+        document.getElementById('formTurma').reset();
+        setMsg('msgTurma', `Turma "${nome}" criada em modo local.`);
+        await fetchTurmas();
+        return;
+      }
+
+      const res = await fetch('/admin/turmas', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ nome, professor_id: professorId ? Number(professorId) : null })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg('msgTurma', data.erro || 'Falha ao criar turma.', true);
+        return;
+      }
+
+      state.turmas.push({ id: data.id, nome: data.nome });
+      document.getElementById('formTurma').reset();
+      setMsg('msgTurma', `Turma "${data.nome}" criada com sucesso.`);
+      fetchTurmas();
+    });
+
+    document.getElementById('formMateria').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = {
+        turma_id: Number(document.getElementById('materiaTurma').value),
+        professor_id: Number(document.getElementById('materiaProfessor').value),
+        nome: document.getElementById('materiaNome').value.trim(),
+        tipo_materia: document.getElementById('materiaTipo').value,
+        descricao: document.getElementById('materiaDescricao').value.trim()
+      };
+
+      if (isTiLocal) {
+        if (!payload.turma_id || !payload.professor_id || !payload.nome) {
+          setMsg('msgMateria', 'Turma, professor e nome da materia sao obrigatorios.', true);
+          return;
+        }
+
+        const turma = state.turmas.find((t) => Number(t.id) === payload.turma_id);
+        const professor = state.professores.find((p) => Number(p.id) === payload.professor_id);
+        if (!turma || !professor) {
+          setMsg('msgMateria', 'Turma ou professor invalido.', true);
+          return;
+        }
+
+        state.mockSeq.materia += 1;
+        const novaMateria = {
+          id: state.mockSeq.materia,
+          turma_id: payload.turma_id,
+          turma_nome: turma.nome,
+          professor_id: payload.professor_id,
+          professor_nome: professor.nome,
+          professor_email: professor.email,
+          nome: payload.nome,
+          tipo_materia: payload.tipo_materia,
+          descricao: payload.descricao || null,
+          ativa: true
+        };
+        state.materias.push(novaMateria);
+        document.getElementById('formMateria').reset();
+        setMsg('msgMateria', `Materia "${novaMateria.nome}" criada em modo local.`);
+        await fetchMaterias();
+        await fetchTurmas();
+        return;
+      }
+
+      const res = await fetch('/admin/materias', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg('msgMateria', data.erro || 'Falha ao criar materia.', true);
+        return;
+      }
+
+      document.getElementById('formMateria').reset();
+      setMsg('msgMateria', `Materia "${data.nome}" criada.`);
+      await fetchMaterias();
+      await fetchTurmas();
+    });
+
+    document.getElementById('formReatribuir').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const materiaId = Number(document.getElementById('reMateria').value);
+      const professorId = Number(document.getElementById('reProfessor').value);
+
+      if (isTiLocal) {
+        const professor = state.professores.find((p) => Number(p.id) === professorId);
+        const materia = state.materias.find((m) => Number(m.id) === materiaId);
+        if (!professor || !materia) {
+          setMsg('msgReatribuir', 'Materia ou professor invalido.', true);
+          return;
+        }
+        materia.professor_id = professor.id;
+        materia.professor_nome = professor.nome;
+        materia.professor_email = professor.email;
+        setMsg('msgReatribuir', `Professor da materia #${materia.id} atualizado em modo local.`);
+        await fetchMaterias();
+        return;
+      }
+
+      const res = await fetch(`/admin/materias/${materiaId}/professor`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ professor_id: professorId })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg('msgReatribuir', data.erro || 'Falha ao atualizar professor.', true);
+        return;
+      }
+
+      setMsg('msgReatribuir', `Professor da materia #${data.id} atualizado.`);
+      fetchMaterias();
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      loadAll();
+    });
+
+    async function loadAll() {
+      try {
+        await fetchProfessores();
+        await fetchMaterias();
+        await fetchTurmas();
+        await fetchPendentes();
+      } catch (error) {
+        alert(error.message || 'Falha ao carregar painel de anexos.');
+      }
+    }
+
+    loadAll();
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

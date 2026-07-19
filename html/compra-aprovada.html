@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento Aprovado - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: #111;
+      border: 1px solid #2b5f35;
+      border-radius: 14px;
+      padding: 1.4rem;
+      box-sizing: border-box;
+    }
+
+    .icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      background: #173c21;
+      color: #74c69d;
+      font-size: 1.6rem;
+      margin-bottom: 0.8rem;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #74c69d;
+    }
+
+    .details {
+      margin-top: 1rem;
+      background: #1a1a1a;
+      border: 1px solid #2d2d2d;
+      border-radius: 10px;
+      padding: 0.9rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      padding: 0.72rem;
+      border-radius: 8px;
+      border: 1px solid #274a2f;
+      color: #d9ffe8;
+      background: #173c21;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .btn.secondary {
+      border-color: #414141;
+      background: transparent;
+      color: #dedede;
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <main class="card">
+    <div class="icon">?</div>
+    <h1>Pedido registrado</h1>
+    <p>Seu pedido foi criado. A confirmaï¿½ï¿½o final depende do status retornado pelo Mercado Pago e do webhook assinado.</p>
+
+    <div class="details" id="payment-info">Carregando dados do pedido...</div>
+
+    <div class="actions">
+      <button id="sync-btn" class="btn secondary" type="button">Sincronizar status</button>
+      <a href="./dashboard-cliente.html" class="btn">Abrir painel</a>
+    </div>
+  </main>
+
+  <script>
+    const infoEl = document.getElementById('payment-info');
+    const syncBtn = document.getElementById('sync-btn');
+    const params = new URLSearchParams(window.location.search);
+
+    const pedidoId = params.get('pedido_id');
+    const orderId = params.get('order_id') || params.get('id') || '-';
+
+    function getToken() {
+      return localStorage.getItem('token') || sessionStorage.getItem('token');
+    }
+
+    function renderInfo(payload) {
+      const pedido = payload?.pedido || {};
+      const transacao = Array.isArray(payload?.transacoes) ? payload.transacoes[0] : null;
+
+      infoEl.textContent = [
+        `Pedido ID: ${pedidoId || pedido.id || '-'}`,
+        `Order ID: ${orderId || transacao?.mercado_order_id || '-'}`,
+        `Status pedido: ${pedido?.status || '-'}`,
+        `Status gateway: ${transacao?.mercado_status || transacao?.status || '-'}`,
+        `Total: R$ ${Number(pedido?.total || 0).toFixed(2)}`
+      ].join('\n');
+    }
+
+    async function fetchPedido() {
+      if (!pedidoId) {
+        infoEl.textContent = `Order ID: ${orderId}\nStatus: aguardando vï¿½nculo com pedido local.`;
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        infoEl.textContent = `Pedido ${pedidoId} criado, mas ï¿½ necessï¿½rio login para consultar status.`;
+        return;
+      }
+
+      try {
+        const response = await fetch(`/loja/pedidos/${pedidoId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.erro || 'Falha ao consultar pedido.');
+        }
+        renderInfo(data);
+      } catch (error) {
+        infoEl.textContent = `Erro: ${error.message}`;
+      }
+    }
+
+    async function syncStatus() {
+      if (!pedidoId) {
+        infoEl.textContent = 'Sem pedido local para sincronizar.';
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        infoEl.textContent = 'Faï¿½a login para sincronizar o status.';
+        return;
+      }
+
+      syncBtn.disabled = true;
+      try {
+        const response = await fetch(`/loja/pedidos/${pedidoId}/sincronizar-ordem`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.erro || 'Falha ao sincronizar status.');
+        }
+
+        infoEl.textContent = [
+          `Pedido ID: ${pedidoId}`,
+          `Order ID: ${data?.mercado_pago?.order_id || orderId || '-'}`,
+          `Status pedido: ${data?.status || '-'}`,
+          `Status gateway: ${data?.mercado_pago?.order_status || '-'}`,
+          `Transaï¿½ï¿½o: ${data?.mercado_pago?.transaction_id || '-'}`
+        ].join('\n');
+      } catch (error) {
+        infoEl.textContent = `Erro: ${error.message}`;
+      } finally {
+        syncBtn.disabled = false;
+      }
+    }
+
+    syncBtn.addEventListener('click', syncStatus);
+    fetchPedido();
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

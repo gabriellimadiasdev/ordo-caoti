@@ -1,0 +1,225 @@
+/* Base theme for legacy pages */
+:root {
+  --legacy-bg: #0a0a0d;
+  --legacy-surface: #17171f;
+  --legacy-surface-2: #201b2a;
+  --legacy-text: #f6f6fb;
+  --legacy-muted: #cbc8d7;
+  --legacy-yellow: #f5c84b;
+  --legacy-yellow-soft: #ffe49a;
+  --legacy-lilac: #b8a0e3;
+  --legacy-border: #3b3550;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--legacy-bg);
+  color: var(--legacy-text);
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: var(--legacy-yellow);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--legacy-yellow-soft);
+}
+
+.main-page-body {
+  text-align: center;
+}
+
+.main-header {
+  padding: 4rem 1rem;
+  background: linear-gradient(180deg, #0c0c10 0%, #16131f 100%);
+  border-bottom: 1px solid var(--legacy-border);
+}
+
+.main-header h1 {
+  font-size: 3rem;
+  margin: 0;
+  color: var(--legacy-yellow);
+}
+
+.main-header p {
+  font-size: 1.1rem;
+  color: var(--legacy-muted);
+}
+
+.container {
+  padding: 2rem;
+}
+
+.mages-section {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.mage-card {
+  background-color: var(--legacy-surface);
+  padding: 2rem;
+  border-radius: 10px;
+  width: 300px;
+  border: 1px solid var(--legacy-border);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.mage-card h2 {
+  color: var(--legacy-yellow);
+  margin-top: 0;
+}
+
+.main-nav {
+  margin-top: 3rem;
+}
+
+.main-nav a {
+  color: var(--legacy-text);
+  text-decoration: none;
+  margin: 0 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--legacy-border);
+  border-radius: 6px;
+  background: var(--legacy-surface-2);
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.main-nav a:hover {
+  background: var(--legacy-yellow);
+  border-color: #cb9f39;
+  color: #211706;
+}
+
+footer {
+  padding: 2rem;
+  margin-top: 2rem;
+  color: var(--legacy-muted);
+  font-size: 0.9rem;
+  border-top: 1px solid var(--legacy-border);
+}
+
+.login-page-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.login-card {
+  background: var(--legacy-surface);
+  padding: 2.2rem;
+  border-radius: 12px;
+  border: 1px solid var(--legacy-border);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.login-card h2 {
+  color: var(--legacy-yellow);
+  margin-top: 0;
+  margin-bottom: 1.3rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--legacy-muted);
+  font-size: 0.9rem;
+}
+
+input[type="email"],
+input[type="password"],
+select {
+  width: 100%;
+  padding: 0.72rem;
+  border: 1px solid var(--legacy-border);
+  border-radius: 7px;
+  background-color: #120f1a;
+  color: var(--legacy-text);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--legacy-lilac);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 160, 227, 0.18);
+}
+
+.form-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.3rem;
+  text-align: left;
+  color: var(--legacy-muted);
+}
+
+.form-options label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+button[type="submit"] {
+  width: 100%;
+  padding: 0.95rem;
+  background: linear-gradient(180deg, var(--legacy-yellow-soft) 0%, var(--legacy-yellow) 100%);
+  color: #1f1506;
+  border: 1px solid #cb9f39;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.2s ease;
+}
+
+button[type="submit"]:hover {
+  filter: brightness(1.05);
+}
+
+button[type="submit"]:active {
+  transform: scale(0.985);
+}
+
+.links {
+  margin-top: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  border-top: 1px solid var(--legacy-border);
+  padding-top: 1.2rem;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+.error-msg {
+  background-color: rgba(255, 107, 107, 0.12);
+  color: #ff98a4;
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: none;
+  border: 1px solid rgba(255, 107, 107, 0.35);
+}

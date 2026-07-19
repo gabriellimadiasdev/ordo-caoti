@@ -1,0 +1,358 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financeiro do Aluno - Ordo Caoti</title>
+  <style>
+    :root {
+      --bg: #080b10;
+      --panel: #121925;
+      --card: #182232;
+      --line: #2b3a52;
+      --text: #eef5ff;
+      --muted: #9fb4ca;
+      --accent: #f3be49;
+      --ok: #4cd137;
+      --warn: #f3be49;
+      --bad: #ff6f79;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 15%, #20324a 0%, transparent 42%),
+        radial-gradient(circle at 80% 85%, #2e2136 0%, transparent 48%),
+        var(--bg);
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      color: var(--accent);
+      font-size: 1.65rem;
+    }
+    .muted { color: var(--muted); }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn, button {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 12px;
+      background: #152030;
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn.primary, button.primary {
+      background: var(--accent);
+      color: #131313;
+      border-color: #cfa744;
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .kpi p {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .kpi h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #101722;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border-bottom: 1px solid #213044;
+      padding: 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--accent);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      background: #142031;
+      letter-spacing: 0.4px;
+    }
+    .tag {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .tag.pago { background: #214931; color: #ccffd9; }
+    .tag.pendente { background: #5b4614; color: #ffe8ae; }
+    .tag.outro { background: #2b3a52; color: #d8e8ff; }
+    .msg {
+      margin-top: 9px;
+      border: 1px solid #2f4764;
+      background: #13263a;
+      color: #d9efff;
+      border-radius: 10px;
+      padding: 9px;
+      display: none;
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <h1>Financeiro e Pagamentos do Aluno</h1>
+        <div class="muted" id="whoami">Carregando sessao...</div>
+      </div>
+      <div class="toolbar">
+        <a class="btn" href="/dashboard">Dashboard</a>
+        <button type="button" id="refreshBtn">Atualizar</button>
+      </div>
+    </header>
+
+    <section class="kpis">
+      <article class="kpi">
+        <p>Mensalidade Atual</p>
+        <h3 id="kpiMensalidade">-</h3>
+      </article>
+      <article class="kpi">
+        <p>Status Mensalidade</p>
+        <h3 id="kpiStatus" class="warn">Sem dados</h3>
+      </article>
+      <article class="kpi">
+        <p>Total Pago</p>
+        <h3 id="kpiPago">R$ 0,00</h3>
+      </article>
+      <article class="kpi">
+        <p>Total Pendente</p>
+        <h3 id="kpiPendente">R$ 0,00</h3>
+      </article>
+      <article class="kpi">
+        <p>Proximo Vencimento</p>
+        <h3 id="kpiVencimento">-</h3>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Acoes Rapidas</h2>
+      <div class="toolbar">
+        <button type="button" class="primary" id="pagarBtn">Pagar Mensalidade</button>
+        <button type="button" id="negociarBtn">Negociar Pendencia</button>
+        <button type="button" id="segundaViaBtn">Solicitar 2a Via</button>
+      </div>
+      <div id="msg" class="msg"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Historico de Pagamentos</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Referencia</th>
+              <th>Valor</th>
+              <th>Status</th>
+              <th>Comprovante</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyFinanceiro">
+            <tr><td colspan="5">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+    const isTiLocal = user.tipo === 'ti';
+
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    if (!isTiLocal && user.tipo !== 'aluno') {
+      alert('Acesso permitido apenas para aluno.');
+      window.location.href = '/dashboard';
+    }
+
+    document.getElementById('whoami').textContent = isTiLocal
+      ? `Sessao: ${user.nome || 'Equipe T.I.'} (ti local - visao aluno)`
+      : `Sessao: ${user.nome || 'Aluno'} (aluno)`;
+
+    const mockTi = [
+      { id: 6101, data_pedido: '2026-03-02', descricao: 'Mensalidade Marco/2026', total: 130, status: 'pendente' },
+      { id: 6100, data_pedido: '2026-02-02', descricao: 'Mensalidade Fevereiro/2026', total: 130, status: 'pago' },
+      { id: 6099, data_pedido: '2026-01-04', descricao: 'Material complementar', total: 49.9, status: 'pago' }
+    ];
+
+    function moeda(valor) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor || 0));
+    }
+
+    function dateBr(value) {
+      return value ? new Date(value).toLocaleDateString('pt-BR') : '-';
+    }
+
+    function monthYear(value) {
+      return value ? new Date(value).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-';
+    }
+
+    function showMsg(text) {
+      const el = document.getElementById('msg');
+      el.style.display = 'block';
+      el.textContent = text;
+    }
+
+    function atualizarKpis(pedidos) {
+      const lista = Array.isArray(pedidos) ? pedidos : [];
+      const pago = lista.filter((item) => String(item.status || '').toLowerCase() === 'pago');
+      const pendente = lista.filter((item) => String(item.status || '').toLowerCase() === 'pendente');
+      const mensalidade = lista.find((item) => String(item.descricao || '').toLowerCase().includes('mensalidade')) || lista[0];
+
+      const totalPago = pago.reduce((acc, item) => acc + Number(item.total || 0), 0);
+      const totalPendente = pendente.reduce((acc, item) => acc + Number(item.total || 0), 0);
+
+      document.getElementById('kpiMensalidade').textContent = mensalidade ? monthYear(mensalidade.data_pedido) : '-';
+      document.getElementById('kpiPago').textContent = moeda(totalPago);
+      document.getElementById('kpiPendente').textContent = moeda(totalPendente);
+
+      const statusEl = document.getElementById('kpiStatus');
+      if (!mensalidade) {
+        statusEl.textContent = 'Sem dados';
+        statusEl.className = 'warn';
+      } else if (String(mensalidade.status).toLowerCase() === 'pago') {
+        statusEl.textContent = 'Em dia';
+        statusEl.className = 'ok';
+      } else {
+        statusEl.textContent = 'Em aberto';
+        statusEl.className = 'warn';
+      }
+
+      const prox = pendente.sort((a, b) => new Date(a.data_pedido) - new Date(b.data_pedido))[0];
+      document.getElementById('kpiVencimento').textContent = prox ? dateBr(prox.data_pedido) : '-';
+    }
+
+    function renderTabela(pedidos) {
+      const tbody = document.getElementById('tbodyFinanceiro');
+      if (!pedidos.length) {
+        tbody.innerHTML = '<tr><td colspan="5">Nenhum registro financeiro encontrado.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = pedidos.map((item) => {
+        const status = String(item.status || '').toLowerCase();
+        const tagClass = status === 'pago' ? 'pago' : (status === 'pendente' ? 'pendente' : 'outro');
+        return `
+          <tr>
+            <td>${dateBr(item.data_pedido)}</td>
+            <td>${item.descricao || 'Mensalidade / Servico'}</td>
+            <td>${moeda(item.total)}</td>
+            <td><span class="tag ${tagClass}">${status || 'desconhecido'}</span></td>
+            <td><button type="button" onclick="alert('Comprovante #${item.id}')">Baixar</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function carregarFinanceiro() {
+      if (isTiLocal) {
+        atualizarKpis(mockTi);
+        renderTabela(mockTi);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/financeiro', { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.erro || 'Falha ao carregar financeiro.');
+        }
+        atualizarKpis(data);
+        renderTabela(data);
+      } catch (error) {
+        console.error(error);
+        atualizarKpis([]);
+        renderTabela([]);
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', carregarFinanceiro);
+    document.getElementById('pagarBtn').addEventListener('click', () => {
+      showMsg('Fluxo de pagamento sera integrado ao gateway na proxima etapa.');
+    });
+    document.getElementById('negociarBtn').addEventListener('click', () => {
+      showMsg('Solicitacao de negociacao registrada para contato da secretaria financeira.');
+    });
+    document.getElementById('segundaViaBtn').addEventListener('click', () => {
+      showMsg('2a via solicitada. Verifique seu painel e notificacoes.');
+    });
+
+    carregarFinanceiro();
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

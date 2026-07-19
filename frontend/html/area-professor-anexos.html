@@ -1,0 +1,809 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Professor | Anexos e Avaliacoes V2</title>
+  <style>
+    :root {
+      --bg: #0d1218;
+      --panel: #121b28;
+      --line: #2b3b50;
+      --text: #eef4ff;
+      --muted: #9fb4ca;
+      --accent: #f3be49;
+      --ok: #2ac993;
+      --bad: #ff6f79;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 15%, #1d2f46 0%, transparent 44%),
+        radial-gradient(circle at 85% 85%, #351f33 0%, transparent 52%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .wrapper {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.6rem;
+    }
+    .muted { color: var(--muted); }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn, button {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #162334;
+      color: var(--text);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn.accent, button.accent {
+      background: var(--accent);
+      color: #111;
+      border-color: #c9a242;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.06rem;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .field label { font-size: 0.86rem; color: var(--muted); }
+    input, select, textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #0f1824;
+      color: var(--text);
+      padding: 9px;
+      font-family: inherit;
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    .msg {
+      margin-top: 8px;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px solid #2f4663;
+      background: #13263a;
+      color: #d7edff;
+      display: none;
+      font-size: 0.9rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #101923;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+      font-size: 0.89rem;
+    }
+    th, td {
+      border-bottom: 1px solid #213042;
+      padding: 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--accent);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      background: #142132;
+      letter-spacing: 0.4px;
+    }
+    .tag {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .tag.pendente { background: #5a4514; color: #ffe8ae; }
+    .tag.aprovado { background: #224a2f; color: #bdf8d0; }
+    .tag.reprovado { background: #4a1f2a; color: #ffd6de; }
+    .tag.obrigatoria { background: #26412c; color: #c9f9d2; }
+    .tag.isolada { background: #4f3c1b; color: #ffe3ac; }
+
+    .question-builder {
+      display: grid;
+      gap: 10px;
+    }
+
+    .question-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #0f1a29;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .question-row {
+      display: grid;
+      grid-template-columns: 1fr 170px 120px auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .options-wrap {
+      display: none;
+      gap: 8px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .options-wrap.visible {
+      display: grid;
+    }
+
+    @media (max-width: 860px) {
+      .question-row {
+        grid-template-columns: 1fr;
+      }
+
+      .options-wrap,
+      .options-wrap.visible {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <div class="wrapper">
+    <div class="top">
+      <div>
+        <h1>Painel do Professor (Anexos + Avaliacoes V2)</h1>
+        <div class="muted" id="whoami">Carregando sessao...</div>
+      </div>
+      <div class="toolbar">
+        <a class="btn" href="/dashboard">Dashboard</a>
+        <button id="refreshBtn" type="button">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Enviar material para moderacao</h2>
+        <form id="formMaterial">
+          <div class="field">
+            <label for="materialMateria">Materia atribuida</label>
+            <select id="materialMateria" required>
+              <option value="">Selecione</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="materialTipo">Tipo de material</label>
+            <select id="materialTipo" required>
+              <option value="video">Video</option>
+              <option value="foto">Foto</option>
+              <option value="texto">Texto</option>
+              <option value="arquivo">Arquivo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="materialTitulo">Titulo</label>
+            <input id="materialTitulo" required placeholder="Titulo do material" />
+          </div>
+          <div class="field">
+            <label for="materialDescricao">Descricao</label>
+            <textarea id="materialDescricao" placeholder="Resumo do material"></textarea>
+          </div>
+          <div class="field">
+            <label for="materialTexto">Conteudo em texto (para tipo texto)</label>
+            <textarea id="materialTexto" placeholder="Texto da aula, orientacoes, instrucoes..."></textarea>
+          </div>
+          <div class="field">
+            <label for="materialArquivo">Arquivo (obrigatorio para video/foto/arquivo)</label>
+            <input id="materialArquivo" type="file" />
+          </div>
+          <button class="accent" type="submit">Enviar para aprovacao</button>
+          <div class="msg" id="msgMaterial"></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Criar avaliacao V2</h2>
+        <form id="formAvaliacao">
+          <div class="field">
+            <label for="avaliacaoMateria">Materia</label>
+            <select id="avaliacaoMateria" required>
+              <option value="">Selecione</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="avaliacaoTipo">Tipo</label>
+            <select id="avaliacaoTipo" required>
+              <option value="teste">Teste</option>
+              <option value="exercicio">Exercicio</option>
+              <option value="avaliacao">Avaliacao</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="avaliacaoTitulo">Titulo</label>
+            <input id="avaliacaoTitulo" required placeholder="Ex: Avaliacao Unidade 1" />
+          </div>
+          <div class="field">
+            <label for="avaliacaoDescricao">Descricao</label>
+            <textarea id="avaliacaoDescricao" placeholder="Descricao para os alunos"></textarea>
+          </div>
+          <div class="field">
+            <label for="avaliacaoData">Data limite (opcional)</label>
+            <input id="avaliacaoData" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label>Questoes (modo simples, sem JSON)</label>
+            <div id="questionBuilder" class="question-builder"></div>
+          </div>
+          <div class="toolbar">
+            <button type="button" id="addObjetivaBtn">+ Questao objetiva</button>
+            <button type="button" id="addDiscursivaBtn">+ Questao discursiva</button>
+          </div>
+          <p class="muted">Peso da questao define impacto na nota final.</p>
+          <button class="accent" type="submit">Criar avaliacao</button>
+          <div class="msg" id="msgAvaliacao"></div>
+        </form>
+      </section>
+    </div>
+
+    <section class="card" style="margin-bottom: 12px;">
+      <h2>Materias sob sua responsabilidade</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Turma</th>
+              <th>Materia</th>
+              <th>Tipo</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyMaterias">
+            <tr><td colspan="4">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Historico de anexos enviados</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Turma / Materia</th>
+              <th>Tipo</th>
+              <th>Titulo</th>
+              <th>Status</th>
+              <th>Comentario moderacao</th>
+              <th>Criado em</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyAnexos">
+            <tr><td colspan="7">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+    const isTiLocal = user.tipo === 'ti';
+
+    if (!token) {
+      window.location.href = '/login';
+    }
+    if (!isTiLocal && user.tipo !== 'professor') {
+      alert('Acesso permitido apenas para professor.');
+      window.location.href = '/dashboard';
+    }
+
+    document.getElementById('whoami').textContent = isTiLocal
+      ? `Sessao: ${user.nome || 'Equipe T.I.'} (ti local - visao professor)`
+      : `Sessao: ${user.nome || 'Professor'} (professor)`;
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    const state = {
+      materias: [],
+      anexos: [],
+      mockAvaliacaoSeq: 600
+    };
+
+    if (isTiLocal) {
+      state.materias = [
+        {
+          id: 71,
+          nome: 'Fundamentos de Ritualistica',
+          descricao: 'Base obrigatoria da turma principal',
+          tipo_materia: 'obrigatoria',
+          ativa: true,
+          turma_id: 11,
+          turma_nome: 'Turma Obrigatoria 2026'
+        },
+        {
+          id: 72,
+          nome: 'Simbologia Isolada',
+          descricao: 'Materia isolada para trilha paralela',
+          tipo_materia: 'isolada',
+          ativa: true,
+          turma_id: 12,
+          turma_nome: 'Turma Isolada 2026'
+        }
+      ];
+      state.anexos = [
+        {
+          id: 501,
+          turma_nome: 'Turma Obrigatoria 2026',
+          materia_nome: 'Fundamentos de Ritualistica',
+          tipo_material: 'video',
+          titulo: 'Aula de abertura',
+          status_moderacao: 'aprovado',
+          comentario_moderacao: 'Liberado para alunos',
+          data_criacao: new Date().toISOString()
+        },
+        {
+          id: 502,
+          turma_nome: 'Turma Isolada 2026',
+          materia_nome: 'Simbologia Isolada',
+          tipo_material: 'texto',
+          titulo: 'Guia textual inicial',
+          status_moderacao: 'pendente',
+          comentario_moderacao: null,
+          data_criacao: new Date().toISOString()
+        }
+      ];
+    }
+
+    function showMsg(id, text, isError = false) {
+      const el = document.getElementById(id);
+      el.style.display = 'block';
+      el.textContent = text;
+      el.style.background = isError ? '#391a21' : '#13263a';
+      el.style.borderColor = isError ? '#7e3445' : '#2f4663';
+      el.style.color = isError ? '#ffd7df' : '#d7edff';
+    }
+
+    function formatDate(value) {
+      return value ? new Date(value).toLocaleString('pt-BR') : '-';
+    }
+
+    function newQuestionTemplate(type = 'objetiva') {
+      return {
+        enunciado: '',
+        tipo_questao: type,
+        peso: 1,
+        opcoes: ['', '', '', ''],
+        resposta_correta: ''
+      };
+    }
+
+    function buildQuestionNode(question, index) {
+      const wrapper = document.createElement('article');
+      wrapper.className = 'question-item';
+      wrapper.dataset.questionIndex = String(index);
+
+      const isObjetiva = question.tipo_questao === 'objetiva';
+      const optionsClass = isObjetiva ? 'options-wrap visible' : 'options-wrap';
+
+      wrapper.innerHTML = `
+        <div class="question-row">
+          <div class="field" style="margin:0;">
+            <label>Enunciado</label>
+            <input type="text" data-q="enunciado" value="${String(question.enunciado || '').replace(/"/g, '&quot;')}" placeholder="Digite a pergunta" />
+          </div>
+          <div class="field" style="margin:0;">
+            <label>Tipo</label>
+            <select data-q="tipo_questao">
+              <option value="objetiva" ${isObjetiva ? 'selected' : ''}>Objetiva</option>
+              <option value="discursiva" ${!isObjetiva ? 'selected' : ''}>Discursiva</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label>Peso</label>
+            <input type="number" min="1" step="0.5" data-q="peso" value="${Number(question.peso || 1)}" />
+          </div>
+          <div class="field" style="margin:0;">
+            <label>Acao</label>
+            <button type="button" data-action="remove">Remover</button>
+          </div>
+        </div>
+        <div class="${optionsClass}" data-q="optionsWrap">
+          <div class="field" style="margin:0;">
+            <label>Opcao A</label>
+            <input type="text" data-q-option="0" value="${String(question.opcoes?.[0] || '').replace(/"/g, '&quot;')}" />
+          </div>
+          <div class="field" style="margin:0;">
+            <label>Opcao B</label>
+            <input type="text" data-q-option="1" value="${String(question.opcoes?.[1] || '').replace(/"/g, '&quot;')}" />
+          </div>
+          <div class="field" style="margin:0;">
+            <label>Opcao C</label>
+            <input type="text" data-q-option="2" value="${String(question.opcoes?.[2] || '').replace(/"/g, '&quot;')}" />
+          </div>
+          <div class="field" style="margin:0;">
+            <label>Opcao D</label>
+            <input type="text" data-q-option="3" value="${String(question.opcoes?.[3] || '').replace(/"/g, '&quot;')}" />
+          </div>
+          <div class="field" style="margin:0; grid-column: 1 / -1;">
+            <label>Resposta correta</label>
+            <input type="text" data-q="resposta_correta" value="${String(question.resposta_correta || '').replace(/"/g, '&quot;')}" placeholder="Ex: Opcao A" />
+          </div>
+        </div>
+      `;
+
+      return wrapper;
+    }
+
+    function renderQuestionBuilder(questions) {
+      const container = document.getElementById('questionBuilder');
+      container.innerHTML = '';
+
+      questions.forEach((question, index) => {
+        const node = buildQuestionNode(question, index);
+        container.appendChild(node);
+      });
+    }
+
+    function collectQuestionsFromBuilder() {
+      const nodes = [...document.querySelectorAll('#questionBuilder .question-item')];
+      return nodes.map((node, index) => {
+        const tipo = String(node.querySelector('[data-q="tipo_questao"]')?.value || 'objetiva');
+        const base = {
+          enunciado: String(node.querySelector('[data-q="enunciado"]')?.value || '').trim(),
+          tipo_questao: tipo,
+          peso: Number(node.querySelector('[data-q="peso"]')?.value || 1) || 1,
+          ordem: index + 1
+        };
+
+        if (tipo === 'objetiva') {
+          const opcoes = [...node.querySelectorAll('[data-q-option]')]
+            .map((input) => String(input.value || '').trim())
+            .filter(Boolean);
+          return {
+            ...base,
+            opcoes,
+            resposta_correta: String(node.querySelector('[data-q="resposta_correta"]')?.value || '').trim()
+          };
+        }
+
+        return base;
+      });
+    }
+
+    function validateQuestions(questions) {
+      if (!questions.length) return 'Adicione pelo menos uma questao.';
+
+      for (let i = 0; i < questions.length; i += 1) {
+        const q = questions[i];
+        if (!q.enunciado) return `Questao ${i + 1} sem enunciado.`;
+        if (!['objetiva', 'discursiva'].includes(q.tipo_questao)) return `Questao ${i + 1} com tipo invalido.`;
+        if (!(Number(q.peso) > 0)) return `Questao ${i + 1} com peso invalido.`;
+        if (q.tipo_questao === 'objetiva') {
+          if (!Array.isArray(q.opcoes) || q.opcoes.length < 2) return `Questao objetiva ${i + 1} precisa de ao menos 2 opcoes.`;
+          if (!q.resposta_correta) return `Questao objetiva ${i + 1} sem resposta correta.`;
+        }
+      }
+
+      return null;
+    }
+
+    function fillMateriaSelects(items) {
+      const options = '<option value="">Selecione</option>' + items
+        .map((m) => `<option value="${m.id}">${m.turma_nome} - ${m.nome}</option>`)
+        .join('');
+
+      document.getElementById('materialMateria').innerHTML = options;
+      document.getElementById('avaliacaoMateria').innerHTML = options;
+    }
+
+    async function fetchMaterias() {
+      if (isTiLocal) {
+        const data = state.materias;
+        fillMateriaSelects(data);
+
+        const tbody = document.getElementById('tbodyMaterias');
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="4">Nenhuma materia atribuida.</td></tr>';
+        } else {
+          tbody.innerHTML = data.map((m) => `
+            <tr>
+              <td>${m.id}</td>
+              <td>${m.turma_nome}</td>
+              <td>${m.nome}</td>
+              <td><span class="tag ${m.tipo_materia}">${m.tipo_materia}</span></td>
+            </tr>
+          `).join('');
+        }
+        return;
+      }
+
+      const res = await fetch('/professor/materias', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Falha ao carregar materias');
+      state.materias = data;
+
+      fillMateriaSelects(data);
+
+      const tbody = document.getElementById('tbodyMaterias');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="4">Nenhuma materia atribuida.</td></tr>';
+      } else {
+        tbody.innerHTML = data.map((m) => `
+          <tr>
+            <td>${m.id}</td>
+            <td>${m.turma_nome}</td>
+            <td>${m.nome}</td>
+            <td><span class="tag ${m.tipo_materia}">${m.tipo_materia}</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function fetchAnexos() {
+      if (isTiLocal) {
+        const data = state.anexos;
+        const tbody = document.getElementById('tbodyAnexos');
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="7">Nenhum anexo enviado.</td></tr>';
+        } else {
+          tbody.innerHTML = data.map((item) => `
+            <tr>
+              <td>${item.id}</td>
+              <td>${item.turma_nome}<br><span class="muted">${item.materia_nome}</span></td>
+              <td>${item.tipo_material}</td>
+              <td>${item.titulo}</td>
+              <td><span class="tag ${item.status_moderacao}">${item.status_moderacao}</span></td>
+              <td>${item.comentario_moderacao || '-'}</td>
+              <td>${formatDate(item.data_criacao)}</td>
+            </tr>
+          `).join('');
+        }
+        return;
+      }
+
+      const res = await fetch('/professor/anexos', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Falha ao carregar anexos');
+
+      const tbody = document.getElementById('tbodyAnexos');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="7">Nenhum anexo enviado.</td></tr>';
+      } else {
+        tbody.innerHTML = data.map((item) => `
+          <tr>
+            <td>${item.id}</td>
+            <td>${item.turma_nome}<br><span class="muted">${item.materia_nome}</span></td>
+            <td>${item.tipo_material}</td>
+            <td>${item.titulo}</td>
+            <td><span class="tag ${item.status_moderacao}">${item.status_moderacao}</span></td>
+            <td>${item.comentario_moderacao || '-'}</td>
+            <td>${formatDate(item.data_criacao)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    document.getElementById('formMaterial').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (isTiLocal) {
+        const materiaId = Number(document.getElementById('materialMateria').value);
+        const materia = state.materias.find((m) => m.id === materiaId);
+        if (!materia) {
+          showMsg('msgMaterial', 'Selecione uma materia valida.', true);
+          return;
+        }
+
+        const novo = {
+          id: Date.now(),
+          turma_nome: materia.turma_nome,
+          materia_nome: materia.nome,
+          tipo_material: document.getElementById('materialTipo').value,
+          titulo: document.getElementById('materialTitulo').value.trim(),
+          status_moderacao: 'pendente',
+          comentario_moderacao: 'Aguardando moderacao (simulado T.I.)',
+          data_criacao: new Date().toISOString()
+        };
+
+        if (!novo.titulo) {
+          showMsg('msgMaterial', 'Titulo e obrigatorio.', true);
+          return;
+        }
+
+        state.anexos.unshift(novo);
+        document.getElementById('formMaterial').reset();
+        showMsg('msgMaterial', `Material "${novo.titulo}" enviado em modo local.`);
+        await fetchAnexos();
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('materia_id', document.getElementById('materialMateria').value);
+      formData.append('tipo_material', document.getElementById('materialTipo').value);
+      formData.append('titulo', document.getElementById('materialTitulo').value.trim());
+      formData.append('descricao', document.getElementById('materialDescricao').value.trim());
+      formData.append('conteudo_texto', document.getElementById('materialTexto').value.trim());
+
+      const fileInput = document.getElementById('materialArquivo');
+      if (fileInput.files[0]) {
+        formData.append('arquivo', fileInput.files[0]);
+      }
+
+      const res = await fetch('/professor/anexos', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMsg('msgMaterial', data.erro || 'Falha ao enviar material.', true);
+        return;
+      }
+
+      document.getElementById('formMaterial').reset();
+      showMsg('msgMaterial', `Material "${data.titulo}" enviado para moderacao.`);
+      fetchAnexos();
+    });
+
+    document.getElementById('addObjetivaBtn').addEventListener('click', () => {
+      const questions = collectQuestionsFromBuilder();
+      questions.push(newQuestionTemplate('objetiva'));
+      renderQuestionBuilder(questions);
+    });
+
+    document.getElementById('addDiscursivaBtn').addEventListener('click', () => {
+      const questions = collectQuestionsFromBuilder();
+      questions.push(newQuestionTemplate('discursiva'));
+      renderQuestionBuilder(questions);
+    });
+
+    document.getElementById('questionBuilder').addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.getAttribute('data-action') !== 'remove') return;
+
+      const current = collectQuestionsFromBuilder();
+      const item = target.closest('.question-item');
+      const index = Number(item?.getAttribute('data-question-index'));
+      if (!Number.isInteger(index)) return;
+
+      current.splice(index, 1);
+      renderQuestionBuilder(current);
+    });
+
+    document.getElementById('questionBuilder').addEventListener('change', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.getAttribute('data-q') !== 'tipo_questao') return;
+
+      const item = target.closest('.question-item');
+      const optionsWrap = item?.querySelector('[data-q="optionsWrap"]');
+      if (!optionsWrap) return;
+
+      if (String(target.value) === 'objetiva') {
+        optionsWrap.classList.add('visible');
+      } else {
+        optionsWrap.classList.remove('visible');
+      }
+    });
+
+    document.getElementById('formAvaliacao').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const questoes = collectQuestionsFromBuilder();
+      const questionValidation = validateQuestions(questoes);
+      if (questionValidation) {
+        showMsg('msgAvaliacao', questionValidation, true);
+        return;
+      }
+
+      const payload = {
+        materia_id: Number(document.getElementById('avaliacaoMateria').value),
+        tipo_avaliacao: document.getElementById('avaliacaoTipo').value,
+        titulo: document.getElementById('avaliacaoTitulo').value.trim(),
+        descricao: document.getElementById('avaliacaoDescricao').value.trim(),
+        data_limite: document.getElementById('avaliacaoData').value || null,
+        questoes
+      };
+
+      if (isTiLocal) {
+        if (!payload.materia_id || !payload.titulo || !payload.questoes.length) {
+          showMsg('msgAvaliacao', 'Preencha materia, titulo e questoes.', true);
+          return;
+        }
+
+        state.mockAvaliacaoSeq += 1;
+        showMsg('msgAvaliacao', `Avaliacao local criada com sucesso (ID ${state.mockAvaliacaoSeq}).`);
+        document.getElementById('formAvaliacao').reset();
+        return;
+      }
+
+      const res = await fetch('/professor/avaliacoes-v2', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMsg('msgAvaliacao', data.erro || 'Falha ao criar avaliacao.', true);
+        return;
+      }
+
+      showMsg('msgAvaliacao', `Avaliacao criada com sucesso (ID ${data.avaliacao_id}).`);
+      document.getElementById('formAvaliacao').reset();
+      renderQuestionBuilder([newQuestionTemplate('objetiva')]);
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      loadAll();
+    });
+
+    async function loadAll() {
+      try {
+        await fetchMaterias();
+        await fetchAnexos();
+      } catch (error) {
+        alert(error.message || 'Falha ao carregar painel do professor.');
+      }
+    }
+
+    renderQuestionBuilder([newQuestionTemplate('objetiva')]);
+    loadAll();
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

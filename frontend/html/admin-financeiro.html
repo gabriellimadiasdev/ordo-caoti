@@ -1,0 +1,265 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Financeiro - Ordo Caoti</title>
+    <style>
+        /* Reusing styles from other admin pages for consistency */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: #f0f0f0; margin: 0; padding: 2rem; }
+        h1, h2 { color: #c8a2c8; }
+        h1 { text-align: center; margin-bottom: 2rem; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid #444; padding-bottom: 1rem; }
+        .tab-btn { background: #333; color: #ccc; border: none; padding: 0.8rem 1.5rem; cursor: pointer; border-radius: 8px 8px 0 0; font-size: 1rem; }
+        .tab-btn.active { background: #c8a2c8; color: #1a1a1a; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .search-bar { padding: 0.7rem; width: 300px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { border: 1px solid #444; padding: 10px 14px; text-align: left; }
+        th { background-color: #333; color: #c8a2c8; }
+        tr:nth-child(even) { background-color: #252525; }
+        tr:hover { background-color: #303030; }
+        .status-pago, .status-ativo { color: #4cd137; font-weight: bold; }
+        .status-pendente { color: #ffd700; font-weight: bold; }
+        .status-atrasado, .status-bloqueado { color: #e84118; font-weight: bold; }
+        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-action { background-color: #555; color: #fff; }
+        .btn-toggle-access { background-color: #ffc400; color: #000; }
+        .form-section { background: #2a2a2a; padding: 2rem; border-radius: 8px; max-width: 500px; }
+        .form-section .form-group { margin-bottom: 1rem; }
+        .form-section label { display: block; margin-bottom: 0.5rem; }
+        .form-section input, .form-section select { width: 100%; padding: 0.8rem; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        .btn-create { background: #c8a2c8; color: #1a1a1a; padding: 1rem; width: 100%; font-size: 1rem; }
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
+        .modal-content { background-color: #2a2a2a; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 8px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+    </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+
+    <h1>Painel Financeiro</h1>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('geral')">Visão Geral</button>
+            <button class="tab-btn" onclick="openTab('cupons')">Gerar Cupons (Bolsas)</button>
+        </div>
+
+        <!-- Tab: Visão Geral -->
+        <div id="geral" class="tab-content active">
+            <div class="controls">
+                <input type="text" id="searchInput" class="search-bar" onkeyup="filterTable()" placeholder="Pesquisar por nome ou e-mail...">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Data Matrícula</th>
+                        <th>Status Acesso</th>
+                        <th>Último Pagamento</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- JS preenche -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab: Gerar Cupons -->
+        <div id="cupons" class="tab-content">
+            <div class="form-section">
+                <h2>Gerador de Cupom de Bolsa</h2>
+                <div class="form-group">
+                    <label for="cupomValor">Valor do Desconto (R$)</label>
+                    <input type="number" id="cupomValor" placeholder="Ex: 80.00">
+                </div>
+                <div class="form-group">
+                    <label for="cupomDescricao">Descrição (Uso interno)</label>
+                    <input type="text" id="cupomDescricao" placeholder="Ex: Bolsa integral para Aluno X">
+                </div>
+                <div class="form-group">
+                    <label for="cupomUsuario">Atribuir a um Usuário (Opcional)</label>
+                    <select id="cupomUsuario">
+                        <option value="">Nenhum (Cupom genérico)</option>
+                        <!-- JS preenche com a lista de usuários -->
+                    </select>
+                </div>
+                <button class="btn-create" onclick="gerarCupom()">Gerar Cupom</button>
+                <div id="cupomGerado" style="margin-top: 1rem; background: #333; padding: 1rem; display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Histórico de Pagamentos -->
+    <div id="historicoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2 id="historicoUserName">Histórico de Pagamentos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="historicoTableBody">
+                    <!-- JS preenche -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+
+        let allUsers = []; // Cache para a busca
+
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`.tab-btn[onclick="openTab('${tabName}')"]`).classList.add('active');
+        }
+
+        function renderTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            const userSelect = document.getElementById('cupomUsuario');
+            tbody.innerHTML = '';
+            userSelect.innerHTML = '<option value="">Nenhum (Cupom genÃ©rico)</option>'; // Reset
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                const statusPagamento = user.ultimo_status_pagamento || 'N/A';
+                const statusAcesso = user.ativo ? 'Ativo' : 'Bloqueado';
+
+                tr.innerHTML = `
+                    <td>${user.nome}</td>
+                    <td>${user.email}</td>
+                    <td>${new Date(user.data_cadastro).toLocaleDateString('pt-BR')}</td>
+                    <td class="status-${statusAcesso.toLowerCase()}">${statusAcesso}</td>
+                    <td class="status-${statusPagamento.toLowerCase()}">${statusPagamento.toUpperCase()} (${user.data_ultimo_pagamento ? new Date(user.data_ultimo_pagamento).toLocaleDateString('pt-BR') : '---'})</td>
+                    <td>
+                        <button class="btn-action" onclick="verHistorico(${user.id}, '${user.nome}')">Ver HistÃ³rico</button>
+                        <button class="btn-toggle-access" onclick="toggleAccess(${user.id}, ${!user.ativo})">${user.ativo ? 'Bloquear' : 'Desbloquear'}</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+
+                // Preenche o select de cupons
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.nome} (${user.email})`;
+                userSelect.appendChild(option);
+            });
+        }
+
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filteredUsers = allUsers.filter(user => 
+                user.nome.toLowerCase().includes(query) || 
+                user.email.toLowerCase().includes(query)
+            );
+            renderTable(filteredUsers);
+        }
+
+        async function carregarUsuarios() {
+            const response = await fetch('/admin/financeiro/usuarios', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) {
+                alert('Erro ao carregar usuÃ¡rios. Verifique se vocÃª Ã© administrador.');
+                return;
+            }
+            allUsers = await response.json();
+            renderTable(allUsers);
+        }
+
+        async function toggleAccess(userId, novoStatus) {
+            const acao = novoStatus ? 'DESBLOQUEAR' : 'BLOQUEAR';
+            if (!confirm(`Tem certeza que deseja ${acao} o acesso deste usuário?`)) return;
+
+            await fetch('/admin/financeiro/alternar-acesso', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ usuario_id: userId, novo_status: novoStatus })
+            });
+            carregarUsuarios(); // Recarrega a lista
+        }
+
+        async function verHistorico(userId, userName) {
+            document.getElementById('historicoUserName').textContent = `Histórico de: ${userName}`;
+            const modal = document.getElementById('historicoModal');
+            const tbody = document.getElementById('historicoTableBody');
+            tbody.innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
+            modal.style.display = 'block';
+
+            const response = await fetch(`/admin/financeiro/historico/${userId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const historico = await response.json();
+            
+            tbody.innerHTML = '';
+            if (historico.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">Nenhum pagamento registrado.</td></tr>';
+                return;
+            }
+
+            historico.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${p.id}</td>
+                    <td>${new Date(p.data_pedido).toLocaleDateString('pt-BR')}</td>
+                    <td>R$ ${p.total}</td>
+                    <td class="status-${p.status}">${p.status.toUpperCase()}</td>
+                    <td>
+                        ${p.status === 'pendente' ? `<button class="btn-action" style="background: #4cd137; color: #000;">Confirmar</button>` : 'Confirmado'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function closeModal() {
+            document.getElementById('historicoModal').style.display = 'none';
+        }
+
+        async function gerarCupom() {
+            const valor = document.getElementById('cupomValor').value;
+            const descricao = document.getElementById('cupomDescricao').value;
+            const usuario_id = document.getElementById('cupomUsuario').value;
+
+            if (!valor) {
+                alert('O valor do desconto é obrigatório.');
+                return;
+            }
+
+            const response = await fetch('/admin/financeiro/gerar-cupom', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ valor, descricao, usuario_id: usuario_id || null })
+            });
+
+            const cupom = await response.json();
+            const divCupom = document.getElementById('cupomGerado');
+            divCupom.style.display = 'block';
+            divCupom.innerHTML = `Cupom Gerado: <strong style="color: #ffc400; font-size: 1.2rem;">${cupom.codigo}</strong><br>Valor: R$ ${cupom.valor_desconto}`;
+        }
+
+        // Load data on page start
+        carregarUsuarios();
+    </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

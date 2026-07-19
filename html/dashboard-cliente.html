@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Cliente - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #0a1017;
+      --panel: #162132;
+      --line: #375273;
+      --text: #eef4ff;
+      --muted: #aec4dd;
+      --accent: #f0bf4a;
+      --ok: #57d17f;
+      --warn: #ffd37f;
+      --bad: #ff8d9a;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 13% 12%, #263b55 0%, transparent 42%),
+        radial-gradient(circle at 86% 86%, #2b4139 0%, transparent 46%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 1140px;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.85rem;
+    }
+    .top {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .top h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+    .actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #18304a;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.55rem 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #261807;
+      border-color: #c89d38;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.85rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 0.7rem;
+      margin-bottom: 0.8rem;
+    }
+    .kpi {
+      border: 1px solid #33506f;
+      border-radius: 10px;
+      padding: 0.65rem;
+      background: #122031;
+    }
+    .kpi p {
+      margin: 0 0 0.3rem;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+    .kpi strong {
+      color: var(--accent);
+    }
+    .order-row {
+      border: 1px solid #345271;
+      border-radius: 10px;
+      padding: 0.65rem;
+      margin-bottom: 0.55rem;
+      background: #111f30;
+      display: grid;
+      gap: 0.45rem;
+    }
+    .status {
+      display: inline-flex;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      width: fit-content;
+    }
+    .status-pago { background: #1a4635; color: var(--ok); }
+    .status-pendente { background: #4a3e19; color: var(--warn); }
+    .status-cancelado { background: #4d2028; color: var(--bad); }
+    .muted {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <h1>Painel do Cliente</h1>
+        <div class="muted" id="whoami">Carregando sessao...</div>
+      </div>
+      <div class="actions">
+        <a data-app-route="/loja" data-app-file="loja.html" href="./loja.html" class="btn">Loja</a>
+        <a data-app-route="/dashboard-aluno" data-app-file="dashboard-aluno.html" href="./dashboard-aluno.html" class="btn">Area academica</a>
+        <a data-app-route="/loja/reembolso-e-logistica" data-app-file="reembolso-e-logistica.html" href="./reembolso-e-logistica.html" class="btn">Reembolso</a>
+        <button id="logoutBtn" type="button" class="btn primary">Sair</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="grid">
+        <article class="kpi">
+          <p>Pedidos totais</p>
+          <strong id="kpiTotalPedidos">0</strong>
+        </article>
+        <article class="kpi">
+          <p>Pagos</p>
+          <strong id="kpiPagos">0</strong>
+        </article>
+        <article class="kpi">
+          <p>Pendentes</p>
+          <strong id="kpiPendentes">0</strong>
+        </article>
+        <article class="kpi">
+          <p>Assinatura</p>
+          <strong id="kpiAssinatura">-</strong>
+        </article>
+      </div>
+
+      <h2 style="margin-top:0;color:var(--accent);">Pedidos recentes</h2>
+      <div id="ordersList"></div>
+      <p id="statusMsg" class="muted"></p>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {},
+      clearSession: () => {}
+    };
+    runtime.bindAppRoutes();
+
+    const whoami = document.getElementById('whoami');
+    const ordersList = document.getElementById('ordersList');
+    const statusMsg = document.getElementById('statusMsg');
+    const kpiTotalPedidos = document.getElementById('kpiTotalPedidos');
+    const kpiPagos = document.getElementById('kpiPagos');
+    const kpiPendentes = document.getElementById('kpiPendentes');
+    const kpiAssinatura = document.getElementById('kpiAssinatura');
+
+    function getToken() {
+      return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    }
+
+    function readUser() {
+      try {
+        return JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function formatMoney(value) {
+      return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function statusClass(status) {
+      const normalized = String(status || '').toLowerCase();
+      if (normalized === 'pago') return 'status-pago';
+      if (normalized === 'cancelado') return 'status-cancelado';
+      return 'status-pendente';
+    }
+
+    function renderOrders(pedidos) {
+      if (!pedidos.length) {
+        ordersList.innerHTML = '<p class="muted">Nenhum pedido encontrado.</p>';
+        return;
+      }
+
+      ordersList.innerHTML = pedidos.map((pedido) => {
+        const date = pedido?.data_pedido ? new Date(pedido.data_pedido).toLocaleString('pt-BR') : '-';
+        return `
+          <article class="order-row">
+            <div><strong>Pedido #${pedido.id}</strong></div>
+            <div class="muted">Data: ${date}</div>
+            <div>${formatMoney(pedido.total)}</div>
+            <span class="status ${statusClass(pedido.status)}">${String(pedido.status || '-').toUpperCase()}</span>
+            <div style="display:flex;gap:.45rem;flex-wrap:wrap;">
+              <button class="btn" type="button" onclick="syncOrder(${pedido.id})">Sincronizar</button>
+              <a class="btn" data-app-route="/loja/reembolso-e-logistica" data-app-file="reembolso-e-logistica.html" href="./reembolso-e-logistica.html?id=${pedido.id}">Reembolso</a>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      runtime.bindAppRoutes(ordersList);
+    }
+
+    async function loadFinanceHistory() {
+      const token = getToken();
+      if (!token) {
+        statusMsg.textContent = 'Sessao ausente. Entre novamente.';
+        window.location.href = runtime.appRoute('/login', 'login.html');
+        return;
+      }
+
+      try {
+        const response = await fetch(runtime.apiUrl('/financeiro/historico'), {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao carregar historico financeiro.');
+
+        const pedidos = Array.isArray(data?.pedidos) ? data.pedidos : [];
+        const pagos = pedidos.filter((pedido) => String(pedido.status).toLowerCase() === 'pago').length;
+        const pendentes = pedidos.filter((pedido) => String(pedido.status).toLowerCase() === 'pendente').length;
+
+        kpiTotalPedidos.textContent = String(pedidos.length);
+        kpiPagos.textContent = String(pagos);
+        kpiPendentes.textContent = String(pendentes);
+        kpiAssinatura.textContent = data?.assinatura?.status || 'sem assinatura';
+
+        renderOrders(pedidos);
+        statusMsg.textContent = `Historico carregado com ${pedidos.length} pedido(s).`;
+      } catch (error) {
+        statusMsg.textContent = error.message;
+      }
+    }
+
+    async function syncOrder(pedidoId) {
+      const token = getToken();
+      if (!token) {
+        statusMsg.textContent = 'Sessao expirada. Faca login novamente.';
+        return;
+      }
+
+      try {
+        const response = await fetch(runtime.apiUrl(`/loja/pedidos/${pedidoId}/sincronizar-ordem`), {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao sincronizar pedido.');
+        statusMsg.textContent = `Pedido #${pedidoId} sincronizado: ${data.status}.`;
+        await loadFinanceHistory();
+      } catch (error) {
+        statusMsg.textContent = error.message;
+      }
+    }
+
+    window.syncOrder = syncOrder;
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      const token = getToken();
+      if (token && token !== 'ti-local-mode') {
+        try {
+          await fetch(runtime.apiUrl('/logout'), {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (_) {}
+      }
+      if (runtime.clearSession) runtime.clearSession();
+      window.location.href = runtime.appRoute('/login', 'login.html');
+    });
+
+    const user = readUser();
+    whoami.textContent = `Sessao: ${user?.nome || 'Cliente'} (${user?.tipo || user?.tipo_usuario || 'cliente'})`;
+
+    loadFinanceHistory();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

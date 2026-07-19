@@ -1,0 +1,129 @@
+/* ============================================ */
+/* Responsividade Universal e Mobile-First      */
+/* ============================================ */
+/* Arquivo revisado e padronizado para garantir consistência visual e funcional em todos os dispositivos. */
+
+:root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+    font-size: 100%; /* Permite que o navegador controle o redimensionamento base */
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+}
+
+body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+    overflow-x: hidden;
+    width: 100%;
+}
+
+/* Tipografia Fluida: Ajusta o tamanho do texto proporcionalmente à tela */
+h1 { font-size: clamp(1.8rem, 5vw, 2.5rem) !important; }
+h2 { font-size: clamp(1.4rem, 4vw, 1.8rem) !important; }
+p, label, input, button, a { font-size: clamp(0.9rem, 2.5vw, 1rem) !important; }
+
+/* Ajuste de Imagens e Ícones */
+img, svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Ajustes de Layout Flexível */
+.container, .login-container, .form-section {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* Grid Adaptativo para Cards */
+.mages-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+.mage-card, .login-box, .login-card {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Menu Lateral/Vertical para Telas Pequenas */
+@media (max-width: 768px) {
+    .oc-global-nav {
+        position: relative;
+    }
+
+    .oc-global-nav__inner {
+        width: 94%;
+        display: grid;
+        grid-template-columns: auto 1fr 1fr;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .oc-global-nav__home {
+        width: 34px;
+        height: 34px;
+    }
+
+    .oc-global-nav__btn {
+        width: 100%;
+        min-height: 42px;
+        font-size: 0.84rem !important;
+        padding: 10px 12px;
+    }
+
+    .main-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .main-nav a {
+        width: 80%; /* Transforma botões em blocos largos para toque */
+        text-align: center;
+    }
+}
+
+/* Inputs Otimizados para Mobile (Evita zoom automático no iOS) */
+input, select, textarea {
+    font-size: 16px !important; 
+    max-width: 100%;
+}
+
+/* Botões Touch-Friendly */
+button, .btn-login, .main-nav a, .btn-action, .btn-create {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    box-sizing: border-box;
+    width: auto;
+}
+
+/* Media Queries para Telas Grandes */
+@media (min-width: 1024px) {
+    .container, .login-container {
+        width: 80%;
+    }
+}
+
+@media (max-width: 420px) {
+    .oc-global-nav__inner {
+        grid-template-columns: 1fr;
+    }
+
+    .oc-global-nav__home {
+        justify-self: start;
+    }
+}

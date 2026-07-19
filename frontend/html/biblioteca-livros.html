@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biblioteca de Livros - Ordo Caoti</title>
+  <link rel="stylesheet" href="./style-login-loja.css" />
+  <style>
+    body { background-color: #0a0e27; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .header { margin-bottom: 30px; }
+    .header h1 { font-size: 2rem; margin: 0; color: #b0a8ff; }
+    .header p { font-size: 0.9rem; margin: 5px 0 0 0; color: #888; }
+    
+    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .filter-group { display: flex; flex-direction: column; }
+    .filter-group label { font-size: 0.85rem; color: #b0a8ff; margin-bottom: 5px; font-weight: 600; }
+    .filter-group input, .filter-group select { padding: 10px; background: #1a1f3a; border: 1px solid #333; color: #e0e0e0; border-radius: 4px; }
+    .filter-group input:focus, .filter-group select:focus { outline: none; border-color: #b0a8ff; }
+    
+    .search-box { display: flex; gap: 10px; }
+    .search-box input { flex: 1; }
+    .btn-search { padding: 10px 20px; background: #b0a8ff; color: #0a0e27; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; }
+    .btn-search:hover { background: #c5bbff; }
+    
+    .livros-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .livro-card { background: #1a1f3a; border-left: 4px solid #b0a8ff; padding: 15px; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+    .livro-card:hover { background: #242a45; transform: translateY(-2px); }
+    
+    .livro-titulo { font-size: 1.1rem; font-weight: 600; color: #b0a8ff; margin-bottom: 5px; }
+    .livro-autor { font-size: 0.9rem; color: #888; margin-bottom: 8px; }
+    .livro-detalhes { font-size: 0.8rem; color: #666; margin-bottom: 10px; }
+    .livro-temas { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+    .tema-badge { background: #333; color: #b0a8ff; padding: 3px 8px; border-radius: 3px; font-size: 0.75rem; }
+    
+    .livro-acoes { display: flex; gap: 8px; margin-top: 10px; }
+    .btn-small { padding: 6px 12px; font-size: 0.8rem; border: none; cursor: pointer; border-radius: 3px; background: #333; color: #e0e0e0; }
+    .btn-small:hover { background: #444; }
+    .btn-primary { background: #b0a8ff; color: #0a0e27; }
+    .btn-primary:hover { background: #c5bbff; }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; }
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: #1a1f3a; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h2 { margin: 0; color: #b0a8ff; }
+    .btn-close { background: none; border: none; color: #888; cursor: pointer; font-size: 1.5rem; }
+    
+    .paginacao { display: flex; justify-content: center; gap: 10px; padding: 20px 0; }
+    .paginacao button { padding: 8px 12px; background: #333; color: #e0e0e0; border: none; cursor: pointer; border-radius: 3px; }
+    .paginacao button.ativo { background: #b0a8ff; color: #0a0e27; }
+    
+    .admin-panel { margin-top: 40px; padding: 20px; background: #1a1f3a; border-radius: 4px; border-left: 4px solid #ff6b6b; }
+    .admin-panel h3 { color: #ff6b6b; }
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    
+    .msg { padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .msg.erro { background: #3d2222; color: #ff6b6b; }
+    .msg.success { background: #223d22; color: #6bff6b; }
+    
+    .loading { text-align: center; color: #888; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📚 Biblioteca de Livros Esotéricos</h1>
+      <p>Acesso ao conhecimento ancestral e moderno sobre magia, ocultismo, espiritualismo e temas relacionados</p>
+    </div>
+
+    <div id="msgArea"></div>
+
+    <!-- Filtros -->
+    <div class="filters">
+      <div style="grid-column: 1 / -1; display: flex; gap: 10px;">
+        <div class="filter-group" style="flex: 1;">
+          <label>🔍 Buscar por título, autor ou ISBN</label>
+          <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Digite para buscar..." />
+            <button class="btn-search" onclick="buscarLivros()">Buscar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>🏷️ Tema</label>
+        <select id="temaFilter" onchange="buscarLivros()">
+          <option value="">Todos os temas</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>🌍 Idioma</label>
+        <select id="idiomaFilter" onchange="buscarLivros()">
+          <option value="">Todos os idiomas</option>
+          <option value="pt-BR">Português (Brasil)</option>
+          <option value="pt">Português (Portugal)</option>
+          <option value="en">Inglês</option>
+          <option value="es">Espanhol</option>
+          <option value="fr">Francês</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>📖 Itens por página</label>
+        <select id="perPageFilter" onchange="buscarLivros()">
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Lista de Livros -->
+    <div id="livrosContainer" class="livros-grid">
+      <div class="loading">Carregando livros...</div>
+    </div>
+
+    <!-- Paginação -->
+    <div class="paginacao" id="paginacaoContainer"></div>
+
+    <!-- Panel Admin (se for admin) -->
+    <div id="adminPanel" style="display: none;">
+      <div class="admin-panel">
+        <h3>⚙️ Painel Administrativo</h3>
+        <div class="admin-grid">
+          <button class="btn-primary" onclick="abrirNovoLivro()">➕ Adicionar Livro</button>
+          <button class="btn-primary" onclick="abrirNovoTema()">➕ Novo Tema</button>
+          <button class="btn-small" onclick="exportarDados()">📥 Exportar Livros (CSV)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Detalhes do Livro -->
+  <div id="detalhesModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="detalhesModalTitulo"></h2>
+        <button class="btn-close" onclick="fecharModal('detalhesModal')">×</button>
+      </div>
+      <div id="detalhesModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Modal de Edição de Livro -->
+  <div id="edicaoModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Editar Livro</h2>
+        <button class="btn-close" onclick="fecharModal('edicaoModal')">×</button>
+      </div>
+      <form id="formLivro" onsubmit="salvarLivro(event)">
+        <input type="hidden" id="livroId" />
+        <div style="margin-bottom: 15px;">
+          <label>Título *</label>
+          <input type="text" id="livroTitulo" required style="width: 100%; padding: 10px; background: #0a0e27; border: 1px solid #333; color: #e0e0e0; border-radius: 4px;" />
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label>Autor *</label>
+          <input type="text" id="livroAutor" required style="width: 100%; padding: 10px; background: #0a0e27; border: 1px solid #333; color: #e0e0e0; border-radius: 4px;" />
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label>ISBN</label>
+          <input type="text" id="livroIsbn" style="width: 100%; padding: 10px; background: #0a0e27; border: 1px solid #333; color: #e0e0e0; border-radius: 4px;" />
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label>Descrição</label>
+          <textarea id="livroDescricao" style="width: 100%; padding: 10px; background: #0a0e27; border: 1px solid #333; color: #e0e0e0; border-radius: 4px; height: 100px;"></textarea>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label>URL de Acesso (PDF/Link Legal)</label>
+          <input type="url" id="livroUrl" style="width: 100%; padding: 10px; background: #0a0e27; border: 1px solid #333; color: #e0e0e0; border-radius: 4px;" />
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn-primary">💾 Salvar</button>
+          <button type="button" class="btn-small" onclick="fecharModal('edicaoModal')">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('usuario') || sessionStorage.getItem('usuario') || '{}');
+    let paginaAtual = 1;
+
+    function requireAuthenticatedSession() {
+      if (!token) {
+        window.location.href = './login.html';
+        return false;
+      }
+      return true;
+    }
+
+    function authHeaders(extra = {}) {
+      return {
+        ...extra,
+        'Authorization': `Bearer ${token}`
+      };
+    }
+
+    function showMsg(text, isError = false) {
+      const msgArea = document.getElementById('msgArea');
+      msgArea.innerHTML = `<div class="msg ${isError ? 'erro' : 'success'}">${text}</div>`;
+      setTimeout(() => { msgArea.innerHTML = ''; }, 5000);
+    }
+
+    function abrirModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function fecharModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    async function carregarTemas() {
+      try {
+        const res = await fetch('/biblioteca/temas', {
+          headers: authHeaders()
+        });
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = './login.html';
+          return;
+        }
+        const temas = await res.json();
+        const select = document.getElementById('temaFilter');
+        temas.forEach(tema => {
+          const opt = document.createElement('option');
+          opt.value = tema.nome;
+          opt.textContent = tema.nome;
+          select.appendChild(opt);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar temas:', error);
+      }
+    }
+
+    async function buscarLivros(pagina = 1) {
+      paginaAtual = pagina;
+      const search = document.getElementById('searchInput').value;
+      const tema = document.getElementById('temaFilter').value;
+      const idioma = document.getElementById('idiomaFilter').value;
+      const perPage = document.getElementById('perPageFilter').value;
+
+      const params = new URLSearchParams({
+        page: pagina,
+        per_page: perPage,
+        ...(search && { search }),
+        ...(tema && { tema }),
+        ...(idioma && { idioma })
+      });
+
+      try {
+        const res = await fetch(`/biblioteca/livros?${params}`, {
+          headers: authHeaders()
+        });
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = './login.html';
+          return;
+        }
+        const data = await res.json();
+
+        const container = document.getElementById('livrosContainer');
+        if (!data.livros || data.livros.length === 0) {
+          container.innerHTML = '<div class="loading">Nenhum livro encontrado.</div>';
+        } else {
+          container.innerHTML = data.livros.map(livro => `
+            <div class="livro-card" onclick="verDetalhes(${livro.id})">
+              <div class="livro-titulo">${livro.titulo}</div>
+              <div class="livro-autor">Por: ${livro.autor}</div>
+              ${livro.ano_publicacao ? `<div class="livro-detalhes">Publicado em ${livro.ano_publicacao}</div>` : ''}
+              ${livro.temas && livro.temas.length > 0 ? `
+                <div class="livro-temas">
+                  ${JSON.parse(livro.temas).slice(0, 3).map(t => `<span class="tema-badge">${t.nome}</span>`).join('')}
+                </div>
+              ` : ''}
+              <div class="livro-acoes">
+                <button class="btn-small btn-primary" onclick="event.stopPropagation(); registrarLeitura(${livro.id})">📖 Ler Depois</button>
+                ${user?.tipo_usuario === 'admin' || user?.papel === 'admin' ? `
+                  <button class="btn-small" onclick="event.stopPropagation(); editarLivro(${livro.id})">✏️</button>
+                  <button class="btn-small" onclick="event.stopPropagation(); deletarLivro(${livro.id})">🗑️</button>
+                ` : ''}
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Paginação
+        const pag = data.paginacao;
+        const paginacaoDiv = document.getElementById('paginacaoContainer');
+        paginacaoDiv.innerHTML = '';
+        
+        if (pag.total_paginas > 1) {
+          for (let i = 1; i <= pag.total_paginas; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.className = i === paginaAtual ? 'ativo' : '';
+            btn.onclick = () => buscarLivros(i);
+            paginacaoDiv.appendChild(btn);
+          }
+        }
+      } catch (error) {
+        showMsg(`Erro ao buscar livros: ${error.message}`, true);
+      }
+    }
+
+    async function verDetalhes(livroId) {
+      try {
+        const res = await fetch(`/biblioteca/livros/${livroId}`, {
+          headers: authHeaders()
+        });
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = './login.html';
+          return;
+        }
+        const livro = await res.json();
+
+        if (!res.ok) throw new Error(livro.erro);
+
+        const temas = livro.temas ? JSON.parse(livro.temas).map(t => t.nome).join(', ') : 'Sem temas';
+        const urls = `
+          ${livro.url_acesso ? `<p><a href="${livro.url_acesso}" target="_blank">📖 Acessar Livro Online</a></p>` : ''}
+          ${livro.url_openlibrary ? `<p><a href="${livro.url_openlibrary}" target="_blank">📚 Open Library</a></p>` : ''}
+          ${livro.url_google_books ? `<p><a href="${livro.url_google_books}" target="_blank">Google Books</a></p>` : ''}
+          ${livro.url_amazon ? `<p><a href="${livro.url_amazon}" target="_blank">🛒 Amazon</a></p>` : ''}
+          ${livro.url_mercado_livre ? `<p><a href="${livro.url_mercado_livre}" target="_blank">🛒 Mercado Livre</a></p>` : ''}
+          ${livro.url_fnac ? `<p><a href="${livro.url_fnac}" target="_blank">FNAC</a></p>` : ''}
+        `;
+
+        document.getElementById('detalhesModalTitulo').textContent = livro.titulo;
+        document.getElementById('detalhesModalBody').innerHTML = `
+          <div style="margin-bottom: 15px;">
+            <strong>Autor:</strong> ${livro.autor}<br/>
+            <strong>Editora:</strong> ${livro.editora || 'N/A'}<br/>
+            <strong>Ano:</strong> ${livro.ano_publicacao || 'N/A'}<br/>
+            <strong>Idioma:</strong> ${livro.idioma}<br/>
+            <strong>Páginas:</strong> ${livro.paginas || 'N/A'}<br/>
+            ${livro.isbn ? `<strong>ISBN:</strong> ${livro.isbn}<br/>` : ''}
+            <strong>Temas:</strong> ${temas}
+          </div>
+          ${livro.descricao ? `<div style="margin-bottom: 15px; padding: 10px; background: #0a0e27; border-radius: 4px;">${livro.descricao}</div>` : ''}
+          ${livro.nota_acesso ? `<p style="font-size: 0.9rem; color: #888; margin-bottom: 15px;">💬 ${livro.nota_acesso}</p>` : ''}
+          <div style="margin-bottom: 15px;">
+            <strong>Disponível em:</strong>
+            ${urls || '<p>Sem links disponíveis no momento.</p>'}
+          </div>
+          <div style="margin-bottom: 15px; font-size: 0.9rem; color: #888;">
+            ${livro.usuarios_leram ? `👥 ${livro.usuarios_leram} usuários já leram este livro` : ''}<br/>
+            ${livro.media_notas ? `⭐ Nota média: ${livro.media_notas}/5` : ''}
+          </div>
+        `;
+        abrirModal('detalhesModal');
+      } catch (error) {
+        showMsg(`Erro: ${error.message}`, true);
+      }
+    }
+
+    async function registrarLeitura(livroId) {
+      if (!token) {
+        window.location.href = './login.html';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/biblioteca/livros/${livroId}/leitura`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: 'para_ler' })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          showMsg('📖 Livro adicionado à sua lista de leitura!', false);
+        } else {
+          showMsg(data.erro || 'Erro ao registrar leitura.', true);
+        }
+      } catch (error) {
+        showMsg(`Erro: ${error.message}`, true);
+      }
+    }
+
+    function abrirNovoLivro() {
+      document.getElementById('livroId').value = '';
+      document.getElementById('formLivro').reset();
+      abrirModal('edicaoModal');
+    }
+
+    function abrirNovoTema() {
+      const nomeTema = prompt('Nome do novo tema:');
+      if (!nomeTema) return;
+
+      fetch('/biblioteca/temas', {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ nome: nomeTema })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.id) {
+            showMsg('✅ Tema criado com sucesso!', false);
+            carregarTemas();
+          } else {
+            showMsg(data.erro || 'Erro ao criar tema.', true);
+          }
+        })
+        .catch(e => showMsg(`Erro: ${e.message}`, true));
+    }
+
+    function editarLivro(livroId) {
+      // Implementar quando necessário
+      alert('Edição em desenvolvimento');
+    }
+
+    function deletarLivro(livroId) {
+      if (!confirm('Tem certeza que deseja deletar este livro?')) return;
+      
+      fetch(`/biblioteca/livros/${livroId}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            showMsg('✅ Livro deletado!', false);
+            buscarLivros(paginaAtual);
+          } else {
+            showMsg(data.erro || 'Erro ao deletar.', true);
+          }
+        })
+        .catch(e => showMsg(`Erro: ${e.message}`, true));
+    }
+
+    function exportarDados() {
+      showMsg('📥 Exportação em desenvolvimento.', false);
+    }
+
+    function salvarLivro(event) {
+      event.preventDefault();
+      showMsg('💾 Salvamento em desenvolvimento.', false);
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAuthenticatedSession()) {
+        return;
+      }
+      if (user?.tipo_usuario === 'admin' || user?.papel === 'admin') {
+        document.getElementById('adminPanel').style.display = 'block';
+      }
+      carregarTemas();
+      buscarLivros(1);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acompanhar Inscrição - Ordo Caoti</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #2a2a2a; padding: 2rem; border-radius: 8px; border: 1px solid #333; text-align: center; max-width: 400px; width: 100%; }
+        input { width: 100%; padding: 0.8rem; margin: 1rem 0; background: #333; border: 1px solid #444; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 1rem; background: #c8a2c8; border: none; font-weight: bold; cursor: pointer; }
+        .status-box { margin-top: 1.5rem; padding: 1rem; border-radius: 5px; display: none; }
+        .pendente { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
+        .aprovado { background: rgba(76, 209, 55, 0.2); color: #4cd137; }
+        .negado { background: rgba(232, 65, 24, 0.2); color: #e84118; }
+    </style>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+    <div class="card">
+        <h2>Acompanhar Processo</h2>
+        <p>Digite o e-mail utilizado na inscrição e clique em "Verificar Status".</p>
+        <input type="email" id="email" placeholder="seu@email.com">
+        <button onclick="verificar()">Verificar Status</button>
+        
+        <div id="resultado" class="status-box"></div>
+        <a href="../../index.html" style="display:block; margin-top:1rem; color:#888; text-decoration:none;">Voltar ao Início</a>
+    </div>
+
+    <script>
+        async function verificar() {
+            const email = document.getElementById('email').value;
+            const resDiv = document.getElementById('resultado');
+            
+            try {
+                const response = await fetch('/api/acompanhamento', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resDiv.style.display = 'block';
+                    resDiv.className = `status-box ${data.status}`;
+                    
+                    let msg = '';
+                    if(data.status === 'pendente') msg = `Olá ${data.nome}.<br>Sua inscrição está <strong>EM ANÁLISE</strong>.<br>Aguarde o contato dos Mestres.`;
+                    if(data.status === 'aprovado') msg = `Parabéns ${data.nome}!<br>Sua inscrição foi <strong>APROVADA</strong>.<br>Verifique seu e-mail para o link de registro.`;
+                    if(data.status === 'negado') msg = `Olá ${data.nome}.<br>Sua inscrição foi <strong>RECUSADA</strong> neste momento.`;
+                    
+                    resDiv.innerHTML = msg;
+                } else {
+                    resDiv.style.display = 'block';
+                    resDiv.className = 'status-box negado';
+                    resDiv.textContent = data.erro || 'Erro ao buscar.';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

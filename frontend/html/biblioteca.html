@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteca Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #0a1017;
+      --panel: #152133;
+      --line: #36516f;
+      --text: #eef4ff;
+      --muted: #aec4de;
+      --accent: #eebb49;
+      --ok: #58d07c;
+      --bad: #ff8c98;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 13% 12%, #263a55 0%, transparent 43%),
+        radial-gradient(circle at 86% 86%, #2a403a 0%, transparent 47%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.75rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.8rem;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.7rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .top h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+    .actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #19314d;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.52rem 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #281b07;
+      border-color: #c89d38;
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.55rem;
+      align-items: center;
+    }
+    input, select {
+      border: 1px solid #3d5879;
+      border-radius: 8px;
+      background: #0f1a2b;
+      color: var(--text);
+      padding: 0.6rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.6rem;
+    }
+    .resource {
+      border: 1px solid #355170;
+      border-radius: 10px;
+      background: #112031;
+      padding: 0.65rem;
+      display: grid;
+      gap: 0.3rem;
+    }
+    .resource .meta {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+    .resource a {
+      color: #9fd0ff;
+      word-break: break-word;
+    }
+    .status {
+      min-height: 20px;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+    .status.error {
+      color: var(--bad);
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card top">
+      <div>
+        <h1>Biblioteca da Ordem</h1>
+        <p style="margin:.35rem 0;color:var(--muted);">Acervo gratuito da escola com curadoria de professores, mestres e administração.</p>
+      </div>
+      <div class="actions">
+        <a data-app-route="/dashboard-aluno" data-app-file="dashboard-aluno.html" href="./dashboard-aluno.html" class="btn">Dashboard</a>
+        <a data-app-route="/loja" data-app-file="loja.html" href="./loja.html" class="btn">Loja</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="filters">
+        <input id="searchInput" type="search" placeholder="Buscar em biblioteca interna e acervo aberto...">
+        <button id="searchBtn" type="button" class="btn primary">Buscar</button>
+      </div>
+      <p id="statusMsg" class="status"></p>
+    </section>
+
+    <section id="adminPanel" class="card hidden">
+      <h2 style="margin-top:0;color:var(--accent);">Adicionar recurso interno</h2>
+      <div class="filters" style="grid-template-columns:1fr 1fr;">
+        <input id="newTitle" placeholder="Titulo">
+        <select id="newType">
+          <option value="livro">Livro</option>
+          <option value="artigo">Artigo</option>
+          <option value="site">Site</option>
+          <option value="texto">Texto</option>
+          <option value="citacao">Citacao</option>
+          <option value="filme">Filme</option>
+          <option value="serie">Serie</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="filters" style="grid-template-columns:1fr 1fr;">
+        <input id="newCategory" placeholder="Categoria">
+        <input id="newUrl" placeholder="URL">
+      </div>
+      <div class="filters" style="grid-template-columns:1fr auto;">
+        <input id="newDescription" placeholder="Descricao curta">
+        <button id="addResourceBtn" type="button" class="btn">Adicionar</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top:0;color:var(--accent);">Acervo interno autorizado</h2>
+      <div id="internalGrid" class="grid"></div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top:0;color:var(--accent);">Acervo externo aberto (Google Books, Open Library, Google Play Livros, Kindle e e-livros.info)</h2>
+      <p style="margin:.2rem 0 .6rem;color:var(--muted);">Use apenas materiais com licença/autorização válida e em conformidade com direitos autorais.</p>
+      <div id="externalGrid" class="grid"></div>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      bindAppRoutes: () => {},
+      getUser: () => ({})
+    };
+    runtime.bindAppRoutes();
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    const user = runtime.getUser();
+    const isPrivileged = ['admin', 'ti', 'professor'].includes(String(user?.tipo || user?.tipo_usuario || '').toLowerCase());
+
+    const statusMsg = document.getElementById('statusMsg');
+    const internalGrid = document.getElementById('internalGrid');
+    const externalGrid = document.getElementById('externalGrid');
+    const adminPanel = document.getElementById('adminPanel');
+    const searchInput = document.getElementById('searchInput');
+
+    if (isPrivileged) {
+      adminPanel.classList.remove('hidden');
+    }
+
+    function setStatus(message, isError = false) {
+      statusMsg.textContent = message || '';
+      statusMsg.className = `status${isError ? ' error' : ''}`;
+    }
+
+    function renderInternal(rows) {
+      if (!rows.length) {
+        internalGrid.innerHTML = '<p style="color:var(--muted);">Nenhum recurso encontrado.</p>';
+        return;
+      }
+      internalGrid.innerHTML = rows.map((item) => `
+        <article class="resource">
+          <strong>${item.titulo}</strong>
+          <span class="meta">${item.tipo_recurso} | ${item.categoria || 'sem categoria'} | ${item.fonte}</span>
+          <span>${item.descricao || ''}</span>
+          <a href="${item.url_recurso}" target="_blank" rel="noopener noreferrer">Abrir recurso</a>
+        </article>
+      `).join('');
+    }
+
+    function renderExternal(rows) {
+      if (!rows.length) {
+        externalGrid.innerHTML = '<p style="color:var(--muted);">Sem resultados externos.</p>';
+        return;
+      }
+      externalGrid.innerHTML = rows.map((item) => `
+        <article class="resource">
+          <strong>${item.titulo}</strong>
+          <span class="meta">${item.fonte} | ${(item.autores || []).join(', ') || 'autor não informado'}</span>
+          <span>${item.descricao || ''}</span>
+          <a href="${item.url || '#'}" target="_blank" rel="noopener noreferrer">Abrir referência</a>
+        </article>
+      `).join('');
+    }
+
+    async function loadInternal(query = '') {
+      if (!token) {
+        setStatus('Faça login para acessar a biblioteca interna.', true);
+        return;
+      }
+      try {
+        const url = runtime.apiUrl(`/biblioteca/recursos${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await response.json().catch(() => ([]));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao carregar biblioteca interna.');
+        renderInternal(Array.isArray(data) ? data : []);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function loadExternal(query = '') {
+      if (!query || query.length < 2) {
+        renderExternal([]);
+        return;
+      }
+      try {
+        const response = await fetch(runtime.apiUrl(`/biblioteca/publica/search?q=${encodeURIComponent(query)}`));
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha na busca externa.');
+        renderExternal(Array.isArray(data?.results) ? data.results : []);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function handleSearch() {
+      const query = String(searchInput.value || '').trim();
+      await Promise.all([loadInternal(query), loadExternal(query)]);
+      setStatus(query ? `Busca aplicada para: ${query}` : 'Acervo carregado.');
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', handleSearch);
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        handleSearch();
+      }
+    });
+
+    document.getElementById('addResourceBtn').addEventListener('click', async () => {
+      if (!isPrivileged) return;
+      try {
+        const payload = {
+          titulo: document.getElementById('newTitle').value.trim(),
+          tipo_recurso: document.getElementById('newType').value,
+          categoria: document.getElementById('newCategory').value.trim(),
+          descricao: document.getElementById('newDescription').value.trim(),
+          url_recurso: document.getElementById('newUrl').value.trim(),
+          fonte: 'interno',
+          gratuito: true
+        };
+        const response = await fetch(runtime.apiUrl('/biblioteca/recursos'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao adicionar recurso.');
+        setStatus('Recurso cadastrado com sucesso.');
+        await loadInternal(searchInput.value.trim());
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    });
+
+    loadInternal();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

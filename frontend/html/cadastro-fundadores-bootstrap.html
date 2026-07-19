@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bootstrap Fundadores</title>
+  <link rel="stylesheet" href="../css/responsivo.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      display: grid;
+      place-items: center;
+      background: #101620;
+      color: #eef3ff;
+      padding: 1rem;
+    }
+    .card {
+      width: min(560px, 100%);
+      border: 1px solid #2d4564;
+      border-radius: 14px;
+      background: #152234;
+      padding: 1rem;
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      color: #f0c458;
+    }
+    .muted {
+      color: #acc0d8;
+      font-size: 0.92rem;
+    }
+    label { display: block; margin: 0.8rem 0 0.3rem; color: #acc0d8; }
+    input, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #355379;
+      background: #0f1a29;
+      color: #eef3ff;
+      padding: 0.72rem;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 0.9rem;
+      background: #f0c458;
+      color: #2b1d00;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    pre {
+      white-space: pre-wrap;
+      border: 1px solid #2a3e58;
+      border-radius: 10px;
+      background: #0f1a29;
+      padding: 0.7rem;
+      min-height: 90px;
+    }
+    .actions {
+      margin-top: 0.8rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .actions a {
+      color: #ffd97c;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Bootstrap Fundadores e T.I.</h1>
+    <p class="muted">Cria ou atualiza contas privilegiadas iniciais com limite total de 3 (fundadores + TI). Este link e temporario e pode ser desativado depois do onboarding.</p>
+
+    <label for="senhaAcesso">Senha de gate administrativo</label>
+    <input id="senhaAcesso" type="password" placeholder="Digite a senha de gate" />
+
+    <h3 style="font-size:0.95rem; margin-top:0.8rem; color:#f0c458;">Emails/Senhas (opcional)</h3>
+    <label for="caioEmail">Email - Caio (fundador)</label>
+    <input id="caioEmail" type="email" placeholder="contatocaiozanoni@gmail.com" />
+    <label for="caioSenha">Senha - Caio (opcional)</label>
+    <input id="caioSenha" type="password" placeholder="Senha para Caio (8+ caracteres)" />
+
+    <label for="dayenneEmail">Email - Dayenne (fundador)</label>
+    <input id="dayenneEmail" type="email" placeholder="dayeekennedy@gmail.com" />
+    <label for="dayenneSenha">Senha - Dayenne (opcional)</label>
+    <input id="dayenneSenha" type="password" placeholder="Senha para Dayenne (8+ caracteres)" />
+
+    <label for="tiEmail">Email - T.I.</label>
+    <input id="tiEmail" type="email" placeholder="g.lima.rocha90@gmail.com" />
+    <label for="tiSenha">Senha - T.I. (opcional)</label>
+    <input id="tiSenha" type="password" placeholder="Senha para T.I. (8+ caracteres)" />
+
+    <button id="btnBootstrap" type="button">Executar bootstrap inicial</button>
+
+    <h2 style="font-size:1rem; margin-top:1rem; color:#f0c458;">Resultado</h2>
+    <pre id="output">Aguardando execucao...</pre>
+
+    <div class="actions">
+      <a href="./login.html">Ir para login</a>
+      <a href="./area-adm-1.html">Ir para area administrativa</a>
+    </div>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || null;
+    const apiUrl = (path) => (runtime && typeof runtime.apiUrl === 'function' ? runtime.apiUrl(path) : path);
+
+    const output = document.getElementById('output');
+    const btn = document.getElementById('btnBootstrap');
+
+    function setOutput(text) {
+      output.textContent = text;
+    }
+
+    btn.addEventListener('click', async () => {
+      const senhaAcesso = String(document.getElementById('senhaAcesso').value || '').trim();
+      if (!senhaAcesso) {
+        setOutput('Informe a senha de gate administrativo.');
+        return;
+      }
+
+      btn.disabled = true;
+      setOutput('Executando bootstrap...');
+
+      try {
+        const response = await fetch(apiUrl('/api/bootstrap/fundadores'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            senha_acesso: senhaAcesso,
+            caio_email: String(document.getElementById('caioEmail').value || '').trim(),
+            caio_password: String(document.getElementById('caioSenha').value || '').trim(),
+            dayenne_email: String(document.getElementById('dayenneEmail').value || '').trim(),
+            dayenne_password: String(document.getElementById('dayenneSenha').value || '').trim(),
+            ti_email: String(document.getElementById('tiEmail').value || '').trim(),
+            ti_password: String(document.getElementById('tiSenha').value || '').trim()
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data?.erro || 'Falha ao executar bootstrap.');
+        }
+
+        const contas = Array.isArray(data?.contas_bootstrap) ? data.contas_bootstrap : [];
+        const resumo = {
+          ok: data?.ok === true,
+          limite_privilegiados: data?.limite_privilegiados,
+          total_privilegiados: data?.total_privilegiados,
+          bloqueado: data?.bloqueado,
+          descartavel: data?.descartavel,
+          observacao: data?.observacao,
+          contas_bootstrap: contas
+        };
+        setOutput(JSON.stringify(resumo, null, 2));
+      } catch (error) {
+        setOutput(`Erro: ${error.message || 'Falha inesperada.'}`);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerenciar Biblioteca - Admin</title>
+  <link rel="stylesheet" href="./style-login-loja.css" />
+  <style>
+    body { background-color: #0a0e27; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+    .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+    .header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.8rem; margin: 0; color: #b0a8ff; }
+    
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #333; }
+    .tab-btn { padding: 10px 20px; background: none; border: none; color: #888; cursor: pointer; border-bottom: 3px solid transparent; }
+    .tab-btn.ativo { color: #b0a8ff; border-bottom-color: #b0a8ff; }
+    
+    .tab-content { display: none; }
+    .tab-content.ativo { display: block; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { color: #b0a8ff; font-weight: 600; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea { padding: 10px; background: #1a1f3a; border: 1px solid #333; color: #e0e0e0; border-radius: 4px; }
+    .form-group textarea { resize: vertical; }
+    
+    .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    .btn { padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; }
+    .btn-primary { background: #b0a8ff; color: #0a0e27; }
+    .btn-primary:hover { background: #c5bbff; }
+    .btn-danger { background: #ff6b6b; color: white; }
+    .btn-danger:hover { background: #ff8787; }
+    .btn-secondary { background: #333; color: #e0e0e0; }
+    .btn-secondary:hover { background: #444; }
+    
+    .table { width: 100%; border-collapse: collapse; }
+    .table th { background: #1a1f3a; color: #b0a8ff; padding: 12px; text-align: left; border-bottom: 2px solid #333; }
+    .table td { padding: 12px; border-bottom: 1px solid #333; }
+    .table tr:hover { background: #242a45; }
+    
+    .msg { padding: 12px; margin-bottom: 15px; border-radius: 4px; }
+    .msg.info { background: #223d3d; color: #6bffff; }
+    .msg.success { background: #223d22; color: #6bff6b; }
+    .msg.error { background: #3d2222; color: #ff6b6b; }
+    
+    .tag { display: inline-block; background: #333; color: #b0a8ff; padding: 4px 8px; border-radius: 3px; font-size: 0.85rem; margin-right: 5px; margin-bottom: 5px; }
+    
+    .loading { text-align: center; color: #888; padding: 20px; }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: #1a1f3a; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    
+    .checkbox-group { margin: 5px 0; }
+    .checkbox-group input[type="checkbox"] { margin-right: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚙️ Gerenciar Biblioteca de Livros</h1>
+      <button class="btn btn-secondary" onclick="window.location.href='/biblioteca'">👁️ Ver Biblioteca</button>
+    </div>
+
+    <div id="msgArea"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn ativo" onclick="trocarTab('livros')">📚 Livros</button>
+      <button class="tab-btn" onclick="trocarTab('temas')">🏷️ Temas</button>
+      <button class="tab-btn" onclick="trocarTab('import')">📥 Importar</button>
+    </div>
+
+    <!-- Tab: Livros -->
+    <div id="tab-livros" class="tab-content ativo">
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="abrirNovofFormulario()">➕ Novo Livro</button>
+        <button class="btn btn-secondary" onclick="exportarLivros()">📥 Exportar CSV</button>
+      </div>
+
+      <div id="livrosTableContainer" class="loading">Carregando livros...</div>
+    </div>
+
+    <!-- Tab: Temas -->
+    <div id="tab-temas" class="tab-content">
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="abrirNovoTemaForm()">➕ Novo Tema</button>
+      </div>
+
+      <div id="temasTableContainer" class="loading">Carregando temas...</div>
+    </div>
+
+    <!-- Tab: Importar -->
+    <div id="tab-import" class="tab-content">
+      <div style="background: #1a1f3a; padding: 20px; border-radius: 4px;">
+        <h3 style="color: #b0a8ff;">📋 Importar Livros</h3>
+        
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label>Arquivo CSV (colunas: titulo, autor, isbn, editora, ano, idioma, descricao, temas)</label>
+          <input type="file" id="csvFile" accept=".csv" />
+        </div>
+
+        <button class="btn btn-primary" onclick="importarCSV()">📤 Importar CSV</button>
+
+        <div style="margin-top: 20px; padding: 15px; background: #0a0e27; border-radius: 4px; border-left: 4px solid #b0a8ff;">
+          <strong>Formato esperado:</strong>
+          <pre style="margin: 10px 0; color: #888; font-size: 0.85rem;">
+titulo,autor,isbn,editora,ano,idioma,descricao,temas
+"Liber Null","Peter J. Carroll","978-1578637669","Penumbra","2025","pt-BR","Obra fundamental","Magia do Caos|Ocultismo"
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Formulário de Livro -->
+  <div id="modalLivro" class="modal">
+    <div class="modal-content">
+      <h2 style="color: #b0a8ff; margin-top: 0;">Novo Livro</h2>
+      <form id="formLivro" onsubmit="salvarLivro(event)">
+        <input type="hidden" id="livroId" />
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div class="form-group">
+            <label>Título *</label>
+            <input type="text" id="livroTitulo" required />
+          </div>
+          <div class="form-group">
+            <label>Autor *</label>
+            <input type="text" id="livroAutor" required />
+          </div>
+          <div class="form-group">
+            <label>ISBN</label>
+            <input type="text" id="livroIsbn" placeholder="978-..." />
+          </div>
+          <div class="form-group">
+            <label>Editora</label>
+            <input type="text" id="livroEditora" />
+          </div>
+          <div class="form-group">
+            <label>Ano</label>
+            <input type="number" id="livroAno" min="1000" max="2099" />
+          </div>
+          <div class="form-group">
+            <label>Idioma</label>
+            <select id="livroIdioma">
+              <option value="pt-BR">Português (Brasil)</option>
+              <option value="pt">Português (Portugal)</option>
+              <option value="en">Inglês</option>
+              <option value="es">Espanhol</option>
+              <option value="fr">Francês</option>
+              <option value="de">Alemão</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Páginas</label>
+            <input type="number" id="livroPaginas" min="1" />
+          </div>
+          <div class="form-group">
+            <label>Nível Mínimo de Acesso</label>
+            <select id="livroNivel">
+              <option value="neofito">Neófito</option>
+              <option value="mago_n1">Mago N1</option>
+              <option value="mago_n2">Mago N2</option>
+              <option value="mago_n3">Mago N3</option>
+              <option value="mentor">Mentor</option>
+              <option value="sabio">Sábio</option>
+              <option value="mestre">Mestre</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label>Descrição</label>
+          <textarea id="livroDescricao" rows="4"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label>Nota de Acesso (ex: "Versão gratuita disponível em Open Library")</label>
+          <textarea id="livroNota" rows="2"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div class="form-group">
+            <label>URL de Acesso (PDF/Link Legal)</label>
+            <input type="url" id="livroUrl" />
+          </div>
+          <div class="form-group">
+            <label>URL Open Library</label>
+            <input type="url" id="livroUrlOL" />
+          </div>
+          <div class="form-group">
+            <label>URL Google Books</label>
+            <input type="url" id="livroUrlGB" />
+          </div>
+          <div class="form-group">
+            <label>URL Amazon</label>
+            <input type="url" id="livroUrlAmazon" />
+          </div>
+          <div class="form-group">
+            <label>URL Mercado Livre</label>
+            <input type="url" id="livroUrlML" />
+          </div>
+          <div class="form-group">
+            <label>URL FNAC</label>
+            <input type="url" id="livroUrlFnac" />
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="color: #b0a8ff; font-weight: 600; margin-bottom: 10px; display: block;">Temas</label>
+          <div id="temasCheckboxes" style="max-height: 200px; overflow-y: auto;"></div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary">💾 Salvar Livro</button>
+          <button type="button" class="btn btn-secondary" onclick="fecharModal('modalLivro')">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Formulário de Tema -->
+  <div id="modalTema" class="modal">
+    <div class="modal-content">
+      <h2 style="color: #b0a8ff; margin-top: 0;">Novo Tema</h2>
+      <form id="formTema" onsubmit="salvarTema(event)">
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label>Nome *</label>
+          <input type="text" id="temaNome" required />
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label>Descrição</label>
+          <textarea id="temaDescricao" rows="3"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label>Ordem de Exibição</label>
+          <input type="number" id="temaOrdem" value="0" min="0" />
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary">💾 Salvar Tema</button>
+          <button type="button" class="btn btn-secondary" onclick="fecharModal('modalTema')">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('usuario') || sessionStorage.getItem('usuario') || '{}');
+
+    if (!token || (user?.tipo_usuario !== 'admin' && user?.papel !== 'admin')) {
+      window.location.href = './login.html';
+    }
+
+    function showMsg(text, type = 'info') {
+      const msgArea = document.getElementById('msgArea');
+      msgArea.innerHTML = `<div class="msg ${type}">${text}</div>`;
+      setTimeout(() => { msgArea.innerHTML = ''; }, 5000);
+    }
+
+    function trocarTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('ativo'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('ativo'));
+      document.getElementById(`tab-${tab}`).classList.add('ativo');
+      event.target.classList.add('ativo');
+
+      if (tab === 'livros') carregarLivros();
+      else if (tab === 'temas') carregarTemas();
+    }
+
+    function abrirModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function fecharModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    async function carregarLivros() {
+      const container = document.getElementById('livrosTableContainer');
+      container.innerHTML = '<div class="loading">Carregando livros...</div>';
+
+      try {
+        const res = await fetch('/biblioteca/livros?per_page=1000');
+        const data = await res.json();
+
+        if (!data.livros || data.livros.length === 0) {
+          container.innerHTML = '<p class="loading">Nenhum livro cadastrado.</p>';
+          return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'table';
+        table.innerHTML = \`
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Autor</th>
+              <th>ISBN</th>
+              <th>Temas</th>
+              <th>Acesso</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            \${data.livros.map(livro => \`
+              <tr>
+                <td>\${livro.titulo}</td>
+                <td>\${livro.autor}</td>
+                <td>\${livro.isbn || '-'}</td>
+                <td>\${livro.temas ? JSON.parse(livro.temas).map(t => \`<span class="tag">\${t.nome}</span>\`).join('') : '-'}</td>
+                <td>\${livro.nivel_minimo_acesso || 'neofito'}</td>
+                <td>
+                  <button class="btn btn-secondary" onclick="editarLivro(\${livro.id})" style="padding: 5px 10px; font-size: 0.85rem;">✏️</button>
+                  <button class="btn btn-danger" onclick="deletarLivro(\${livro.id})" style="padding: 5px 10px; font-size: 0.85rem;">🗑️</button>
+                </td>
+              </tr>
+            \`).join('')}
+          </tbody>
+        \`;
+        container.innerHTML = '';
+        container.appendChild(table);
+      } catch (error) {
+        showMsg(\`Erro ao carregar livros: \${error.message}\`, 'error');
+      }
+    }
+
+    async function carregarTemas() {
+      const container = document.getElementById('temasTableContainer');
+      container.innerHTML = '<div class="loading">Carregando temas...</div>';
+
+      try {
+        const res = await fetch('/biblioteca/temas');
+        const temas = await res.json();
+
+        if (!temas || temas.length === 0) {
+          container.innerHTML = '<p class="loading">Nenhum tema cadastrado.</p>';
+          return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'table';
+        table.innerHTML = \`
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Ordem</th>
+              <th>Ativo</th>
+            </tr>
+          </thead>
+          <tbody>
+            \${temas.map(tema => \`
+              <tr>
+                <td><strong>\${tema.nome}</strong></td>
+                <td>\${tema.descricao || '-'}</td>
+                <td>\${tema.ordem_exibicao}</td>
+                <td>\${tema.ativo ? '✅' : '❌'}</td>
+              </tr>
+            \`).join('')}
+          </tbody>
+        \`;
+        container.innerHTML = '';
+        container.appendChild(table);
+      } catch (error) {
+        showMsg(\`Erro ao carregar temas: \${error.message}\`, 'error');
+      }
+    }
+
+    async function carregarTemasCheckboxes() {
+      const res = await fetch('/biblioteca/temas');
+      const temas = await res.json();
+      const container = document.getElementById('temasCheckboxes');
+      container.innerHTML = temas.map(tema => \`
+        <div class="checkbox-group">
+          <input type="checkbox" value="\${tema.id}" name="tema" />
+          <label>\${tema.nome}</label>
+        </div>
+      \`).join('');
+    }
+
+    async function abrirNovofFormulario() {
+      document.getElementById('livroId').value = '';
+      document.getElementById('formLivro').reset();
+      await carregarTemasCheckboxes();
+      abrirModal('modalLivro');
+    }
+
+    async function abrirNovoTemaForm() {
+      document.getElementById('formTema').reset();
+      abrirModal('modalTema');
+    }
+
+    async function salvarLivro(event) {
+      event.preventDefault();
+
+      const titulo = document.getElementById('livroTitulo').value.trim();
+      const autor = document.getElementById('livroAutor').value.trim();
+      const isbn = document.getElementById('livroIsbn').value.trim() || null;
+
+      if (!titulo || !autor) {
+        showMsg('Título e Autor são obrigatórios.', 'error');
+        return;
+      }
+
+      const tema_ids = Array.from(document.querySelectorAll('#temasCheckboxes input[type="checkbox"]:checked')).map(c => Number(c.value));
+
+      const payload = {
+        titulo,
+        autor,
+        isbn,
+        editora: document.getElementById('livroEditora').value.trim() || null,
+        ano_publicacao: Number(document.getElementById('livroAno').value) || null,
+        idioma: document.getElementById('livroIdioma').value,
+        descricao: document.getElementById('livroDescricao').value.trim() || null,
+        nota_acesso: document.getElementById('livroNota').value.trim() || null,
+        url_acesso: document.getElementById('livroUrl').value.trim() || null,
+        paginas: Number(document.getElementById('livroPaginas').value) || null,
+        nivel_minimo_acesso: document.getElementById('livroNivel').value,
+        tema_ids,
+        urls: {
+          openlibrary: document.getElementById('livroUrlOL').value.trim() || null,
+          google_books: document.getElementById('livroUrlGB').value.trim() || null,
+          amazon: document.getElementById('livroUrlAmazon').value.trim() || null,
+          mercado_livre: document.getElementById('livroUrlML').value.trim() || null,
+          fnac: document.getElementById('livroUrlFnac').value.trim() || null
+        }
+      };
+
+      try {
+        const res = await fetch('/biblioteca/livros', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': \`Bearer \${token}\`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          showMsg('✅ Livro salvo com sucesso!', 'success');
+          fecharModal('modalLivro');
+          carregarLivros();
+        } else {
+          showMsg(data.erro || 'Erro ao salvar livro.', 'error');
+        }
+      } catch (error) {
+        showMsg(\`Erro: \${error.message}\`, 'error');
+      }
+    }
+
+    async function salvarTema(event) {
+      event.preventDefault();
+
+      const nome = document.getElementById('temaNome').value.trim();
+      if (!nome) {
+        showMsg('Nome do tema é obrigatório.', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/biblioteca/temas', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': \`Bearer \${token}\`
+          },
+          body: JSON.stringify({
+            nome,
+            descricao: document.getElementById('temaDescricao').value.trim() || null,
+            ordem_exibicao: Number(document.getElementById('temaOrdem').value)
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          showMsg('✅ Tema criado com sucesso!', 'success');
+          fecharModal('modalTema');
+          carregarTemas();
+        } else {
+          showMsg(data.erro || 'Erro ao criar tema.', 'error');
+        }
+      } catch (error) {
+        showMsg(\`Erro: \${error.message}\`, 'error');
+      }
+    }
+
+    function exportarLivros() {
+      showMsg('📥 Exportação em desenvolvimento.', 'info');
+    }
+
+    function importarCSV() {
+      showMsg('📤 Importação em desenvolvimento.', 'info');
+    }
+
+    async function deletarLivro(id) {
+      if (!confirm('Tem certeza que deseja deletar este livro?')) return;
+
+      try {
+        const res = await fetch(\`/biblioteca/livros/\${id}\`, {
+          method: 'DELETE',
+          headers: { 'Authorization': \`Bearer \${token}\` }
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          showMsg('✅ Livro deletado!', 'success');
+          carregarLivros();
+        } else {
+          showMsg(data.erro || 'Erro ao deletar.', 'error');
+        }
+      } catch (error) {
+        showMsg(\`Erro: \${error.message}\`, 'error');
+      }
+    }
+
+    function editarLivro(id) {
+      showMsg('✏️ Edição em desenvolvimento.', 'info');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarLivros();
+    });
+  </script>
+</body>
+</html>

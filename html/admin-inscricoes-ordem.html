@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | Inscricoes da Ordem</title>
+  <style>
+    :root {
+      --bg: #0b1119;
+      --panel: #121c2a;
+      --line: #2c4159;
+      --text: #eef5ff;
+      --muted: #9fb5cb;
+      --accent: #f3be49;
+      --ok: #2ac993;
+      --bad: #ff6f79;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 16% 14%, #1f3148 0%, transparent 42%),
+        radial-gradient(circle at 84% 86%, #2b1f37 0%, transparent 46%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+    .wrap {
+      width: min(1220px, 96vw);
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.45rem;
+    }
+    .muted { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+      color: #fff;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    label { color: var(--muted); font-size: 0.86rem; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0f1824;
+      color: var(--text);
+      padding: 9px;
+      font-family: inherit;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button, .btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 12px;
+      background: #17283d;
+      color: var(--text);
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn.accent, button.accent {
+      background: var(--accent);
+      border-color: #c9a344;
+      color: #1a1306;
+    }
+    .btn.ok, button.ok {
+      background: #173828;
+      border-color: #2b7450;
+      color: #d3ffe7;
+    }
+    .btn.bad, button.bad {
+      background: #3b1922;
+      border-color: #7d3446;
+      color: #ffd9e1;
+    }
+    .msg {
+      margin-top: 8px;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px solid #2f4663;
+      background: #13263a;
+      color: #d7edff;
+      display: none;
+      font-size: 0.9rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #101824;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 920px;
+      font-size: 0.88rem;
+    }
+    th, td {
+      border-bottom: 1px solid #203248;
+      padding: 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.3px;
+      color: var(--accent);
+      background: #142133;
+    }
+    .tag {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+    .tag.pendente { background: #5d4714; color: #ffe8ae; }
+    .tag.aprovado { background: #234d32; color: #ccffe0; }
+    .tag.negado { background: #4a202b; color: #ffd8e0; }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <h1>Inscricoes da Ordem</h1>
+        <p class="muted" id="whoami">Carregando sessao...</p>
+      </div>
+      <div class="toolbar">
+        <a class="btn" href="./area-adm-1.html">Voltar ao Painel Mestre</a>
+        <button id="refreshBtn" type="button">Atualizar</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Cadastro interno simplificado</h2>
+        <p class="muted">Para quem ja e da Ordem e so precisa entrar no fluxo de aprovacao.</p>
+        <form id="formInterno">
+          <div class="field">
+            <label for="nome">Nome</label>
+            <input id="nome" required placeholder="Nome completo" />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" required placeholder="email@dominio.com" />
+          </div>
+          <div class="field">
+            <label for="telefone">Telefone</label>
+            <input id="telefone" placeholder="(xx) xxxxx-xxxx" />
+          </div>
+          <div class="field">
+            <label for="obs">Observacao interna</label>
+            <textarea id="obs" placeholder="Ex: Membro ativo ha 2 anos"></textarea>
+          </div>
+          <button class="accent" type="submit">Criar inscricao interna</button>
+          <div id="msgInterno" class="msg"></div>
+        </form>
+      </article>
+
+      <article class="card">
+        <h2>Filtro rapido</h2>
+        <div class="field">
+          <label for="search">Buscar por nome ou email</label>
+          <input id="search" placeholder="Digite para filtrar" />
+        </div>
+        <div class="field">
+          <label for="statusFilter">Status</label>
+          <select id="statusFilter">
+            <option value="">Todos</option>
+            <option value="pendente">Pendente</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="negado">Negado</option>
+          </select>
+        </div>
+        <p class="muted">Use Aprovar para gerar RA automaticamente e liberar o cadastro final.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Fila de inscricoes</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>RA</th>
+              <th>Data inscricao</th>
+              <th>Acoes</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyInscricoes">
+            <tr><td colspan="7">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="msgLista" class="msg"></div>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || { apiUrl: (path) => path };
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = './login.html';
+    }
+
+    if (!['admin', 'ti'].includes(String(user.tipo || '').toLowerCase())) {
+      alert('Acesso permitido apenas para admin/TI.');
+      window.location.href = './dashboard-TI.html';
+    }
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    let inscricoesCache = [];
+
+    document.getElementById('whoami').textContent = `Sessao: ${user.nome || 'Administrador'} (${user.tipo || 'admin'})`;
+
+    function showMsg(id, text, isError = false) {
+      const el = document.getElementById(id);
+      el.style.display = 'block';
+      el.textContent = text;
+      el.style.background = isError ? '#391a21' : '#13263a';
+      el.style.borderColor = isError ? '#7e3445' : '#2f4663';
+      el.style.color = isError ? '#ffd7df' : '#d7edff';
+    }
+
+    function formatDate(value) {
+      return value ? new Date(value).toLocaleString('pt-BR') : '-';
+    }
+
+    function statusTag(status) {
+      const safe = String(status || 'pendente').toLowerCase();
+      return `<span class="tag ${safe}">${safe}</span>`;
+    }
+
+    function applyFilters() {
+      const query = String(document.getElementById('search').value || '').trim().toLowerCase();
+      const status = String(document.getElementById('statusFilter').value || '').trim().toLowerCase();
+
+      const filtered = inscricoesCache.filter((item) => {
+        const textOk = !query
+          || String(item.nome || '').toLowerCase().includes(query)
+          || String(item.email || '').toLowerCase().includes(query);
+        const statusOk = !status || String(item.status || '').toLowerCase() === status;
+        return textOk && statusOk;
+      });
+
+      renderInscricoes(filtered);
+    }
+
+    function renderInscricoes(list) {
+      const tbody = document.getElementById('tbodyInscricoes');
+      if (!Array.isArray(list) || !list.length) {
+        tbody.innerHTML = '<tr><td colspan="7">Nenhuma inscricao encontrada.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map((item) => {
+        const canApprove = String(item.status || '').toLowerCase() !== 'aprovado';
+        return `
+          <tr>
+            <td>${item.id}</td>
+            <td>${item.nome || '-'}</td>
+            <td>${item.email || '-'}</td>
+            <td>${statusTag(item.status)}</td>
+            <td>${item.ra_codigo || '-'}</td>
+            <td>${formatDate(item.data_inscricao)}</td>
+            <td>
+              <div class="toolbar">
+                ${canApprove ? `<button class="ok" type="button" data-action="aprovar" data-id="${item.id}">Aprovar</button>` : ''}
+                <button class="bad" type="button" data-action="negar" data-id="${item.id}">Negar</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function loadInscricoes() {
+      const response = await fetch(runtime.apiUrl('/admin/inscricoes-lista'), { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json().catch(() => []);
+      if (!response.ok) throw new Error(data?.erro || 'Falha ao carregar inscricoes.');
+      inscricoesCache = Array.isArray(data) ? data : [];
+      applyFilters();
+    }
+
+    async function createInscricaoInterna(payload) {
+      const response = await fetch(runtime.apiUrl('/inscricao'), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.erro || 'Falha ao criar inscricao interna.');
+      return data;
+    }
+
+    async function aprovarInscricao(id) {
+      const response = await fetch(runtime.apiUrl(`/admin/inscricoes/${id}/aprovar`), {
+        method: 'POST',
+        headers
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.erro || 'Falha ao aprovar inscricao.');
+      return data;
+    }
+
+    async function negarInscricao(id) {
+      const response = await fetch(runtime.apiUrl('/admin/decisao-inscricao'), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ id: Number(id), status: 'negado' })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.erro || 'Falha ao negar inscricao.');
+      return data;
+    }
+
+    document.getElementById('formInterno').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = {
+        nome: String(document.getElementById('nome').value || '').trim(),
+        email: String(document.getElementById('email').value || '').trim().toLowerCase(),
+        telefone: String(document.getElementById('telefone').value || '').trim(),
+        respostas: String(document.getElementById('obs').value || '').trim() || 'Inscricao interna simplificada por administrador.'
+      };
+
+      try {
+        const created = await createInscricaoInterna(payload);
+        document.getElementById('formInterno').reset();
+        showMsg('msgInterno', `Inscricao interna criada com sucesso (ID ${created.id}).`);
+        await loadInscricoes();
+      } catch (error) {
+        showMsg('msgInterno', String(error?.message || 'Erro inesperado.'), true);
+      }
+    });
+
+    document.getElementById('tbodyInscricoes').addEventListener('click', async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const action = target.getAttribute('data-action');
+      const id = Number(target.getAttribute('data-id'));
+      if (!action || !id) return;
+
+      try {
+        if (action === 'aprovar') {
+          const data = await aprovarInscricao(id);
+          showMsg('msgLista', `Inscricao ${id} aprovada com RA ${data.ra_codigo || 'gerado'}.`);
+        }
+        if (action === 'negar') {
+          await negarInscricao(id);
+          showMsg('msgLista', `Inscricao ${id} marcada como negada.`);
+        }
+        await loadInscricoes();
+      } catch (error) {
+        showMsg('msgLista', String(error?.message || 'Erro ao processar acao.'), true);
+      }
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      loadInscricoes().catch((error) => showMsg('msgLista', String(error?.message || 'Erro inesperado.'), true));
+    });
+
+    document.getElementById('search').addEventListener('input', applyFilters);
+    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+
+    loadInscricoes().catch((error) => showMsg('msgLista', String(error?.message || 'Erro inesperado.'), true));
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

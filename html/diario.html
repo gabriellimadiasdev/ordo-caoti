@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diario Pessoal | Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <style>
+    :root {
+      --bg: #080808;
+      --panel: #141414;
+      --line: #2a2a2a;
+      --text: #f5f5f5;
+      --muted: #c7c7c7;
+      --gold: #f1c232;
+      --lilac: #b997ff;
+      --danger: #ff6f7d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: radial-gradient(circle at top right, #262626 0%, transparent 35%), var(--bg);
+      font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+    }
+    .wrap {
+      width: min(1100px, 94vw);
+      margin: 24px auto;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 16px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      color: var(--gold);
+      font-size: 1.35rem;
+      letter-spacing: 0.3px;
+    }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .field { display: grid; gap: 6px; margin: 10px 0; }
+    label { font-size: 0.84rem; color: var(--muted); }
+    input, textarea, select {
+      border: 1px solid #3a3a3a;
+      border-radius: 10px;
+      background: #0f0f0f;
+      color: var(--text);
+      padding: 9px 10px;
+      font: inherit;
+    }
+    textarea { min-height: 140px; resize: vertical; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #1f1f1f;
+      color: var(--text);
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--gold), #ffe08b);
+      border-color: #e0ba4e;
+      color: #151515;
+    }
+    .btn.secondary {
+      border-color: #5f4d8b;
+      background: #261f36;
+      color: #eadfff;
+    }
+    .msg {
+      margin-top: 8px;
+      border: 1px solid #3d4f6f;
+      border-radius: 10px;
+      background: #1a2230;
+      color: #e3edff;
+      padding: 8px 10px;
+      display: none;
+      font-size: 0.9rem;
+    }
+    .list { display: grid; gap: 10px; }
+    .entry {
+      border: 1px solid #303030;
+      border-left: 4px solid var(--lilac);
+      border-radius: 10px;
+      background: #101010;
+      padding: 10px;
+    }
+    .entry h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      color: var(--gold);
+    }
+    .entry .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 7px; }
+    .empty {
+      border: 1px dashed #444;
+      border-radius: 10px;
+      padding: 10px;
+      color: var(--muted);
+      text-align: center;
+    }
+    @media (max-width: 940px) {
+      .wrap { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Diario Pessoal</h1>
+      <p class="muted">Registro pessoal com visibilidade obrigatoria para supervisao.</p>
+      <form id="diario-form">
+        <div class="field">
+          <label for="titulo">Titulo</label>
+          <input id="titulo" name="titulo" maxlength="180" placeholder="Ex: Pratica da Lua Crescente" />
+        </div>
+        <div class="field">
+          <label for="sentimento">Sentimento (opcional)</label>
+          <input id="sentimento" name="sentimento" maxlength="40" placeholder="calmo, focado, intenso..." />
+        </div>
+        <div class="field">
+          <label for="conteudo">Conteudo</label>
+          <textarea id="conteudo" name="conteudo" required placeholder="Escreveu, ficou salvo."></textarea>
+        </div>
+        <div class="field">
+          <label for="visivel">Visivel para supervisao</label>
+          <select id="visivel" name="visivel" required>
+            <option value="true" selected>Sim (obrigatorio)</option>
+          </select>
+          <small class="muted">Este registro deve permanecer visivel para supervisao.</small>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="submit">Salvar no diario</button>
+          <a class="btn secondary" href="/dashboard-aluno">Voltar ao dashboard</a>
+        </div>
+        <div id="msg" class="msg"></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h1>Ultimos Registros</h1>
+      <div id="entries" class="list"></div>
+    </section>
+  </main>
+
+  <script src="/js/runtime-api.js"></script>
+  <script>
+    const form = document.getElementById('diario-form');
+    const entries = document.getElementById('entries');
+    const msg = document.getElementById('msg');
+
+    function formatDate(value) {
+      if (!value) return '-';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('pt-BR');
+    }
+
+    function showMessage(text, isError = false) {
+      msg.style.display = 'block';
+      msg.style.borderColor = isError ? '#6f3d4d' : '#3d4f6f';
+      msg.style.background = isError ? '#2f1822' : '#1a2230';
+      msg.style.color = isError ? '#ffd8df' : '#e3edff';
+      msg.textContent = text;
+    }
+
+    function renderEntries(list) {
+      if (!Array.isArray(list) || !list.length) {
+        entries.innerHTML = '<div class="empty">Nenhum registro ainda.</div>';
+        return;
+      }
+
+      entries.innerHTML = list.map((item) => {
+        const titulo = item.titulo ? String(item.titulo) : 'Entrada sem titulo';
+        const sentimento = item.sentimento ? ` | Sentimento: ${item.sentimento}` : '';
+        const conteudo = item.conteudo_texto ? String(item.conteudo_texto) : '';
+        return `
+          <article class="entry">
+            <h3>${titulo}</h3>
+            <div class="meta">${formatDate(item.criado_em)}${sentimento}</div>
+            <p>${conteudo}</p>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadEntries() {
+      const response = await window.ordoRuntime.apiFetch('/diario/pessoal');
+      if (!response.ok) throw new Error('Falha ao carregar diario.');
+      const data = await response.json();
+      renderEntries(data);
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      msg.style.display = 'none';
+
+      const payload = {
+        titulo: form.titulo.value.trim(),
+        sentimento: form.sentimento.value.trim(),
+        conteudo_texto: form.conteudo.value.trim(),
+        visivel_para_supervisao: true
+      };
+
+      try {
+        const response = await window.ordoRuntime.apiFetch('/diario/pessoal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao salvar diario.');
+        form.reset();
+        showMessage('Entrada salva com sucesso.');
+        await loadEntries();
+      } catch (error) {
+        showMessage(String(error?.message || 'Erro inesperado.'), true);
+      }
+    });
+
+    loadEntries().catch((error) => showMessage(String(error?.message || 'Erro inesperado.'), true));
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

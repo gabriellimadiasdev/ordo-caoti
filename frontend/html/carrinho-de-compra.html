@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrinho - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #0d1118;
+      --panel: #172131;
+      --line: #34506f;
+      --text: #eef4ff;
+      --muted: #acc3dd;
+      --accent: #e9bf52;
+      --ok: #58d07b;
+      --bad: #ff8b95;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 11% 12%, #263a52 0%, transparent 42%),
+        radial-gradient(circle at 86% 86%, #2b3f38 0%, transparent 47%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 0.8rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.85rem;
+    }
+    h1, h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+    .item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+      border-bottom: 1px solid #2c4562;
+      padding: 0.6rem 0;
+      cursor: pointer;
+    }
+    .item:last-child {
+      border-bottom: none;
+    }
+    .item.active {
+      background: rgba(31, 54, 80, 0.48);
+      border-radius: 8px;
+      border-bottom-color: transparent;
+      padding: 0.6rem;
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .price {
+      color: var(--ok);
+      font-weight: 700;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .total {
+      border-top: 1px solid #34506f;
+      padding-top: 0.6rem;
+      margin-top: 0.6rem;
+      font-size: 1.12rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .btn {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.65rem;
+      background: #1a324e;
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 0.55rem;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #271806;
+      border-color: #c79b37;
+    }
+    .status {
+      min-height: 20px;
+      margin-top: 0.6rem;
+      color: var(--muted);
+    }
+    .status.error {
+      color: var(--bad);
+    }
+    @media (max-width: 900px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Carrinho de Compras</h1>
+      <p class="muted">Selecione o item que deseja processar no checkout unificado.</p>
+      <div id="itemsList"></div>
+    </section>
+
+    <aside class="card">
+      <h2>Resumo</h2>
+      <div class="row"><span>Itens</span><span id="sumItems">0</span></div>
+      <div class="row"><span>Subtotal</span><span id="sumSubtotal">R$ 0,00</span></div>
+      <div class="row total"><span>Total</span><span id="sumTotal">R$ 0,00</span></div>
+
+      <button class="btn primary" id="addToCartBtn" type="button">Adicionar 1 item e seguir</button>
+      <button class="btn" id="gotoCheckoutBtn" type="button">Abrir pagina de pagamento</button>
+      <a data-app-route="/loja" data-app-file="loja.html" href="./loja.html" class="btn" style="display:block;text-align:center;text-decoration:none;">Voltar para loja</a>
+
+      <p id="statusMsg" class="status"></p>
+    </aside>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {}
+    };
+    runtime.bindAppRoutes();
+
+    const itemsList = document.getElementById('itemsList');
+    const sumItems = document.getElementById('sumItems');
+    const sumSubtotal = document.getElementById('sumSubtotal');
+    const sumTotal = document.getElementById('sumTotal');
+    const statusMsg = document.getElementById('statusMsg');
+    const addToCartBtn = document.getElementById('addToCartBtn');
+
+    let products = [];
+    let selectedProduct = null;
+
+    function getToken() {
+      return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    }
+
+    function formatMoney(value) {
+      return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function setStatus(message, isError = false) {
+      statusMsg.textContent = message || '';
+      statusMsg.className = `status${isError ? ' error' : ''}`;
+    }
+
+    function updateSummary() {
+      if (!selectedProduct) {
+        sumItems.textContent = '0';
+        sumSubtotal.textContent = formatMoney(0);
+        sumTotal.textContent = formatMoney(0);
+        return;
+      }
+      const price = Number(selectedProduct.preco || 0);
+      sumItems.textContent = '1';
+      sumSubtotal.textContent = formatMoney(price);
+      sumTotal.textContent = formatMoney(price);
+    }
+
+    function renderProducts(rows) {
+      if (!rows.length) {
+        itemsList.innerHTML = '<p class="muted">Nenhum produto ativo encontrado.</p>';
+        selectedProduct = null;
+        updateSummary();
+        return;
+      }
+
+      selectedProduct = rows[0];
+      itemsList.innerHTML = rows.map((product) => `
+        <article class="item${selectedProduct && selectedProduct.id === product.id ? ' active' : ''}" data-id="${product.id}">
+          <div>
+            <strong>${product.nome}</strong>
+            <div class="muted">${product.descricao || 'Item da loja/escola Ordo Caoti.'}</div>
+          </div>
+          <div class="price">${formatMoney(product.preco)}</div>
+        </article>
+      `).join('');
+
+      itemsList.querySelectorAll('.item').forEach((row) => {
+        row.addEventListener('click', () => {
+          const chosenId = Number(row.getAttribute('data-id'));
+          selectedProduct = rows.find((product) => Number(product.id) === chosenId) || selectedProduct;
+          renderProducts(rows);
+          updateSummary();
+        });
+      });
+
+      updateSummary();
+    }
+
+    async function loadProducts() {
+      try {
+        const response = await fetch(runtime.apiUrl('/produtos'));
+        if (!response.ok) throw new Error('Falha ao carregar produtos.');
+        const list = await response.json();
+        products = Array.isArray(list) ? list.slice(0, 8) : [];
+        renderProducts(products);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function addSelectedToCart() {
+      const token = getToken();
+      if (!token) {
+        setStatus('Faca login antes de usar o carrinho.', true);
+        window.location.href = runtime.appRoute('/login', 'login.html');
+        return;
+      }
+      if (!selectedProduct?.id) {
+        setStatus('Selecione um produto valido.', true);
+        return;
+      }
+
+      addToCartBtn.disabled = true;
+      setStatus('Adicionando item no carrinho...');
+
+      try {
+        const response = await fetch(runtime.apiUrl('/loja/carrinho'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            produto_id: Number(selectedProduct.id),
+            tipo_item: 'produto',
+            quantidade: 1
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao montar carrinho.');
+        setStatus('Carrinho atualizado. Redirecionando para pagamento.');
+        window.location.href = runtime.appRoute('/loja/checkout', 'recolhimento-de-dados-de-pagamento.html');
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        addToCartBtn.disabled = false;
+      }
+    }
+
+    document.getElementById('gotoCheckoutBtn').addEventListener('click', () => {
+      window.location.href = runtime.appRoute('/loja/checkout', 'recolhimento-de-dados-de-pagamento.html');
+    });
+    addToCartBtn.addEventListener('click', addSelectedToCart);
+
+    loadProducts();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

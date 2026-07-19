@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loja Mística da Ordo Caoti</title>
+    <link rel="stylesheet" href="../css/style-login-loja.css">
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+    <main class="login-container">
+        <section class="login-box">
+            <header>
+                <h1>Grimório de Vendas</h1>
+                <p>Identifique-se para acessar os artefatos.</p>
+            </header>
+            
+            <form id="clienteLoginForm">
+                <div class="input-group">
+                    <label for="email">E-mail </label>
+                    <input type="email" id="email" name="email" required placeholder="seu@email.com">
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Senha Secreta</label>
+                                        <input type="password" id="password" name="password" required placeholder="********">
+                </div>
+
+                <button type="submit" class="btn-login">Entrar na Loja</button>
+                                <p id="statusMsg" style="min-height:18px;color:#cdd8e6;margin-top:0.6rem;"></p>
+                
+                <div class="form-footer">
+                    <a href="#">Esqueceu a senha?</a>
+                    <p>Novo por aqui? <a href="./cadastro-loja-cliente.html">Criar conta</a></p>
+                                        <p>Area lojista? <a data-app-route="/login/loja/lojista" data-app-file="login-loja-lojista.html" href="./login-loja-lojista.html">Entrar como lojista</a></p>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script src="../js/runtime-api.js"></script>
+    <script>
+        const runtime = window.ordoRuntime || { apiUrl: (path) => path, appRoute: (_route, file) => `./${file}` };
+        const form = document.getElementById('clienteLoginForm');
+        const statusMsg = document.getElementById('statusMsg');
+
+        function setStatus(message, isError = false) {
+            statusMsg.textContent = message || '';
+            statusMsg.style.color = isError ? '#ff97aa' : '#cdd8e6';
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            setStatus('');
+
+            const email = String(form.email.value || '').trim().toLowerCase();
+            const senha = String(form.password.value || '');
+
+            try {
+                const response = await fetch(runtime.apiUrl('/login'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha, session_type: 'persistent', perfil_login: 'cliente' })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data?.erro || 'Falha ao autenticar cliente.');
+
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
+
+                window.location.href = runtime.appRoute('/dashboard-cliente', 'dashboard-cliente.html');
+            } catch (error) {
+                setStatus(String(error?.message || 'Erro inesperado.'), true);
+            }
+        });
+    </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

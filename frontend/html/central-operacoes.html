@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central de Operacoes - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #081018;
+      --panel: #142232;
+      --line: #365270;
+      --text: #edf4ff;
+      --muted: #adc4de;
+      --accent: #f3be49;
+      --ok: #4acd85;
+      --bad: #ff8d9a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 14% 14%, #243a54 0%, transparent 42%),
+        radial-gradient(circle at 85% 85%, #2d243d 0%, transparent 46%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 1220px;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.8rem;
+    }
+    .top {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+    .top h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.42rem;
+    }
+    .who {
+      color: var(--muted);
+      margin-top: 0.3rem;
+      font-size: 0.92rem;
+    }
+    .actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #19314b;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.55rem 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #2b1d08;
+      border-color: #d2a03e;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 0.8rem;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 0.85rem;
+    }
+    .panel h2 {
+      margin: 0 0 0.65rem;
+      color: var(--accent);
+      font-size: 1.04rem;
+    }
+    .panel p {
+      margin: 0 0 0.6rem;
+      color: var(--muted);
+      line-height: 1.4;
+      font-size: 0.92rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      border: 1px solid #3b5777;
+      border-radius: 10px;
+      background: #0f1a2a;
+      color: var(--text);
+      padding: 0.72rem;
+      font-family: "Consolas", "Courier New", monospace;
+      resize: vertical;
+    }
+    .toolbar {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      margin-top: 0.6rem;
+    }
+    .status {
+      min-height: 20px;
+      margin-top: 0.55rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+    }
+    pre {
+      margin: 0;
+      border: 1px solid #355271;
+      border-radius: 10px;
+      background: #0f1a2a;
+      color: #dbe9ff;
+      padding: 0.65rem;
+      min-height: 210px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.84rem;
+    }
+    .template-list {
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 0.55rem;
+    }
+    .template-list button {
+      text-align: left;
+      border: 1px solid #3b5575;
+      border-radius: 8px;
+      background: #111f30;
+      color: #d3e4f8;
+      padding: 0.52rem;
+      cursor: pointer;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 0.82rem;
+    }
+    @media (max-width: 1000px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <h1>Central de Operacoes por Comando</h1>
+        <div id="whoami" class="who">Carregando sessao...</div>
+      </div>
+      <div class="actions">
+        <a class="btn" data-app-route="/dashboard-lojista" data-app-file="dashboard-lojista.html" href="./dashboard-lojista.html">Painel lojista</a>
+        <a class="btn" data-app-route="/live/central" data-app-file="live-center.html" href="./live-center.html">Live center</a>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Escreva o comando e clique em Executar</h2>
+        <p>Sem codificar: voce escreve em texto simples, clica no botao e a acao e enviada para as rotas prontas do sistema.</p>
+        <textarea id="commandInput" spellcheck="false">listar produtos</textarea>
+        <div class="toolbar">
+          <button id="runBtn" class="btn primary" type="button">Executar comando</button>
+          <button id="clearBtn" class="btn" type="button">Limpar</button>
+        </div>
+        <p id="statusMsg" class="status"></p>
+      </article>
+
+      <article class="panel">
+        <h2>Modelos prontos</h2>
+        <div class="template-list">
+          <button type="button" data-template="listar produtos">listar produtos</button>
+          <button type="button" data-template="produto: nome=Curso Basico; preco=79.9; tipo=digital; estoque=999; descricao=Curso introdutorio; contato=https://wa.me/5511999999999">produto: nome=...; preco=...; tipo=...; estoque=...; descricao=...; contato=...</button>
+          <button type="button" data-template="desativar produto 1001">desativar produto 1001</button>
+          <button type="button" data-template="aula: titulo=Aula ao vivo Modulo 1; materia=41; turma=5; inicio=2026-05-10 20:00; fim=2026-05-10 21:30; provider=interno; descricao=Introducao">aula: titulo=...; materia=...; turma=...; inicio=...; fim=...; provider=...</button>
+          <button type="button" data-template="listar aulas">listar aulas</button>
+          <button type="button" data-template="gerar link aula 801 provider=zoom">gerar link aula 801 provider=zoom</button>
+          <button type="button" data-template="entrar aula 801">entrar aula 801</button>
+          <button type="button" data-template="encerrar aula 801">encerrar aula 801</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Resposta da execucao</h2>
+      <pre id="outputPane">Aguardando comando...</pre>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      bindAppRoutes: () => {},
+      getUser: () => ({}),
+      getToken: () => localStorage.getItem("token") || sessionStorage.getItem("token") || ""
+    };
+    runtime.bindAppRoutes();
+
+    const token = runtime.getToken();
+    const user = runtime.getUser ? runtime.getUser() : JSON.parse(localStorage.getItem("user") || sessionStorage.getItem("user") || "{}");
+    const isLocalMode = token === "ti-local-mode";
+    const tipoUsuario = String(user?.tipo || user?.tipo_usuario || "").toLowerCase();
+
+    const commandInput = document.getElementById("commandInput");
+    const statusMsg = document.getElementById("statusMsg");
+    const outputPane = document.getElementById("outputPane");
+
+    if (!token) {
+      window.location.href = "/login";
+    }
+
+    document.getElementById("whoami").textContent = `Sessao: ${user?.nome || "Usuario"} (${tipoUsuario || "nao informado"})`;
+
+    function authHeaders(withJson = false) {
+      const headers = { Authorization: `Bearer ${token}` };
+      if (withJson) headers["Content-Type"] = "application/json";
+      return headers;
+    }
+
+    function printOutput(value) {
+      outputPane.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    }
+
+    function setStatus(text) {
+      statusMsg.textContent = text || "";
+    }
+
+    function parsePairs(text) {
+      const pairs = {};
+      String(text || "")
+        .split(";")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .forEach((item) => {
+          const idx = item.indexOf("=");
+          if (idx <= 0) return;
+          const key = item.slice(0, idx).trim().toLowerCase();
+          const value = item.slice(idx + 1).trim();
+          if (!key) return;
+          pairs[key] = value;
+        });
+      return pairs;
+    }
+
+    function normalizeDateInput(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return null;
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw)) return raw;
+      if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(raw)) return raw.replace(" ", "T");
+      return raw;
+    }
+
+    function parseCommand(commandRaw) {
+      const command = String(commandRaw || "").trim();
+      const lc = command.toLowerCase();
+
+      if (lc === "listar produtos") {
+        return { action: "listProducts" };
+      }
+      if (lc === "listar aulas") {
+        return { action: "listLiveRooms" };
+      }
+
+      let match = lc.match(/^desativar produto\s+(\d+)$/);
+      if (match) return { action: "toggleProduct", id: Number(match[1]), active: false };
+
+      match = lc.match(/^ativar produto\s+(\d+)$/);
+      if (match) return { action: "toggleProduct", id: Number(match[1]), active: true };
+
+      match = lc.match(/^excluir produto\s+(\d+)$/);
+      if (match) return { action: "deleteProduct", id: Number(match[1]) };
+
+      match = lc.match(/^entrar aula\s+(\d+)$/);
+      if (match) return { action: "enterRoom", id: Number(match[1]) };
+
+      match = lc.match(/^encerrar aula\s+(\d+)$/);
+      if (match) return { action: "closeRoom", id: Number(match[1]) };
+
+      match = lc.match(/^gerar link aula\s+(\d+)(?:\s+provider=([a-z_]+))?$/);
+      if (match) {
+        return {
+          action: "regenerateLink",
+          id: Number(match[1]),
+          provider: match[2] || "interno"
+        };
+      }
+
+      if (lc.startsWith("produto:")) {
+        const pairs = parsePairs(command.slice(command.indexOf(":") + 1));
+        return {
+          action: "createProduct",
+          payload: {
+            nome: pairs.nome || "",
+            preco: Number(pairs.preco || 0),
+            tipo: (pairs.tipo || "digital").toLowerCase(),
+            estoque: Number(pairs.estoque || 0),
+            descricao: pairs.descricao || "",
+            url_contato_direto: pairs.contato || pairs.url || null
+          }
+        };
+      }
+
+      if (lc.startsWith("aula:")) {
+        const pairs = parsePairs(command.slice(command.indexOf(":") + 1));
+        return {
+          action: "createRoom",
+          payload: {
+            titulo: pairs.titulo || "",
+            descricao: pairs.descricao || null,
+            materia_id: pairs.materia ? Number(pairs.materia) : null,
+            turma_id: pairs.turma ? Number(pairs.turma) : null,
+            inicio_previsto: normalizeDateInput(pairs.inicio),
+            fim_previsto: normalizeDateInput(pairs.fim),
+            provider: (pairs.provider || "interno").toLowerCase()
+          }
+        };
+      }
+
+      throw new Error("Comando nao reconhecido. Use um dos modelos prontos.");
+    }
+
+    async function fetchJson(path, options = {}) {
+      const response = await fetch(runtime.apiUrl(path), options);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.erro || `Falha na rota ${path}`);
+      }
+      return data;
+    }
+
+    async function executeAction(intent) {
+      if (isLocalMode) {
+        return {
+          local_mode: true,
+          intent,
+          mensagem: "Modo local ativo. Comando simulado sem alterar backend real."
+        };
+      }
+
+      if (intent.action === "listProducts") {
+        return fetchJson("/lojista/meus-produtos", { headers: authHeaders() });
+      }
+      if (intent.action === "listLiveRooms") {
+        return fetchJson("/live/salas", { headers: authHeaders() });
+      }
+      if (intent.action === "createProduct") {
+        return fetchJson("/lojista/produtos", {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify(intent.payload)
+        });
+      }
+      if (intent.action === "toggleProduct") {
+        return fetchJson(`/lojista/produtos/${intent.id}`, {
+          method: "PUT",
+          headers: authHeaders(true),
+          body: JSON.stringify({ ativo: Boolean(intent.active) })
+        });
+      }
+      if (intent.action === "deleteProduct") {
+        return fetchJson(`/lojista/produtos/${intent.id}`, {
+          method: "DELETE",
+          headers: authHeaders()
+        });
+      }
+      if (intent.action === "createRoom") {
+        return fetchJson("/live/salas", {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify(intent.payload)
+        });
+      }
+      if (intent.action === "regenerateLink") {
+        return fetchJson(`/live/salas/${intent.id}/gerar-link`, {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify({ provider: intent.provider })
+        });
+      }
+      if (intent.action === "enterRoom") {
+        return fetchJson(`/live/salas/${intent.id}/entrar`, {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify({
+            microfone_liberado: true,
+            camera_liberada: true,
+            tela_liberada: true
+          })
+        });
+      }
+      if (intent.action === "closeRoom") {
+        return fetchJson(`/live/salas/${intent.id}/encerrar`, {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify({
+            titulo: "Gravacao da aula",
+            descricao: "Encerramento via central de operacoes"
+          })
+        });
+      }
+
+      throw new Error("Acao nao implementada.");
+    }
+
+    async function runCommand() {
+      const command = commandInput.value.trim();
+      if (!command) {
+        setStatus("Digite um comando.");
+        return;
+      }
+
+      setStatus("Executando comando...");
+      printOutput("Processando...");
+
+      try {
+        const intent = parseCommand(command);
+        const result = await executeAction(intent);
+        printOutput({ intent, result });
+        setStatus("Comando executado com sucesso.");
+
+        const maybeExternal = String(result?.sala?.link_sala || "").trim();
+        if (/^https?:\/\//i.test(maybeExternal) && intent.action === "enterRoom") {
+          window.open(maybeExternal, "_blank", "noopener,noreferrer");
+        }
+      } catch (error) {
+        printOutput({ erro: error.message });
+        setStatus(error.message);
+      }
+    }
+
+    document.getElementById("runBtn").addEventListener("click", runCommand);
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      commandInput.value = "";
+      printOutput("Aguardando comando...");
+      setStatus("");
+      commandInput.focus();
+    });
+
+    document.querySelectorAll("[data-template]").forEach((button) => {
+      button.addEventListener("click", () => {
+        commandInput.value = button.getAttribute("data-template") || "";
+        commandInput.focus();
+      });
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

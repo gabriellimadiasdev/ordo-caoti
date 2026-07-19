@@ -1,0 +1,305 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Cadastro - Ordo Caoti</title>
+    <script src="../js/runtime-api.js"></script>
+    <script>
+        const runtime = window.ordoRuntime || null;
+
+        function toApiUrl(path) {
+            if (runtime && typeof runtime.apiUrl === 'function') {
+                return runtime.apiUrl(path);
+            }
+            return path;
+        }
+
+        function toAppRoute(routePath, htmlFile) {
+            if (runtime && typeof runtime.appRoute === 'function') {
+                return runtime.appRoute(routePath, htmlFile);
+            }
+            return routePath;
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background-color: #2a2a2a;
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        h2 {
+            color: #c8a2c8;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #333;
+            color: #fff;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #c8a2c8;
+            outline: none;
+        }
+        input[readonly] {
+            background-color: #252525;
+            color: #888;
+            cursor: not-allowed;
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background-color: #c8a2c8;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #b08cb0;
+        }
+        .error-msg {
+            background-color: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+            padding: 0.8rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        .checkbox-container input {
+            width: auto;
+            margin-top: 4px;
+        }
+        .captcha-box {
+            background-color: #333;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #444;
+            text-align: left;
+        }
+        .captcha-label {
+            font-weight: bold;
+            color: var(--color-yellow, #ffc400);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .password-req {
+            font-size: 0.8rem;
+            color: #888;
+            text-align: left;
+            margin-top: -10px;
+            margin-bottom: 1rem;
+        }
+        .success-actions {
+            display: none;
+            margin-top: 2rem;
+        }
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid #c8a2c8;
+            color: #c8a2c8;
+            margin-top: 1rem;
+        }
+        .btn-secondary:hover {
+            background-color: rgba(200, 162, 200, 0.1);
+        }
+    </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+
+    <div class="login-card">
+        <div id="formContainer">
+            <h2>Finalizar Cadastro</h2>
+            <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 1.5rem;">Defina sua senha para acessar o portal.</p>
+            
+            <div id="errorMsg" class="error-msg"></div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="email">E-mail Aprovado</label>
+                    <input type="email" id="email" name="email" required readonly placeholder="Seu e-mail de inscricao">
+                </div>
+
+                <div class="form-group">
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" id="nome" name="nome" required placeholder="Como prefere ser chamado">
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" required placeholder="Crie sua senha segura">
+                </div>
+                <div class="password-req">
+                    Minimo 8 caracteres, 1 maiuscula, 1 numero e 1 simbolo.
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmaSenha">Confirmar Senha</label>
+                    <input type="password" id="confirmaSenha" name="confirmaSenha" required placeholder="Repita a senha">
+                </div>
+
+                <!-- Checkbox de Acordo -->
+                <div class="checkbox-container">
+                    <input type="checkbox" id="termos" required>
+                    <label for="termos">Eu reli e revisei tudo o que foi passado a mim durante o processo de selecao e estou de acordo.</label>
+                </div>
+
+                <!-- Captcha Simples -->
+                <div class="captcha-box">
+                    <label class="captcha-label" id="captchaLabel">Resolva: 0 + 0 = ?</label>
+                    <input type="number" id="captchaInput" required placeholder="Digite o resultado">
+                </div>
+
+                <button type="submit">Criar Conta</button>
+            </form>
+        </div>
+
+        <!-- Tela de Sucesso -->
+        <div id="successContainer" class="success-actions">
+            <h2 style="color: #4cd137;">Cadastro Realizado!</h2>
+            <p>Sua jornada na Ordo Caoti comeca agora.</p>
+            <button onclick="window.location.href=toAppRoute('/login', 'login.html')">Ir para Login</button>
+            <button class="btn-secondary" onclick="window.location.href='/'">Voltar ao Inicio</button>
+        </div>
+    </div>
+
+    <script>
+        // Logica do captcha
+        let captchaSum = 0;
+        function gerarCaptcha() {
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            captchaSum = num1 + num2;
+            document.getElementById('captchaLabel').textContent = `Resolva para provar que e humano: ${num1} + ${num2} = ?`;
+            document.getElementById('captchaInput').value = '';
+        }
+        gerarCaptcha(); // Inicia ao carregar
+
+        // Pega o email da URL (ex: /registro?email=gabriel@teste.com)
+        const params = new URLSearchParams(window.location.search);
+        const emailParam = params.get('email');
+        if (emailParam) {
+            document.getElementById('email').value = emailParam;
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const nome = document.getElementById('nome').value;
+            const senha = document.getElementById('senha').value;
+            const confirmaSenha = document.getElementById('confirmaSenha').value;
+            const captchaInput = parseInt(document.getElementById('captchaInput').value);
+            const termos = document.getElementById('termos').checked;
+            const errorMsg = document.getElementById('errorMsg');
+
+            errorMsg.style.display = 'none';
+
+            // Validacao do checkbox
+            if (!termos) {
+                errorMsg.textContent = 'Voce precisa confirmar que leu e revisou o processo.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // Validacao do captcha
+            if (captchaInput !== captchaSum) {
+                errorMsg.textContent = 'Captcha incorreto. Tente novamente.';
+                errorMsg.style.display = 'block';
+                gerarCaptcha();
+                return;
+            }
+
+            if (senha !== confirmaSenha) {
+                errorMsg.textContent = 'As senhas nao coincidem.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // Regex de Senha Forte
+            const senhaRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!senhaRegex.test(senha)) {
+                errorMsg.textContent = 'A senha deve ter no minimo 8 caracteres, 1 maiuscula, 1 numero e 1 simbolo.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(toApiUrl('/concluir-cadastro'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, nome, senha })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Esconde formulario e mostra botoes de sucesso
+                    document.getElementById('formContainer').style.display = 'none';
+                    document.getElementById('successContainer').style.display = 'block';
+                } else {
+                    errorMsg.textContent = data.erro || 'Erro ao criar conta.';
+                    errorMsg.style.display = 'block';
+                    gerarCaptcha(); // Reseta o captcha em caso de erro
+                }
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = 'Erro de conexao com o servidor.';
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

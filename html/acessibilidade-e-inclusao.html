@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central de Acessibilidade - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0b1118;
+      color: #edf4ff;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.8rem;
+    }
+    .card {
+      background: #162233;
+      border: 1px solid #36516f;
+      border-radius: 12px;
+      padding: 0.85rem;
+    }
+    h1, h2 {
+      margin-top: 0;
+      color: #efbf4c;
+    }
+    .actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid #36516f;
+      border-radius: 8px;
+      background: #19324d;
+      color: #edf4ff;
+      text-decoration: none;
+      padding: 0.52rem 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .list {
+      display: grid;
+      gap: 0.35rem;
+      color: #b2c8df;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Central de Acessibilidade e Inclusão</h1>
+      <p>Esta página oferece atalhos funcionais para recursos de acessibilidade do site e do dispositivo.</p>
+      <div class="actions">
+        <a data-app-route="/dashboard" data-app-file="dashboard.html" href="./dashboard.html" class="btn">Ir para Dashboard</a>
+        <a data-app-route="/biblioteca" data-app-file="biblioteca.html" href="./biblioteca.html" class="btn">Abrir Biblioteca</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Recursos ativos no site</h2>
+      <div class="list">
+        <span>1. Barra de acessibilidade com alto contraste, fonte legível, espaçamento e foco.</span>
+        <span>2. Modo de redução de movimento.</span>
+        <span>3. Modos para daltonismo (protanopia, deuteranopia, tritanopia).</span>
+        <span>4. Leitura em voz (text-to-speech) pelo navegador.</span>
+        <span>5. Atalho de pular para conteúdo principal.</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Libras e voz</h2>
+      <p>O widget de Libras (VLibras) e o leitor de voz são carregados no shell global quando disponíveis no navegador/conexão.</p>
+      <div class="actions">
+        <button id="readPageBtn" type="button" class="btn">Ler conteúdo da página</button>
+        <button id="stopReadBtn" type="button" class="btn">Parar leitura</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || { bindAppRoutes: () => {} };
+    runtime.bindAppRoutes();
+
+    document.getElementById('readPageBtn').addEventListener('click', () => {
+      if (!('speechSynthesis' in window)) return;
+      const utter = new SpeechSynthesisUtterance(document.body.innerText.slice(0, 1500));
+      utter.lang = 'pt-BR';
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    });
+    document.getElementById('stopReadBtn').addEventListener('click', () => {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

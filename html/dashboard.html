@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #0f141c;
+      color: #edf3ff;
+      padding: 1rem;
+    }
+    .card {
+      width: min(560px, 100%);
+      border: 1px solid #2f425d;
+      border-radius: 14px;
+      background: #172130;
+      padding: 1.3rem;
+    }
+    .actions {
+      display: grid;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+    a {
+      text-decoration: none;
+      color: #111;
+      background: #ffc400;
+      border-radius: 8px;
+      padding: 0.75rem;
+      text-align: center;
+      font-weight: 700;
+    }
+  </style>
+
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <main class="card">
+    <h1>Redirecionamento de Dashboard</h1>
+    <p id="status">Identificando perfil de acesso...</p>
+    <div class="actions">
+      <a href="/dashboard-cliente">Ir para painel do cliente</a>
+      <a href="/dashboard-lojista">Ir para painel do lojista</a>
+      <a href="/dashboard-aluno">Ir para painel do aluno</a>
+      <a href="/dashboard-professor">Ir para painel do professor</a>
+      <a href="/admin/master">Ir para painel admin</a>
+    </div>
+  </main>
+
+  <script>
+    (function routeByProfile() {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+        const tipo = String(user?.tipo || user?.tipo_usuario || '').toLowerCase();
+        const routeByTipo = {
+          aluno: '/dashboard-aluno',
+          professor: '/dashboard-professor',
+          admin: '/admin/master',
+          ti: '/dashboard-TI',
+          lojista: '/dashboard-lojista'
+        };
+
+        if (routeByTipo[tipo]) {
+          window.location.replace(routeByTipo[tipo]);
+          return;
+        }
+
+        document.getElementById('status').textContent = 'Perfil nÃ£o identificado. Selecione um painel manualmente.';
+      } catch (_) {
+        document.getElementById('status').textContent = 'Falha ao identificar sessÃ£o local.';
+      }
+    })();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

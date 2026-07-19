@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento Recusado - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 540px;
+      background: #111;
+      border: 1px solid #7e2f39;
+      border-radius: 14px;
+      padding: 1.3rem;
+    }
+
+    .icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      background: #4a1d25;
+      color: #ffb3bc;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #ffb3bc;
+    }
+
+    .msg-box {
+      background: #1a1a1a;
+      border: 1px solid #2f2f2f;
+      border-radius: 10px;
+      padding: 0.9rem;
+      line-height: 1.45;
+      color: #d0d0d0;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      text-align: center;
+      text-decoration: none;
+      padding: 0.72rem;
+      border-radius: 8px;
+      font-weight: 700;
+      border: 1px solid #424242;
+      color: #fff;
+      background: transparent;
+    }
+
+    .btn.primary {
+      background: #ffc400;
+      color: #111;
+      border-color: #ffc400;
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <main class="card">
+    <div class="icon">?</div>
+    <h1>Nï¿½o foi possï¿½vel concluir</h1>
+    <div id="error-message" class="msg-box">A transaï¿½ï¿½o foi recusada. Revise os dados e tente novamente.</div>
+    <div class="actions">
+      <a href="./recolhimento-de-dados-de-pagamento.html" class="btn primary">Tentar novamente</a>
+      <a href="./loja.html" class="btn">Voltar para loja</a>
+    </div>
+  </main>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusDetail = urlParams.get('status_detail');
+
+    const errorMap = {
+      cc_rejected_insufficient_amount: 'Seu cartï¿½o nï¿½o possui saldo suficiente.',
+      cc_rejected_bad_filled_card_number: 'O nï¿½mero do cartï¿½o estï¿½ incorreto.',
+      cc_rejected_bad_filled_date: 'A data de validade estï¿½ invï¿½lida.',
+      cc_rejected_bad_filled_other: 'Os dados do cartï¿½o estï¿½o incorretos.',
+      cc_rejected_call_for_authorize: 'A operadora exige autorizaï¿½ï¿½o.',
+      cc_rejected_invalid_installments: 'Parcelamento nï¿½o permitido para o cartï¿½o.',
+      cc_rejected_max_attempts: 'Muitas tentativas realizadas. Tente outro mï¿½todo.',
+      cc_rejected_other_reason: 'Pagamento recusado pela operadora.',
+      order_creation_failed: 'A criaï¿½ï¿½o da order falhou no backend.'
+    };
+
+    if (statusDetail) {
+      document.getElementById('error-message').textContent =
+        errorMap[statusDetail] || `Transaï¿½ï¿½o recusada (${statusDetail}).`;
+    }
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+
