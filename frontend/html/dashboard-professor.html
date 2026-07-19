@@ -1,0 +1,984 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard do Professor - Ordo Caoti</title>
+  <style>
+    :root {
+      --bg: #0a0f16;
+      --side: #101925;
+      --panel: #152132;
+      --line: #2d415a;
+      --text: #eef5ff;
+      --muted: #9db6cf;
+      --accent: #f3be49;
+      --ok: #2ac993;
+      --bad: #ff6f79;
+      --cyan: #3bd6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 18%, #203247 0%, transparent 42%),
+        radial-gradient(circle at 84% 86%, #312239 0%, transparent 46%),
+        var(--bg);
+      min-height: 100vh;
+      display: flex;
+    }
+    .mobile-toggle {
+      display: none;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 120;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #16263a;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .sidebar {
+      width: 270px;
+      background: var(--side);
+      border-right: 1px solid #213346;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .profile {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #142131;
+      padding: 12px;
+    }
+    .profile h3 {
+      margin: 0 0 6px;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+    .profile p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+    .nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .nav button {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px;
+      background: transparent;
+      color: #bbccdf;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .nav button:hover,
+    .nav button.active {
+      border-color: #385277;
+      color: var(--accent);
+      background: #18283b;
+    }
+    .logout {
+      color: var(--bad) !important;
+      border-color: #5f2f3e !important;
+      background: #2f1720 !important;
+    }
+    .main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .section {
+      display: none;
+      animation: fadeIn 0.22s ease;
+    }
+    .section.active { display: block; }
+    .title {
+      margin: 0 0 12px;
+      color: var(--accent);
+      border-bottom: 1px solid #263a53;
+      padding-bottom: 8px;
+      font-size: 1.55rem;
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 10px;
+    }
+    .kpi p {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .kpi h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      padding: 14px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.06rem;
+      color: var(--cyan);
+    }
+    .card p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .field label {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px;
+      background: #0f1824;
+      color: var(--text);
+      font-family: inherit;
+    }
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .btn, button {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 11px;
+      font-weight: bold;
+      font-size: 0.86rem;
+      background: #17273b;
+      color: var(--text);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn.primary, button.primary {
+      background: var(--accent);
+      color: #131313;
+      border-color: #ccaa4e;
+    }
+    .btn.ok, button.ok {
+      background: #123525;
+      border-color: #236a49;
+      color: #c7ffe1;
+    }
+    .btn.bad, button.bad {
+      background: #3b1a24;
+      border-color: #7a3347;
+      color: #ffd8df;
+    }
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow-x: auto;
+      background: #101825;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 780px;
+      font-size: 0.89rem;
+    }
+    th, td {
+      border-bottom: 1px solid #223247;
+      padding: 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--accent);
+      background: #142233;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .tag {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.74rem;
+      font-weight: bold;
+    }
+    .tag.pendente { background: #5f4715; color: #ffe7ab; }
+    .tag.agendada { background: #214966; color: #c8ecff; }
+    .tag.ao_vivo { background: #1a5641; color: #bdfee0; }
+    .tag.realizada { background: #355031; color: #dcffd6; }
+    .tag.rejeitada { background: #4b202a; color: #ffd5de; }
+    .msg {
+      margin-top: 8px;
+      border: 1px solid #32506f;
+      border-radius: 10px;
+      background: #12253a;
+      color: #d7edff;
+      padding: 9px;
+      display: none;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 900px) {
+      .mobile-toggle { display: block; }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 110;
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+        height: 100vh;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main { padding-top: 54px; }
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <button class="mobile-toggle" id="mobileToggle" type="button">Menu</button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="profile">
+      <h3 id="userName">Carregando...</h3>
+      <p id="userType">professor</p>
+    </div>
+
+    <ul class="nav">
+      <li><button class="active" type="button" data-section="visao-geral">Visao Geral</button></li>
+      <li><button type="button" data-section="aulas-vivo">Aulas ao Vivo</button></li>
+      <li><button type="button" data-section="presencas-faltas">Presencas e Faltas</button></li>
+      <li><button type="button" data-section="materiais">Materiais e Avaliacoes</button></li>
+      <li><button class="logout" type="button" id="logoutBtn">Sair</button></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <section id="visao-geral" class="section active">
+      <h2 class="title">Dashboard do Professor</h2>
+      <div class="kpis">
+        <article class="kpi">
+          <p>Materias atribuidas</p>
+          <h3 id="kpiMaterias">0</h3>
+        </article>
+        <article class="kpi">
+          <p>Turmas ativas</p>
+          <h3 id="kpiTurmas">0</h3>
+        </article>
+        <article class="kpi">
+          <p>Aulas agendadas</p>
+          <h3 id="kpiAulasAgendadas">0</h3>
+        </article>
+        <article class="kpi">
+          <p>Faltas pendentes</p>
+          <h3 id="kpiFaltasPendentes">0</h3>
+        </article>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <h2>Navegacao rapida</h2>
+          <div class="toolbar">
+            <a class="btn primary" href="/professor/area-anexos">Painel de Anexos</a>
+            <a class="btn" data-app-route="/live/central" data-app-file="live-center.html" href="./live-center.html">Live Center</a>
+            <a class="btn" data-app-route="/central-operacoes" data-app-file="central-operacoes.html" href="./central-operacoes.html">Central de Operacoes</a>
+            <a class="btn" href="/dashboard">Dashboard Principal</a>
+            <a class="btn" href="/dashboard-aluno">Visao Aluno</a>
+          </div>
+          <p>Use o painel de anexos para publicar materiais, criar avaliacoes V2 e acompanhar moderacao administrativa.</p>
+        </article>
+
+        <article class="card">
+          <h2>Sala ao vivo (control center)</h2>
+          <p>Fluxo: criar agenda -> aprovacao admin -> entrar em sala -> encerrar com gravacao e metadados.</p>
+          <p>Controles de microfone/camera/tela, templates de cena e dinamicas em aula ficam centralizados nesta area.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="aulas-vivo" class="section">
+      <h2 class="title">Aulas ao Vivo</h2>
+      <div class="grid">
+        <article class="card">
+          <h2>Nova aula / agendamento</h2>
+          <form id="formNovaAula">
+            <div class="field">
+              <label for="aulaMateria">Materia</label>
+              <select id="aulaMateria" required>
+                <option value="">Selecione</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="aulaProvider">Provedor da aula ao vivo</label>
+              <select id="aulaProvider" required>
+                <option value="interno">Interno (fallback)</option>
+                <option value="zoom">Zoom</option>
+                <option value="google_meet">Google Meet</option>
+                <option value="microsoft_teams">Microsoft Teams</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="aulaTitulo">Titulo</label>
+              <input id="aulaTitulo" required placeholder="Ex: Aula ao vivo - Fundamentos" />
+            </div>
+            <div class="field">
+              <label for="aulaDescricao">Descricao</label>
+              <textarea id="aulaDescricao" placeholder="Objetivos da aula e roteiro"></textarea>
+            </div>
+            <div class="field">
+              <label for="aulaInicio">Inicio previsto</label>
+              <input id="aulaInicio" type="datetime-local" required />
+            </div>
+            <div class="field">
+              <label for="aulaFim">Fim previsto</label>
+              <input id="aulaFim" type="datetime-local" required />
+            </div>
+            <button class="primary" type="submit">Criar e enviar para agenda</button>
+          </form>
+          <div id="msgAulas" class="msg"></div>
+        </article>
+
+        <article class="card">
+          <h2>Cena e recursos da aula</h2>
+          <div class="field">
+            <label for="templateSelect">Template de transmissao</label>
+            <select id="templateSelect">
+              <option value="aula-comecando">Aula comecando</option>
+              <option value="ja-volto">Ja volto</option>
+            </select>
+          </div>
+          <div class="toolbar">
+            <button type="button" onclick="alert('Controle de microfones aplicado.')">Microfones</button>
+            <button type="button" onclick="alert('Controle de cameras aplicado.')">Cameras</button>
+            <button type="button" onclick="alert('Controle de compartilhamento aplicado.')">Tela</button>
+          </div>
+          <p>A captura multi-dispositivo sera negociada no cliente WebRTC durante entrada na sala.</p>
+        </article>
+      </div>
+
+      <article class="card">
+        <h2>Salas cadastradas</h2>
+        <div class="toolbar">
+          <button type="button" id="refreshSalasBtn">Atualizar salas</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Turma / Materia</th>
+                <th>Titulo</th>
+                <th>Status</th>
+                <th>Inicio/Fim</th>
+                <th>Acoes</th>
+              </tr>
+            </thead>
+            <tbody id="tbodySalas">
+              <tr><td colspan="6">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section id="presencas-faltas" class="section">
+      <h2 class="title">Presencas, Faltas e Justificativas</h2>
+      <div class="grid">
+        <article class="card">
+          <h2>Lancar presencas da aula</h2>
+          <form id="formPresencas">
+            <div class="field">
+              <label for="presencaSala">Sala</label>
+              <select id="presencaSala" required>
+                <option value="">Selecione</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="presencasJson">Lista JSON</label>
+              <textarea id="presencasJson" required>[
+  { "aluno_id": 10, "presenca_status": "presente", "motivo": "" },
+  { "aluno_id": 11, "presenca_status": "falta", "motivo": "nao compareceu" }
+]</textarea>
+            </div>
+            <button class="primary" type="submit">Salvar presencas</button>
+          </form>
+          <div id="msgPresencas" class="msg"></div>
+        </article>
+
+        <article class="card">
+          <h2>Legenda da gravacao</h2>
+          <form id="formLegenda">
+            <div class="field">
+              <label for="legendaSala">Sala</label>
+              <select id="legendaSala" required>
+                <option value="">Selecione</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="legendaStatus">Status</label>
+              <select id="legendaStatus">
+                <option value="aprovada">Aprovar</option>
+                <option value="reprovada">Reprovar</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="legendaTexto">Texto revisado</label>
+              <textarea id="legendaTexto" placeholder="Legenda revisada pelo professor"></textarea>
+            </div>
+            <button class="primary" type="submit">Enviar revisao</button>
+          </form>
+          <div id="msgLegenda" class="msg"></div>
+        </article>
+      </div>
+
+      <article class="card">
+        <h2>Justificativas pendentes de aprovacao docente</h2>
+        <div class="toolbar">
+          <button type="button" id="refreshFaltasBtn">Atualizar justificativas</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Aluno</th>
+                <th>Aula</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Motivo/Atestado</th>
+                <th>Acoes</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyFaltas">
+              <tr><td colspan="7">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section id="materiais" class="section">
+      <h2 class="title">Materiais e Avaliacoes</h2>
+      <div class="grid">
+        <article class="card">
+          <h2>Fluxo academico</h2>
+          <p>1. Selecione a materia atribuida.</p>
+          <p>2. Envie video/foto/texto/arquivo para moderacao.</p>
+          <p>3. Crie avaliacoes V2 objetivas e discursivas.</p>
+          <p>4. Corrija discursivas e acompanhe notas.</p>
+          <div class="toolbar">
+            <a class="btn primary" href="/professor/area-anexos">Abrir painel de anexos</a>
+          </div>
+        </article>
+        <article class="card">
+          <h2>Materias sob responsabilidade</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Turma</th>
+                  <th>Materia</th>
+                  <th>Tipo</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyMaterias">
+                <tr><td colspan="4">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      appRoute: (route) => route,
+      bindAppRoutes: () => {}
+    };
+    runtime.bindAppRoutes();
+
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || sessionStorage.getItem("user") || "{}");
+    const isTiLocal = user.tipo === "ti";
+
+    if (!token) {
+      window.location.href = runtime.appRoute("/login", "login.html");
+    }
+    if (!isTiLocal && user.tipo !== "professor") {
+      alert("Acesso permitido apenas para professor.");
+      window.location.href = runtime.appRoute("/dashboard", "dashboard.html");
+    }
+
+    const state = {
+      materias: [],
+      salas: [],
+      faltasPendentes: [],
+      mockSeqSala: 910
+    };
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    };
+
+    const mock = {
+      materias: [
+        { id: 41, turma_id: 5, turma_nome: "Turma 2026.1", nome: "Fundamentos", tipo_materia: "obrigatoria" },
+        { id: 42, turma_id: 6, turma_nome: "Turma Isolada", nome: "Simbologia", tipo_materia: "isolada" }
+      ],
+      salas: [
+        { id: 801, turma_id: 5, turma_nome: "Turma 2026.1", materia_id: 41, materia_nome: "Fundamentos", titulo: "Aula 01", status: "agendada", inicio_previsto: "2026-03-12T20:00:00", fim_previsto: "2026-03-12T21:30:00", link_sala: "/live/sala/mock-1" },
+        { id: 802, turma_id: 6, turma_nome: "Turma Isolada", materia_id: 42, materia_nome: "Simbologia", titulo: "Laboratorio", status: "realizada", inicio_previsto: "2026-03-01T19:00:00", fim_previsto: "2026-03-01T20:30:00", link_sala: "/live/sala/mock-2" }
+      ],
+      faltas: [
+        { justificativa_id: 3001, aluno_nome: "Aluno Mock", aluno_email: "aluno@mock.com", aula_titulo: "Aula 01", turma_nome: "Turma 2026.1", materia_nome: "Fundamentos", tipo_justificativa: "motivo", justificativa_status: "pendente", texto_motivo: "Conflito de horario", atestado_url: "" }
+      ]
+    };
+
+    document.getElementById("userName").textContent = user.nome || "Professor";
+    document.getElementById("userType").textContent = isTiLocal ? "ti local - visao professor" : "professor";
+
+    const sidebar = document.getElementById("sidebar");
+    document.getElementById("mobileToggle").addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+
+    document.querySelectorAll(".nav button[data-section]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const section = btn.getAttribute("data-section");
+        showSection(section, btn);
+      });
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      document.cookie = "auth_token=; Max-Age=0; path=/";
+      window.location.href = "/login";
+    });
+
+    document.getElementById("refreshSalasBtn").addEventListener("click", loadSalas);
+    document.getElementById("refreshFaltasBtn").addEventListener("click", loadFaltasPendentes);
+    document.getElementById("formNovaAula").addEventListener("submit", submitNovaAula);
+    document.getElementById("formPresencas").addEventListener("submit", submitPresencas);
+    document.getElementById("formLegenda").addEventListener("submit", submitLegenda);
+
+    function showSection(sectionId, btn) {
+      document.querySelectorAll(".section").forEach((section) => section.classList.remove("active"));
+      document.querySelectorAll(".nav button[data-section]").forEach((button) => button.classList.remove("active"));
+      document.getElementById(sectionId).classList.add("active");
+      btn.classList.add("active");
+      sidebar.classList.remove("open");
+    }
+
+    function showMsg(elId, text) {
+      const el = document.getElementById(elId);
+      el.style.display = "block";
+      el.textContent = text;
+      setTimeout(() => { el.style.display = "none"; }, 2500);
+    }
+
+    async function apiFetch(url, options = {}) {
+      const res = await fetch(url, options);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.erro || "Falha na requisicao.");
+      }
+      return data;
+    }
+
+    function toTag(status) {
+      const map = {
+        pendente: "pendente",
+        agendada: "agendada",
+        ao_vivo: "ao_vivo",
+        realizada: "realizada",
+        rejeitada: "rejeitada",
+        aprovada: "agendada"
+      };
+      const klass = map[status] || "pendente";
+      return `<span class="tag ${klass}">${status}</span>`;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "-";
+      return new Date(value).toLocaleString("pt-BR");
+    }
+
+    function updateKpis() {
+      const turmas = new Set(state.materias.map((m) => m.turma_id)).size;
+      const agendadas = state.salas.filter((s) => ["agendada", "pendente"].includes(String(s.status || "").toLowerCase())).length;
+      document.getElementById("kpiMaterias").textContent = String(state.materias.length);
+      document.getElementById("kpiTurmas").textContent = String(turmas);
+      document.getElementById("kpiAulasAgendadas").textContent = String(agendadas);
+      document.getElementById("kpiFaltasPendentes").textContent = String(state.faltasPendentes.length);
+    }
+
+    function renderMaterias() {
+      const tbody = document.getElementById("tbodyMaterias");
+      if (!state.materias.length) {
+        tbody.innerHTML = "<tr><td colspan='4'>Nenhuma materia atribuida.</td></tr>";
+        return;
+      }
+      tbody.innerHTML = state.materias.map((m) => `
+        <tr>
+          <td>${m.id}</td>
+          <td>${m.turma_nome || "-"}</td>
+          <td>${m.nome}</td>
+          <td>${m.tipo_materia}</td>
+        </tr>
+      `).join("");
+
+      const materiaOptions = state.materias.map((m) =>
+        `<option value="${m.id}" data-turma="${m.turma_id}">${m.turma_nome || "Turma"} - ${m.nome}</option>`
+      ).join("");
+      document.getElementById("aulaMateria").innerHTML = `<option value="">Selecione</option>${materiaOptions}`;
+    }
+
+    function renderSalas() {
+      const tbody = document.getElementById("tbodySalas");
+      if (!state.salas.length) {
+        tbody.innerHTML = "<tr><td colspan='6'>Nenhuma sala cadastrada.</td></tr>";
+        document.getElementById("presencaSala").innerHTML = "<option value=''>Selecione</option>";
+        document.getElementById("legendaSala").innerHTML = "<option value=''>Selecione</option>";
+        return;
+      }
+
+      tbody.innerHTML = state.salas.map((s) => `
+        <tr>
+          <td>${s.id}</td>
+          <td>${s.turma_nome || "-"} / ${s.materia_nome || "-"}</td>
+          <td>${s.titulo}</td>
+          <td>${toTag(String(s.status || "").toLowerCase())}</td>
+          <td>${formatDateTime(s.inicio_previsto)}<br>${formatDateTime(s.fim_previsto)}</td>
+          <td>
+            <div class="toolbar">
+              <button type="button" onclick="entrarSala(${s.id})">Entrar</button>
+              <button type="button" class="ok" onclick="encerrarSala(${s.id})">Encerrar</button>
+              <a class="btn" href="${s.link_sala || "#"}" target="_blank">Link</a>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      const salaOptions = state.salas.map((s) =>
+        `<option value="${s.id}">#${s.id} - ${s.titulo} (${s.turma_nome || "-"})</option>`
+      ).join("");
+      document.getElementById("presencaSala").innerHTML = `<option value="">Selecione</option>${salaOptions}`;
+      document.getElementById("legendaSala").innerHTML = `<option value="">Selecione</option>${salaOptions}`;
+    }
+
+    function renderFaltasPendentes() {
+      const tbody = document.getElementById("tbodyFaltas");
+      if (!state.faltasPendentes.length) {
+        tbody.innerHTML = "<tr><td colspan='7'>Sem justificativas pendentes.</td></tr>";
+        return;
+      }
+
+      tbody.innerHTML = state.faltasPendentes.map((f) => `
+        <tr>
+          <td>${f.justificativa_id}</td>
+          <td>${f.aluno_nome}<br><small>${f.aluno_email || ""}</small></td>
+          <td>${f.turma_nome || "-"} / ${f.aula_titulo || "-"}</td>
+          <td>${f.tipo_justificativa}</td>
+          <td>${f.justificativa_status}</td>
+          <td>
+            ${f.texto_motivo || "-"}
+            ${f.atestado_url ? `<br><a class="btn" href="${f.atestado_url}" target="_blank">Atestado</a>` : ""}
+          </td>
+          <td>
+            <div class="toolbar">
+              <button type="button" class="ok" onclick="aprovarFalta(${f.justificativa_id}, 'aprovado')">Aprovar</button>
+              <button type="button" class="bad" onclick="aprovarFalta(${f.justificativa_id}, 'reprovado')">Reprovar</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function loadMaterias() {
+      if (isTiLocal) {
+        state.materias = mock.materias;
+        renderMaterias();
+        updateKpis();
+        return;
+      }
+      state.materias = await apiFetch("/professor/materias", { headers: { Authorization: `Bearer ${token}` } });
+      renderMaterias();
+      updateKpis();
+    }
+
+    async function loadSalas() {
+      if (isTiLocal) {
+        state.salas = mock.salas;
+        renderSalas();
+        updateKpis();
+        return;
+      }
+      state.salas = await apiFetch("/live/salas", { headers: { Authorization: `Bearer ${token}` } });
+      renderSalas();
+      updateKpis();
+    }
+
+    async function loadFaltasPendentes() {
+      if (isTiLocal) {
+        state.faltasPendentes = mock.faltas;
+        renderFaltasPendentes();
+        updateKpis();
+        return;
+      }
+      state.faltasPendentes = await apiFetch("/professor/faltas/pendentes", { headers: { Authorization: `Bearer ${token}` } });
+      renderFaltasPendentes();
+      updateKpis();
+    }
+
+    async function submitNovaAula(event) {
+      event.preventDefault();
+      const materiaSelect = document.getElementById("aulaMateria");
+      const materiaId = Number(materiaSelect.value);
+      const turmaId = Number(materiaSelect.selectedOptions?.[0]?.getAttribute("data-turma"));
+      const payload = {
+        materia_id: materiaId,
+        turma_id: turmaId || null,
+        provider: document.getElementById("aulaProvider").value,
+        titulo: document.getElementById("aulaTitulo").value.trim(),
+        descricao: document.getElementById("aulaDescricao").value.trim(),
+        inicio_previsto: document.getElementById("aulaInicio").value,
+        fim_previsto: document.getElementById("aulaFim").value
+      };
+
+      try {
+        if (isTiLocal) {
+          state.mockSeqSala += 1;
+          state.salas.unshift({
+            id: state.mockSeqSala,
+            turma_id: turmaId,
+            turma_nome: state.materias.find((m) => m.id === materiaId)?.turma_nome || "Turma local",
+            materia_id: materiaId,
+            materia_nome: state.materias.find((m) => m.id === materiaId)?.nome || "Materia local",
+            titulo: payload.titulo,
+            status: "pendente",
+            inicio_previsto: payload.inicio_previsto,
+            fim_previsto: payload.fim_previsto,
+            provedor_sala: payload.provider,
+            link_sala: "/live/sala/mock-local"
+          });
+          renderSalas();
+          updateKpis();
+          showMsg("msgAulas", "Sala criada no modo local.");
+          event.target.reset();
+          return;
+        }
+
+        await apiFetch("/live/salas", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload)
+        });
+        await loadSalas();
+        showMsg("msgAulas", "Sala criada com sucesso.");
+        event.target.reset();
+      } catch (error) {
+        showMsg("msgAulas", error.message);
+      }
+    }
+
+    async function submitPresencas(event) {
+      event.preventDefault();
+      const salaId = Number(document.getElementById("presencaSala").value);
+      const texto = document.getElementById("presencasJson").value;
+
+      try {
+        const lista = JSON.parse(texto);
+        if (!Array.isArray(lista) || !lista.length) {
+          throw new Error("JSON de presencas vazio.");
+        }
+
+        if (isTiLocal) {
+          showMsg("msgPresencas", `Presencas salvas localmente para sala #${salaId}.`);
+          return;
+        }
+
+        const data = await apiFetch(`/live/salas/${salaId}/presencas`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ presencas: lista })
+        });
+        showMsg("msgPresencas", `Presencas processadas: ${data.processados}.`);
+      } catch (error) {
+        showMsg("msgPresencas", error.message);
+      }
+    }
+
+    async function submitLegenda(event) {
+      event.preventDefault();
+      const salaId = Number(document.getElementById("legendaSala").value);
+      const status = document.getElementById("legendaStatus").value;
+      const texto = document.getElementById("legendaTexto").value.trim();
+
+      try {
+        if (isTiLocal) {
+          showMsg("msgLegenda", `Legenda ${status} no modo local para sala #${salaId}.`);
+          return;
+        }
+
+        await apiFetch(`/professor/aulas/${salaId}/legendas/aprovar`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ status, texto_revisado: texto })
+        });
+        showMsg("msgLegenda", `Legenda ${status} com sucesso.`);
+      } catch (error) {
+        showMsg("msgLegenda", error.message);
+      }
+    }
+
+    async function entrarSala(salaId) {
+      try {
+        if (isTiLocal) {
+          alert(`Entrada local simulada na sala #${salaId}.`);
+          return;
+        }
+        const data = await apiFetch(`/live/salas/${salaId}/entrar`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ microfone_liberado: true, camera_liberada: true, tela_liberada: true })
+        });
+        const linkSala = String(data?.sala?.link_sala || "").trim();
+        const isExternal = /^https?:\/\//i.test(linkSala);
+        if (isExternal) {
+          window.open(linkSala, "_blank", "noopener,noreferrer");
+          alert(`Entrada autorizada na sala #${salaId}. Provedor: ${data?.sala?.provedor_sala || "externo"}.`);
+        } else {
+          alert(`Entrada autorizada na sala #${salaId}. Papel: ${data.permissao.papel}`);
+        }
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function encerrarSala(salaId) {
+      const titulo = prompt("Titulo da gravacao:", "Gravacao da aula");
+      if (titulo === null) return;
+      const descricao = prompt("Descricao da gravacao:", "Registro automatico da aula ao vivo");
+      if (descricao === null) return;
+
+      try {
+        if (isTiLocal) {
+          const idx = state.salas.findIndex((s) => s.id === salaId);
+          if (idx >= 0) state.salas[idx].status = "realizada";
+          renderSalas();
+          alert(`Sala #${salaId} encerrada localmente.`);
+          return;
+        }
+        await apiFetch(`/live/salas/${salaId}/encerrar`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ titulo, descricao })
+        });
+        await loadSalas();
+        alert(`Sala #${salaId} encerrada.`);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function aprovarFalta(justificativaId, decisao) {
+      const comentario = prompt(`Comentario (${decisao}):`, decisao === "aprovado" ? "Aprovado pelo professor." : "Reprovado pelo professor.");
+      if (comentario === null) return;
+      try {
+        if (isTiLocal) {
+          state.faltasPendentes = state.faltasPendentes.filter((f) => f.justificativa_id !== justificativaId);
+          renderFaltasPendentes();
+          updateKpis();
+          return;
+        }
+        await apiFetch(`/professor/faltas/${justificativaId}/aprovar`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ decisao, comentario })
+        });
+        await loadFaltasPendentes();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    window.entrarSala = entrarSala;
+    window.encerrarSala = encerrarSala;
+    window.aprovarFalta = aprovarFalta;
+
+    async function init() {
+      try {
+        await Promise.all([loadMaterias(), loadSalas(), loadFaltasPendentes()]);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    init();
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

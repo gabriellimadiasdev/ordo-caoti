@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Operacional | Ordo Caoti</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --ink: #1f1a14;
+      --muted: #61574b;
+      --accent: #6f4121;
+      --card: #fffdf8;
+      --line: #e7dac6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #f8f3ea 0%, var(--bg) 100%);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wrap { max-width: 1040px; margin: 0 auto; }
+    h1 { margin: 0; }
+    p { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 10px 20px rgba(56, 34, 12, 0.06);
+    }
+    h2 { font-size: 1.05rem; margin: 0 0 8px; }
+    ul { margin: 0; padding-left: 16px; }
+    li { margin: 6px 0; }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Painel Operacional (MVP)</h1>
+    <p>Atalhos para áreas-chave já conectadas no backend e novas rotas de operação.</p>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Admin / TI</h2>
+        <ul>
+          <li><a href="/admin/master">Admin Master</a></li>
+          <li><a href="/dashboard-ti">Dashboard TI</a></li>
+          <li><a href="/admin/financeiro">Financeiro Admin</a></li>
+          <li><a href="/admin/loja/produtos">Aprovação Loja</a></li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Loja / Logística</h2>
+        <ul>
+          <li><a href="/loja">Loja</a></li>
+          <li><a href="/lojista/produtos">Cadastro Produtos</a></li>
+          <li><a href="/loja/reembolso-e-logistica">Reembolso e Logística</a></li>
+          <li><a href="/logistica/rastreio">Rastreio Correios</a></li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Secretaria / Escola</h2>
+        <ul>
+          <li><a href="/acompanhamento">Acompanhamento</a></li>
+          <li><a href="/registro">Matrícula</a></li>
+          <li><a href="/dashboard-aluno">Dashboard Aluno</a></li>
+          <li><a href="/dashboard-professor">Dashboard Professor</a></li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Operações (API)</h2>
+        <ul>
+          <li><a href="/api/ops/resumo">GET /api/ops/resumo</a></li>
+          <li><a href="/api/ops/estoque">GET /api/ops/estoque</a></li>
+          <li><a href="/api/ops/metas-vendas">GET /api/ops/metas-vendas</a></li>
+          <li><a href="/api/compatibilidade">GET /api/compatibilidade</a></li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

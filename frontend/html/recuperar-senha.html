@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Senha - Ordo Caoti</title>
+    <style>
+        /* Reutilizando estilos do login para consistÃªncia */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background-color: #2a2a2a;
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        h2 { color: #c8a2c8; margin-top: 0; margin-bottom: 1rem; }
+        p { color: #aaa; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        input {
+            width: 100%; padding: 0.8rem; border: 1px solid #444; border-radius: 5px;
+            background-color: #333; color: #fff; font-size: 1rem; box-sizing: border-box;
+            margin-bottom: 1rem;
+        }
+        input:focus { border-color: #c8a2c8; outline: none; }
+        button {
+            width: 100%; padding: 1rem; background-color: #c8a2c8; color: #1a1a1a;
+            border: none; border-radius: 5px; font-weight: bold; font-size: 1rem;
+            cursor: pointer; transition: background-color 0.3s;
+        }
+        button:hover { background-color: #b08cb0; }
+        .msg {
+            margin-top: 1rem; padding: 0.8rem; border-radius: 5px; display: none; font-size: 0.9rem;
+        }
+        .success { background-color: rgba(76, 209, 55, 0.1); color: #4cd137; border: 1px solid rgba(76, 209, 55, 0.3); }
+        .error { background-color: rgba(255, 107, 107, 0.1); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+        .back-link { display: block; margin-top: 1.5rem; color: #888; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { color: #fff; }
+    </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+    <div class="card">
+        <h2>Recuperar Acesso</h2>
+        <p>Digite seu e-mail cadastrado. Enviaremos um link para vocÃª redefinir sua senha.</p>
+        
+        <form id="resetForm">
+            <input type="email" id="email" required placeholder="Seu e-mail">
+            <button type="submit" id="btnSubmit">Enviar Link</button>
+        </form>
+
+        <div id="msgBox" class="msg"></div>
+        <a href="./login.html" class="back-link">Voltar para o Login</a>
+    </div>
+
+    <script>
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const btn = document.getElementById('btnSubmit');
+            const msgBox = document.getElementById('msgBox');
+
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+            msgBox.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/recuperar-senha', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await response.json();
+                
+                msgBox.className = 'msg success';
+                msgBox.textContent = 'Se o e-mail estiver cadastrado, verifique sua caixa de entrada (ou o console do servidor).';
+                msgBox.style.display = 'block';
+            } catch (err) {
+                msgBox.className = 'msg error';
+                msgBox.textContent = 'Erro ao conectar com o servidor.';
+                msgBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Enviar Link';
+            }
+        });
+    </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

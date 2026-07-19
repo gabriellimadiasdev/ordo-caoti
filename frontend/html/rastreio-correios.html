@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rastreio de Entrega | Ordo Caoti</title>
+  <style>
+    :root {
+      --bg: #f6f3eb;
+      --card: #fffefb;
+      --text: #1f1d1a;
+      --muted: #6b6458;
+      --accent: #8a5a2b;
+      --ok: #1f8a43;
+      --error: #a32626;
+      --border: #e8ddc8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, #efe2cc 0, transparent 40%),
+        radial-gradient(circle at 90% 10%, #f5e8d6 0, transparent 35%),
+        var(--bg);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .card {
+      width: min(860px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(37, 26, 11, 0.08);
+      padding: 24px;
+    }
+    h1 { margin: 0 0 8px; }
+    p { margin: 0 0 18px; color: var(--muted); }
+    form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    input, button {
+      font: inherit;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 12px;
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    .status { min-height: 24px; font-weight: 600; }
+    .status.error { color: var(--error); }
+    .status.ok { color: var(--ok); }
+    .timeline {
+      margin-top: 14px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      display: grid;
+      gap: 12px;
+    }
+    .event {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+    .event strong { display: block; margin-bottom: 4px; }
+    @media (max-width: 680px) {
+      form { grid-template-columns: 1fr; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Rastreio Correios</h1>
+    <p>Consulte o andamento da entrega com o código de rastreio (ex: AA123456789BR).</p>
+
+    <form id="rastreioForm">
+      <input id="codigo" type="text" maxlength="13" placeholder="AA123456789BR" required />
+      <button id="btn" type="submit">Consultar</button>
+    </form>
+
+    <div id="status" class="status"></div>
+    <section id="resultado"></section>
+  </main>
+
+  <script>
+    const form = document.getElementById('rastreioForm');
+    const statusEl = document.getElementById('status');
+    const resultadoEl = document.getElementById('resultado');
+    const btn = document.getElementById('btn');
+
+    function setStatus(message, type) {
+      statusEl.textContent = message || '';
+      statusEl.className = `status ${type || ''}`;
+    }
+
+    function renderRastreio(data) {
+      const rastreio = data?.rastreio || data;
+      const eventos = Array.isArray(rastreio?.eventos) ? rastreio.eventos : [];
+
+      const header = `
+        <div class="event">
+          <strong>Código: ${rastreio?.codigo || '-'}</strong>
+          <div>Serviço: ${rastreio?.servico || '-'}</div>
+          <div>Prazo: ${rastreio?.prazo || '-'}</div>
+          <div>Local: ${rastreio?.cidade || '-'} / ${rastreio?.estado || '-'}</div>
+        </div>
+      `;
+
+      const timeline = eventos.length
+        ? eventos.map((event) => {
+            const when = event.date ? new Date(event.date).toLocaleString('pt-BR') : '-';
+            return `
+              <article class="event">
+                <strong>${event.status || 'Atualização'}</strong>
+                <div>${event.local || '-'}</div>
+                <div>${when}</div>
+              </article>
+            `;
+          }).join('')
+        : '<div class="event">Sem eventos disponíveis no momento.</div>';
+
+      resultadoEl.innerHTML = `${header}<div class="timeline">${timeline}</div>`;
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const codigo = document.getElementById('codigo').value.trim().toUpperCase();
+
+      if (!codigo) {
+        setStatus('Informe um código válido.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      setStatus('Consultando rastreio...', '');
+      resultadoEl.innerHTML = '';
+
+      try {
+        const response = await fetch(`/api/correios/rastreio/${encodeURIComponent(codigo)}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+          }
+        });
+        const payload = await response.json();
+
+        if (!response.ok || payload?.ok === false) {
+          throw new Error(payload?.erro || payload?.detalhes || 'Falha na consulta.');
+        }
+
+        renderRastreio(payload);
+        setStatus('Rastreio atualizado com sucesso.', 'ok');
+      } catch (error) {
+        setStatus(error.message || 'Erro ao consultar rastreio.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

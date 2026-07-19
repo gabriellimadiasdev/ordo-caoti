@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Lojista - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #081019;
+      --panel: #142233;
+      --line: #365271;
+      --text: #edf4ff;
+      --muted: #afc5de;
+      --accent: #f3be49;
+      --ok: #49cc86;
+      --warn: #ffd27d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 15%, #253c58 0%, transparent 43%),
+        radial-gradient(circle at 84% 85%, #274238 0%, transparent 47%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 0.75rem;
+    }
+    .top {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .top h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+    .who {
+      color: var(--muted);
+      margin-top: 0.3rem;
+      font-size: 0.92rem;
+    }
+    .actions {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #19314b;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.55rem 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #2a1d08;
+      border-color: #d2a03e;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0.65rem;
+    }
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 0.7rem;
+    }
+    .kpi p {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+    .kpi strong { font-size: 1.04rem; }
+    .kpi .ok { color: var(--ok); }
+    .kpi .warn { color: var(--warn); }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 0.7rem;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 0.85rem;
+    }
+    .card h2 {
+      margin: 0 0 0.55rem;
+      color: var(--accent);
+      font-size: 1.05rem;
+    }
+    .card p {
+      margin: 0 0 0.7rem;
+      color: var(--muted);
+      line-height: 1.4;
+      font-size: 0.92rem;
+    }
+    .card .group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .status {
+      min-height: 18px;
+      margin: 0.2rem 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <h1>Painel do Lojista</h1>
+        <div id="whoami" class="who">Carregando sessao...</div>
+      </div>
+      <div class="actions">
+        <a class="btn" data-app-route="/dashboard" data-app-file="dashboard.html" href="./dashboard.html">Dashboard geral</a>
+        <button class="btn primary" id="logoutBtn" type="button">Sair</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="kpi">
+        <p>Produtos cadastrados</p>
+        <strong id="kpiProdutos">0</strong>
+      </article>
+      <article class="kpi">
+        <p>Produtos ativos</p>
+        <strong id="kpiAtivos" class="ok">0</strong>
+      </article>
+      <article class="kpi">
+        <p>Estoque total</p>
+        <strong id="kpiEstoque">0</strong>
+      </article>
+      <article class="kpi">
+        <p>Aulas ao vivo (acesso)</p>
+        <strong id="kpiLive" class="warn">-</strong>
+      </article>
+    </section>
+
+    <section class="cards">
+      <article class="card">
+        <h2>Produtos</h2>
+        <p>Cadastre, edite e desative produtos em uma pagina dedicada.</p>
+        <div class="group">
+          <a class="btn primary" data-app-route="/lojista/produtos" data-app-file="cadastro-produtos.html" href="./cadastro-produtos.html">Abrir produtos</a>
+          <a class="btn" data-app-route="/loja" data-app-file="loja.html" href="./loja.html">Ver vitrine</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Aulas ao Vivo</h2>
+        <p>Area dedicada para criar sala, gerar link, entrar e encerrar aula.</p>
+        <div class="group">
+          <a class="btn primary" data-app-route="/live/central" data-app-file="live-center.html" href="./live-center.html">Abrir live center</a>
+          <a class="btn" data-app-route="/dashboard-professor" data-app-file="dashboard-professor.html" href="./dashboard-professor.html">Painel professor</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Automacao por Botao</h2>
+        <p>Escreva o comando em texto simples e clique para executar sem codificar.</p>
+        <div class="group">
+          <a class="btn primary" data-app-route="/central-operacoes" data-app-file="central-operacoes.html" href="./central-operacoes.html">Abrir central de operacoes</a>
+        </div>
+      </article>
+    </section>
+
+    <p id="statusMsg" class="status"></p>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {},
+      getUser: () => ({}),
+      clearSession: () => {}
+    };
+    runtime.bindAppRoutes();
+
+    const token = runtime.getToken ? runtime.getToken() : (localStorage.getItem("token") || sessionStorage.getItem("token") || "");
+    const user = runtime.getUser ? runtime.getUser() : JSON.parse(localStorage.getItem("user") || sessionStorage.getItem("user") || "{}");
+    const isLocalMode = token === "ti-local-mode";
+    const tipoUsuario = String(user?.tipo || user?.tipo_usuario || "").toLowerCase();
+
+    const whoami = document.getElementById("whoami");
+    const statusMsg = document.getElementById("statusMsg");
+    const kpiProdutos = document.getElementById("kpiProdutos");
+    const kpiAtivos = document.getElementById("kpiAtivos");
+    const kpiEstoque = document.getElementById("kpiEstoque");
+    const kpiLive = document.getElementById("kpiLive");
+
+    if (!token) {
+      window.location.href = runtime.appRoute("/login", "login.html");
+    }
+
+    if (!isLocalMode && !["lojista", "admin", "ti"].includes(tipoUsuario)) {
+      window.location.href = runtime.appRoute("/dashboard", "dashboard.html");
+    }
+
+    whoami.textContent = `Sessao: ${user?.nome || "Lojista"} (${tipoUsuario || "lojista"})`;
+
+    function authHeaders() {
+      return { Authorization: `Bearer ${token}` };
+    }
+
+    function setStatus(message) {
+      statusMsg.textContent = message || "";
+    }
+
+    async function loadProducts() {
+      if (isLocalMode) {
+        kpiProdutos.textContent = "3";
+        kpiAtivos.textContent = "2";
+        kpiEstoque.textContent = "35";
+        return;
+      }
+
+      try {
+        const response = await fetch(runtime.apiUrl("/lojista/meus-produtos"), { headers: authHeaders() });
+        const data = await response.json().catch(() => []);
+        if (!response.ok) throw new Error(data?.erro || "Falha ao carregar produtos.");
+        const produtos = Array.isArray(data) ? data : [];
+        const ativos = produtos.filter((item) => Boolean(item.ativo)).length;
+        const estoqueTotal = produtos.reduce((acc, item) => acc + Number(item.estoque || 0), 0);
+        kpiProdutos.textContent = String(produtos.length);
+        kpiAtivos.textContent = String(ativos);
+        kpiEstoque.textContent = String(estoqueTotal);
+      } catch (error) {
+        setStatus(error.message);
+      }
+    }
+
+    async function loadLiveAccess() {
+      if (isLocalMode) {
+        kpiLive.textContent = "modo local";
+        return;
+      }
+
+      try {
+        const response = await fetch(runtime.apiUrl("/live/salas"), { headers: authHeaders() });
+        const data = await response.json().catch(() => []);
+        if (response.status === 403) {
+          kpiLive.textContent = "sem permissao";
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(data?.erro || "Falha ao carregar modulo live.");
+        }
+        const aulas = Array.isArray(data) ? data : [];
+        kpiLive.textContent = `${aulas.length} sala(s)`;
+      } catch (error) {
+        kpiLive.textContent = "indisponivel";
+        setStatus(error.message);
+      }
+    }
+
+    async function logout() {
+      if (!isLocalMode && token) {
+        try {
+          await fetch(runtime.apiUrl("/logout"), { method: "POST", headers: authHeaders() });
+        } catch (_) {}
+      }
+      if (runtime.clearSession) runtime.clearSession();
+      window.location.href = runtime.appRoute("/login", "login.html");
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+
+    Promise.all([loadProducts(), loadLiveAccess()])
+      .then(() => setStatus("Painel carregado com sucesso."))
+      .catch((error) => setStatus(error?.message || "Falha ao carregar painel."));
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

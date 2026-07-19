@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grimorio | Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <style>
+    :root {
+      --bg: #070707;
+      --panel: #151515;
+      --line: #2d2d2d;
+      --text: #f5f5f5;
+      --muted: #c2c2c2;
+      --gold: #efc443;
+      --lilac: #b28eff;
+      --ok: #dfffd8;
+      --danger: #ffd7de;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 14%, #2f243f 0%, transparent 32%),
+        radial-gradient(circle at 85% 88%, #2f2b1b 0%, transparent 35%),
+        var(--bg);
+      font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+    }
+    .wrap {
+      width: min(1150px, 94vw);
+      margin: 22px auto;
+      display: grid;
+      grid-template-columns: 370px 1fr;
+      gap: 16px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: var(--gold);
+      font-size: 1.35rem;
+    }
+    .muted { color: var(--muted); font-size: 0.88rem; }
+    .field { display: grid; gap: 6px; margin: 10px 0; }
+    label { font-size: 0.83rem; color: var(--muted); }
+    input, textarea, select {
+      border: 1px solid #3a3a3a;
+      border-radius: 10px;
+      background: #0f0f0f;
+      color: var(--text);
+      padding: 9px 10px;
+      font: inherit;
+    }
+    textarea { min-height: 170px; resize: vertical; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #1f1f1f;
+      color: var(--text);
+      padding: 9px 12px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--gold), #ffe194);
+      color: #171717;
+      border-color: #d6b24e;
+    }
+    .btn.secondary {
+      border-color: #634f95;
+      background: #271f39;
+      color: #ebddff;
+    }
+    .msg {
+      margin-top: 8px;
+      border: 1px solid #415472;
+      border-radius: 10px;
+      background: #172235;
+      color: #e0ecff;
+      padding: 8px 10px;
+      display: none;
+      font-size: 0.9rem;
+    }
+    .entries { display: grid; gap: 10px; }
+    .entry {
+      border: 1px solid #323232;
+      border-left: 4px solid var(--gold);
+      border-radius: 10px;
+      background: #0f0f0f;
+      padding: 10px;
+    }
+    .entry h3 { margin: 0 0 6px; color: var(--lilac); font-size: 1rem; }
+    .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 7px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag {
+      border: 1px solid #55447d;
+      color: #ecdfff;
+      background: #241d36;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.73rem;
+    }
+    .empty {
+      border: 1px dashed #474747;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      color: var(--muted);
+    }
+    @media (max-width: 960px) {
+      .wrap { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Grimorio</h1>
+      <p class="muted">Area de estudo e registro ritual para Neofito, Mago N1 e Mago N2.</p>
+
+      <form id="grimorio-form">
+        <div class="field">
+          <label for="titulo">Titulo</label>
+          <input id="titulo" name="titulo" maxlength="180" placeholder="Ex: Ritual de Protecao de Casa" />
+        </div>
+        <div class="field">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo">
+            <option value="anotacao">Anotacao</option>
+            <option value="estudo">Estudo</option>
+            <option value="ritual">Ritual</option>
+            <option value="referencia">Referencia</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="tags">Tags (separadas por virgula)</label>
+          <input id="tags" name="tags" placeholder="fogo, foco, protecao" />
+        </div>
+        <div class="field">
+          <label for="conteudo">Conteudo</label>
+          <textarea id="conteudo" name="conteudo" required placeholder="Escreveu ou clicou, ficou pronto."></textarea>
+        </div>
+        <div class="field">
+          <label for="visivel">Visivel para supervisao</label>
+          <select id="visivel" name="visivel" required>
+            <option value="true" selected>Sim (obrigatorio)</option>
+          </select>
+          <small class="muted">Este registro deve permanecer visivel para supervisao.</small>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" type="submit">Salvar no grimorio</button>
+          <a class="btn secondary" href="/dashboard-aluno">Voltar ao dashboard</a>
+        </div>
+
+        <div id="msg" class="msg"></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h1>Registros do Grimorio</h1>
+      <div id="entries" class="entries"></div>
+    </section>
+  </main>
+
+  <script src="/js/runtime-api.js"></script>
+  <script>
+    const form = document.getElementById('grimorio-form');
+    const msg = document.getElementById('msg');
+    const entries = document.getElementById('entries');
+
+    function showMessage(text, isError = false) {
+      msg.style.display = 'block';
+      msg.style.borderColor = isError ? '#734154' : '#415472';
+      msg.style.background = isError ? '#321a24' : '#172235';
+      msg.style.color = isError ? '#ffd8e2' : '#e0ecff';
+      msg.textContent = text;
+    }
+
+    function formatDate(value) {
+      if (!value) return '-';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('pt-BR');
+    }
+
+    function renderEntries(list) {
+      if (!Array.isArray(list) || !list.length) {
+        entries.innerHTML = '<div class="empty">Nenhum registro ainda no grimorio.</div>';
+        return;
+      }
+
+      entries.innerHTML = list.map((item) => {
+        const tags = Array.isArray(item.tags) ? item.tags : [];
+        const tagsHtml = tags.length
+          ? `<div class="tags">${tags.map((tag) => `<span class="tag">${tag}</span>`).join('')}</div>`
+          : '';
+
+        return `
+          <article class="entry">
+            <h3>${item.titulo || 'Registro sem titulo'}</h3>
+            <div class="meta">${formatDate(item.criado_em)} | ${item.tipo_registro || 'anotacao'}</div>
+            <p>${item.conteudo_texto || ''}</p>
+            ${tagsHtml}
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadEntries() {
+      const response = await window.ordoRuntime.apiFetch('/grimorio/pessoal');
+      if (!response.ok) throw new Error('Falha ao carregar grimorio.');
+      const data = await response.json();
+      renderEntries(data);
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      msg.style.display = 'none';
+
+      const tags = form.tags.value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      const payload = {
+        titulo: form.titulo.value.trim(),
+        tipo_registro: form.tipo.value,
+        conteudo_texto: form.conteudo.value.trim(),
+        visivel_para_supervisao: true,
+        tags
+      };
+
+      try {
+        const response = await window.ordoRuntime.apiFetch('/grimorio/pessoal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao salvar no grimorio.');
+        form.reset();
+        showMessage('Registro salvo com sucesso.');
+        await loadEntries();
+      } catch (error) {
+        showMessage(String(error?.message || 'Erro inesperado.'), true);
+      }
+    });
+
+    loadEntries().catch((error) => showMessage(String(error?.message || 'Erro inesperado.'), true));
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

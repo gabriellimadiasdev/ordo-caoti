@@ -1,0 +1,199 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastreio de Pedido - Ordo Caoti</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --panel: #161616;
+            --accent: #ffc400;
+            --text: #f0f0f0;
+            --muted: #888;
+            --border: #333;
+            --success: #4cd137;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 2rem;
+        }
+        .tracking-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        h1 { color: var(--accent); margin-top: 0; }
+        .order-info {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        .status-timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .status-step {
+            position: relative;
+            padding-bottom: 2rem;
+            border-left: 2px solid var(--border);
+            padding-left: 20px;
+        }
+        .status-step.active { border-left-color: var(--success); }
+        .status-step.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -11px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+        .status-step h3 {
+            margin: 0;
+            color: var(--accent);
+        }
+        .status-step p {
+            margin: 0.5rem 0 0 0;
+            color: var(--muted);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+        .home-link {
+            text-decoration: none;
+            color: var(--accent);
+            font-size: 1.5rem;
+            background: var(--panel);
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+        }
+        .home-link:hover { border-color: var(--accent); }
+        .brand-name { font-size: 1.2rem; font-weight: bold; color: var(--accent); }
+    </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+    <div class="tracking-container">
+        <header>
+            <a href="./dashboard-cliente.html" class="home-link" title="Voltar ao Painel">
+                <img src="../img/ordo-caoti-icon.jpeg" alt="Ordo Caoti" style="width: 100%; height: 100%;">
+            </a>
+            <div class="brand-name">Ordo Caoti - LogÃ­stica</div>
+            <div style="width: 45px;"></div> <!-- Spacer for alignment -->
+        </header>
+
+        <div class="card">
+            <h1>Rastreio do Pedido #12345</h1>
+            <div class="order-info">
+                <div>
+                    <strong>Produto:</strong> Camiseta Ordo Caoti<br>
+                    <strong>Quantidade:</strong> 1<br>
+                    <strong>Valor:</strong> R$ 179,90
+                </div>
+                <div>
+                    <strong>Data do Pedido:</strong> 20/09/2024<br>
+                    <strong>Status Atual:</strong> Em Transporte<br>
+                    <strong>PrevisÃ£o de Entrega:</strong> 25/09/2024
+                </div>
+            </div>
+            <div class="status-timeline">   
+                <div class="status-step active">
+                    <h3>Pedido Recebido</h3>
+                    <p>20/09/2024 14:35</p>
+                </div>
+                <div class="status-step active">
+                    <h3>Processando Pedido</h3>
+                    <p>20/09/2024 15:00</p>
+                </div>
+                <div class="status-step active">
+                    <h3>Em Transporte</h3>
+                    <p>21/09/2024 10:00</p>
+                </div>
+                <div class="status-step">
+                    <h3>Entregue</h3>
+                    <p>PrevisÃ£o: 25/09/2024</p>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <h1>Rastreio do Pedido #67890</h1>
+            <div class="order-info">
+                <div>
+                    <strong>Produto:</strong> Caneca Ordo Caoti<br>
+                    <strong>Quantidade:</strong> 2<br>
+                    <strong>Valor:</strong> R$ 99,90
+                </div>
+                <div>
+                    <strong>Data do Pedido:</strong> 18/09/2024<br>
+                    <strong>Status Atual:</strong> Entregue<br>
+                    <strong>Data de Entrega:</strong> 22/09/2024
+                </div>
+            </div>
+            <div class="status-timeline">   
+                <div class="status-step active">
+                    <h3>Pedido Recebido</h3>
+                    <p>18/09/2024 09:20</p>
+                </div>
+                <div class="status-step active">
+                    <h3>Processando Pedido</h3>
+                    <p>18/09/2024 10:00</p>
+                </div>
+                <div class="status-step active">
+                    <h3>Em Transporte</h3>
+                    <p>19/09/2024 08:00</p>
+                </div>
+                <div class="status-step active">
+                    <h3>Entregue</h3>
+                    <p>22/09/2024 16:30</p>
+                </div>
+            </div>
+            <div class="card">  
+                <h1>Rastreio do Pedido #54321</h1>
+                <div class="order-info">
+                    <div>
+                        <strong>Produto:</strong> BonÃ© Ordo Caoti<br>
+                        <strong>Quantidade:</strong> 1<br>
+                        <strong>Valor:</strong> R$ 89,90
+                    </div>
+                    <div>
+                        <strong>Data do Pedido:</strong> 19/09/2024<br>
+                        <strong>Status Atual:</strong> Processando<br>
+                        <strong>PrevisÃ£o de Entrega:</strong> 24/09/2024
+                    </div>
+            </div>
+        </div>
+    </div>
+
+
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+
+</html>

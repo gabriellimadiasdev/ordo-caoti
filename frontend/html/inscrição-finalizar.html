@@ -1,0 +1,178 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inscricao finalizada - Ordo Caoti</title>
+  <style>
+    :root {
+      --bg: #0b1016;
+      --panel: #121d2a;
+      --line: #2c4056;
+      --text: #eef5ff;
+      --muted: #9eb4cb;
+      --accent: #f3be49;
+      --ok: #2ac993;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 16% 18%, #22374c 0%, transparent 42%),
+        radial-gradient(circle at 84% 82%, #3a2132 0%, transparent 48%),
+        var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 780px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      padding: 24px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 1.9rem;
+    }
+    p {
+      margin: 0 0 10px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .highlight {
+      border: 1px solid #355575;
+      border-radius: 12px;
+      background: #142539;
+      padding: 12px;
+      margin: 12px 0;
+    }
+    .highlight strong { color: #fff; }
+    .status {
+      border: 1px solid #2f7057;
+      background: #133528;
+      color: #ceffe5;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 10px;
+      display: none;
+      white-space: pre-wrap;
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 13px;
+      text-decoration: none;
+      color: var(--text);
+      background: #17273b;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #141414;
+      border-color: #caa84c;
+    }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+  </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <main class="card">
+    <h1>Inscricao enviada com sucesso</h1>
+    <p>Obrigado por concluir o processo inicial. Sua inscricao foi recebida e entrou em fila de avaliacao administrativa.</p>
+
+    <div class="highlight">
+      <p><strong>Prazo de retorno:</strong> ate 6 meses corridos.</p>
+      <p><strong>Canal de retorno:</strong> e-mail e/ou WhatsApp informados na inscricao.</p>
+      <p><strong>Importante:</strong> mantenha seus contatos ativos para nao perder a convocacao.</p>
+    </div>
+
+    <p id="emailInfo" class="muted">E-mail informado: -</p>
+    <p id="tokenInfo" class="muted">Codigo de acompanhamento: -</p>
+
+    <div id="statusCard" class="status"></div>
+
+    <div class="toolbar">
+      <a class="btn" href="/">Voltar para a Home</a>
+      <button class="btn primary" type="button" id="loginBtn">Ir para Login</button>
+      <a class="btn" href="/acompanhamento">Acompanhar processo</a>
+    </div>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || null;
+    const toApiUrl = (path) => (runtime && typeof runtime.apiUrl === 'function' ? runtime.apiUrl(path) : path);
+    const toAppRoute = (routePath, htmlFile) => (
+      runtime && typeof runtime.appRoute === 'function'
+        ? runtime.appRoute(routePath, htmlFile)
+        : routePath
+    );
+
+    const params = new URLSearchParams(window.location.search);
+    const email = (params.get("email") || "").trim();
+    const token = (params.get("token") || "").trim();
+
+    const emailInfo = document.getElementById("emailInfo");
+    const tokenInfo = document.getElementById("tokenInfo");
+    const statusCard = document.getElementById("statusCard");
+
+    emailInfo.textContent = `E-mail informado: ${email || "nao informado"}`;
+    tokenInfo.textContent = `Codigo de acompanhamento: ${token || "nao informado"}`;
+
+    async function carregarStatus() {
+      if (!email || !token) return;
+
+      try {
+        const res = await fetch(toApiUrl(`/candidato/acompanhamento?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`));
+        const data = await res.json();
+        if (!res.ok) return;
+
+        const dataUltima = data.ultima_atualizacao ? new Date(data.ultima_atualizacao).toLocaleString("pt-BR") : "-";
+        statusCard.style.display = "block";
+        statusCard.textContent =
+          `Status atual: ${data.status_atual || "em_analise"}\n` +
+          `Tentativas registradas: ${data.tentativas_total || 1}\n` +
+          `RA: ${data.ra_codigo || "ainda nao gerado"}\n` +
+          `Ultima atualizacao: ${dataUltima}`;
+      } catch (_) {
+      }
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      if (email) {
+        sessionStorage.setItem("prefill_email", email);
+        window.location.href = `${toAppRoute('/login', 'login.html')}?email=${encodeURIComponent(email)}`;
+        return;
+      }
+      window.location.href = toAppRoute('/login', 'login.html');
+    });
+
+    carregarStatus();
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

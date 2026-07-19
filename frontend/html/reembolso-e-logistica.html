@@ -1,0 +1,246 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reembolso e Logï¿½stica - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card: #151515;
+      --line: #2a2a2a;
+      --text: #f2f2f2;
+      --muted: #9f9f9f;
+      --accent: #ff5a5f;
+      --ok: #4cd137;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 1.2rem;
+      box-sizing: border-box;
+    }
+
+    .wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #ffc0c3;
+    }
+
+    .input-group {
+      margin-bottom: 0.8rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.3rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #101010;
+      border: 1px solid #323232;
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.7rem;
+    }
+
+    textarea {
+      min-height: 100px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.7rem;
+      border-radius: 8px;
+      border: 1px solid #5a2f30;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .timeline {
+      margin-top: 1rem;
+      border-left: 2px solid #323232;
+      padding-left: 0.8rem;
+    }
+
+    .timeline-item {
+      margin-bottom: 0.8rem;
+      color: #d5d5d5;
+    }
+
+    .msg {
+      margin-top: 0.7rem;
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+
+    .msg.ok {
+      color: var(--ok);
+    }
+
+    .msg.error {
+      color: var(--accent);
+    }
+
+    .top-links {
+      max-width: 980px;
+      margin: 0 auto 0.9rem;
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .top-links a {
+      color: #d3d3d3;
+      text-decoration: none;
+      border: 1px solid #2f2f2f;
+      border-radius: 8px;
+      padding: 0.45rem 0.7rem;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 900px) {
+      .wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+  <nav class="top-links">
+    <a href="./dashboard-cliente.html">Voltar ao painel</a>
+    <a href="./logistica.html">Rastreamento logï¿½stico</a>
+  </nav>
+
+  <div class="wrapper">
+    <section class="card">
+      <h1>Solicitar Reembolso</h1>
+      <p style="color: var(--muted);">A solicitaï¿½ï¿½o ï¿½ registrada e pode ser processada no gateway via Orders API por perfil autorizado.</p>
+
+      <form id="refund-form">
+        <div class="input-group">
+          <label for="order-id">ID do pedido</label>
+          <input id="order-id" type="number" required>
+        </div>
+
+        <div class="input-group">
+          <label for="motivo">Motivo</label>
+          <select id="motivo" required>
+            <option value="">Selecione</option>
+            <option value="arrependimento">Arrependimento</option>
+            <option value="erro-no-pedido">Erro no pedido</option>
+            <option value="nao-recebido">Nï¿½o recebido</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="detalhes">Detalhes</label>
+          <textarea id="detalhes" placeholder="Descreva os detalhes da solicitaï¿½ï¿½o"></textarea>
+        </div>
+
+        <button type="submit" class="btn">Enviar solicitaï¿½ï¿½o</button>
+        <p id="refund-msg" class="msg"></p>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Status logï¿½stico</h2>
+      <p style="color: var(--muted);">Fluxo de referï¿½ncia para pedidos fï¿½sicos e digitais.</p>
+
+      <div class="timeline">
+        <div class="timeline-item"><strong>1.</strong> Pedido confirmado e order criada no Mercado Pago.</div>
+        <div class="timeline-item"><strong>2.</strong> Pagamento conciliado por webhook assinado.</div>
+        <div class="timeline-item"><strong>3.</strong> Pedido segue para preparaï¿½ï¿½o/entrega.</div>
+        <div class="timeline-item"><strong>4.</strong> Em caso de devoluï¿½ï¿½o, reembolso ï¿½ processado pelo backend.</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const initialOrder = params.get('id');
+    if (initialOrder) {
+      document.getElementById('order-id').value = initialOrder;
+    }
+
+    function getToken() {
+      return localStorage.getItem('token') || sessionStorage.getItem('token');
+    }
+
+    function setMessage(message, type = '') {
+      const msg = document.getElementById('refund-msg');
+      msg.textContent = message;
+      msg.className = `msg ${type}`.trim();
+    }
+
+    document.getElementById('refund-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const token = getToken();
+      if (!token) {
+        setMessage('Faï¿½a login para enviar solicitaï¿½ï¿½o.', 'error');
+        return;
+      }
+
+      const orderId = Number(document.getElementById('order-id').value);
+      const motivo = document.getElementById('motivo').value;
+      const detalhes = document.getElementById('detalhes').value.trim();
+
+      try {
+        const response = await fetch(`/loja/pedidos/${orderId}/reembolso`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            motivo: [motivo, detalhes].filter(Boolean).join(' - ')
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.erro || 'Falha ao registrar solicitaï¿½ï¿½o.');
+        }
+
+        setMessage(`Solicitaï¿½ï¿½o #${data.id} registrada com sucesso.`, 'ok');
+      } catch (error) {
+        setMessage(error.message, 'error');
+      }
+    });
+  </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

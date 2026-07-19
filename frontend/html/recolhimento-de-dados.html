@@ -1,0 +1,170 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dados e Pagamento - Ordo Caoti</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: #f0f0f0; padding: 2rem; }
+        .form-container { max-width: 700px; margin: 0 auto; background: #2a2a2a; padding: 2rem; border-radius: 8px; border: 1px solid #333; }
+        h2 { color: #c8a2c8; border-bottom: 1px solid #444; padding-bottom: 0.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; color: #ccc; font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 0.8rem; background: #333; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        .row { display: flex; gap: 1rem; }
+        .col { flex: 1; }
+        .btn-pay { background-color: #009ee3; color: white; padding: 1rem; text-align: center; display: block; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 1.5rem 0; }
+        .btn-submit { background-color: #4cd137; color: #1a1a1a; width: 100%; padding: 1rem; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .btn-submit:hover { background-color: #44bd32; }
+        .file-input { padding: 0.5rem; background: #222; }
+    </style>
+
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Dados Pessoais e Endereco</h2>
+        <form id="dadosForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" name="nome" required>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>E-mail</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="col form-group">
+                    <label>Celular / WhatsApp</label>
+                    <input type="text" name="telefone" placeholder="(XX) 9XXXX-XXXX" required>
+                </div>
+            </div>
+
+            <h3>Endereco</h3>
+            <div class="row">
+                <div class="col form-group">
+                    <label>Tipo</label>
+                    <select name="tipo_logradouro" required>
+                        <option value="Rua">Rua</option>
+                        <option value="Avenida">Avenida</option>
+                        <option value="Alameda">Alameda</option>
+                        <option value="Travessa">Travessa</option>
+                        <option value="Rodovia">Rodovia</option>
+                        <option value="Estrada">Estrada</option>
+                    </select>
+                </div>
+                <div class="col form-group" style="flex: 3;">
+                    <label>Logradouro (Nome da Rua)</label>
+                    <input type="text" name="logradouro" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Numero</label>
+                    <input type="text" name="numero" required>
+                </div>
+                <div class="col form-group">
+                    <label>Complemento</label>
+                    <input type="text" name="complemento">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Municipio</label>
+                    <input type="text" name="municipio" required>
+                </div>
+                <div class="col form-group">
+                    <label>Estado (UF)</label>
+                    <input type="text" name="estado" maxlength="2" placeholder="SP" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Pais</label>
+                    <input type="text" name="pais" value="Brasil" required>
+                </div>
+                <div class="col form-group">
+                    <label>CEP</label>
+                    <input type="text" name="cep" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Motivacao / Respostas (Breve resumo)</label>
+                <textarea name="respostas" rows="3" placeholder="Por que deseja entrar na Ordem?"></textarea>
+            </div>
+
+            <hr style="border-color: #444; margin: 2rem 0;">
+
+            <h2>Pagamento e Documentacao</h2>
+            <p>1. Realize o pagamento da taxa de inscricao (R$ 80,00) via Mercado Pago:</p>
+            <a href="https://www.mercadopago.com.br/checkout/v1/payment/redirect/b69eaa74-6372-451e-a45c-ceda3490f269/payment-option-form/?source=link&preference-id=21821894-701bb189-869c-4c5d-ba33-38ea1a9d3f20&router-request-id=53e569b3-c1ff-4f54-84f6-2e5e41eceda5&p=a2df17010e89426cac8e38a0f4f491ba" target="_blank" class="btn-pay">Pagar Taxa de Inscricao</a>
+
+            <div class="form-group">
+                <label>2. Anexe o Comprovante de Pagamento</label>
+                <input type="file" name="comprovante" class="file-input" accept="image/*,.pdf" required>
+            </div>
+
+            <div class="form-group">
+                <label>3. Anexe o Termo de Adesao Assinado (Gov.br ou PDF)</label>
+                <input type="file" name="termo" class="file-input" accept=".pdf,.p7s" required>
+                <small style="color: #888;">Se nao assinou digitalmente, anexe o PDF gerado na pagina anterior.</small>
+            </div>
+
+            <button type="submit" class="btn-submit">Enviar Solicitacao</button>
+        </form>
+    </div>
+
+    <script src="../js/runtime-api.js"></script>
+    <script>
+        const runtime = window.ordoRuntime || null;
+        const apiUrl = (path) => (runtime && typeof runtime.apiUrl === 'function' ? runtime.apiUrl(path) : path);
+        const appRoute = (routePath, htmlFile) => (
+            runtime && typeof runtime.appRoute === 'function'
+                ? runtime.appRoute(routePath, htmlFile)
+                : routePath
+        );
+
+        document.getElementById('dadosForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.querySelector('.btn-submit');
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch(apiUrl('/inscricao'), {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(data.erro || 'Erro ao enviar. Verifique os dados e tente novamente.');
+                }
+
+                const email = encodeURIComponent(String(formData.get('email') || '').trim());
+                const token = encodeURIComponent(String(data.token_acompanhamento || '').trim());
+                window.location.href = `${appRoute('/inscricao-finalizar', 'inscrição-finalizar.html')}?email=${email}&token=${token}`;
+            } catch (err) {
+                console.error(err);
+                alert(err.message || 'Erro de conexao.');
+                btn.disabled = false;
+                btn.textContent = 'Enviar Solicitacao';
+            }
+        });
+    </script>
+
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
+

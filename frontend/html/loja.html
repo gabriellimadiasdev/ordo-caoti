@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loja Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/style-login-loja.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #090d14;
+      --panel: #141e2d;
+      --line: #2f445f;
+      --text: #ecf3ff;
+      --muted: #abc1da;
+      --accent: #f3be49;
+      --ok: #4fd079;
+    }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 15% 12%, #243950 0%, transparent 43%),
+        radial-gradient(circle at 84% 83%, #23423b 0%, transparent 45%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0.9rem;
+    }
+    .top {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.8rem;
+      align-items: center;
+      margin-bottom: 0.85rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .brand img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #4f6684;
+    }
+    .search input {
+      width: 100%;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: #111c2b;
+      color: var(--text);
+      padding: 0.7rem;
+    }
+    .actions {
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #18304b;
+      color: var(--text);
+      padding: 0.55rem 0.8rem;
+      text-decoration: none;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #2b1d07;
+      border-color: #d19f3a;
+    }
+    .content {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 0.85rem;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.85rem;
+    }
+    .panel h2 {
+      margin: 0 0 0.7rem;
+      color: var(--accent);
+      font-size: 1.08rem;
+    }
+    .categories {
+      display: grid;
+      gap: 0.45rem;
+    }
+    .categories button {
+      border: 1px solid #3b5574;
+      border-radius: 8px;
+      background: #0f1b2b;
+      color: #d8e9ff;
+      padding: 0.5rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .products-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.8rem;
+    }
+    .card {
+      background: #101b2b;
+      border: 1px solid #314a67;
+      border-radius: 12px;
+      padding: 0.75rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #1b2d42;
+      border: 1px solid #3b5777;
+      border-radius: 999px;
+      padding: 0.16rem 0.5rem;
+      width: fit-content;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .price {
+      color: var(--ok);
+      font-weight: 700;
+    }
+    .muted {
+      color: var(--muted);
+    }
+    .status {
+      min-height: 20px;
+      color: var(--muted);
+      margin: 0.45rem 0 0;
+      font-size: 0.9rem;
+    }
+    @media (max-width: 900px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+      .top {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <a class="brand" href="../../index.html">
+        <img src="../img/ordo-caoti-icon.jpeg" alt="Ordo Caoti">
+        <strong>Loja + Escola Ordo Caoti</strong>
+      </a>
+      <div class="search">
+        <input id="searchInput" type="search" placeholder="Buscar produtos e temas..." data-i18n-placeholder="shop.search.placeholder">
+      </div>
+      <div class="actions">
+        <select id="lang-switch" data-lang-switch aria-label="Idioma"></select>
+        <a data-app-route="/loja/carrinho" data-app-file="carrinho-de-compra.html" href="./carrinho-de-compra.html" class="btn">Carrinho <span id="cartCount">0</span></a>
+        <a data-app-route="/login/loja/cliente" data-app-file="login-loja-cliente.html" href="./login-loja-cliente.html" class="btn">Login cliente</a>
+        <a data-app-route="/login/loja/lojista" data-app-file="login-loja-lojista.html" href="./login-loja-lojista.html" class="btn primary">Login lojista</a>
+      </div>
+    </header>
+
+    <section class="content">
+      <aside class="panel">
+        <h2>Filtro rapido</h2>
+        <div class="categories">
+          <button type="button" data-category="">Todos</button>
+          <button type="button" data-category="digital">Digitais</button>
+          <button type="button" data-category="fisico">Fisicos</button>
+          <button type="button" data-category="servico">Servicos</button>
+        </div>
+      </aside>
+
+      <section class="panel">
+        <div class="products-head">
+          <span>Resultados: <strong id="resultsCount">0</strong></span>
+          <span class="muted">Busca unificada via backend `/api/search`</span>
+        </div>
+        <div id="productsGrid" class="grid"></div>
+        <p id="statusMsg" class="status"></p>
+      </section>
+    </section>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {}
+    };
+    runtime.bindAppRoutes();
+
+    const productsGrid = document.getElementById('productsGrid');
+    const searchInput = document.getElementById('searchInput');
+    const statusMsg = document.getElementById('statusMsg');
+    const cartCount = document.getElementById('cartCount');
+    const resultsCount = document.getElementById('resultsCount');
+    const categoryButtons = [...document.querySelectorAll('[data-category]')];
+
+    let products = [];
+    let selectedCategory = '';
+    let searchAbort = null;
+
+    function getToken() {
+      return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    }
+
+    function formatMoney(value) {
+      return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function setStatus(message) {
+      statusMsg.textContent = message || '';
+    }
+
+    function productEmoji(type) {
+      if (type === 'fisico') return '📦';
+      if (type === 'servico') return '🛠';
+      return '📚';
+    }
+
+    function normalizeProducts(rows) {
+      return (rows || []).map((item) => ({
+        id: Number(item.id),
+        nome: String(item.nome || item.titulo || `Produto ${item.id}`),
+        descricao: String(item.descricao || ''),
+        preco: Number(item.preco || item.valor || 0),
+        tipo: String(item.tipo || 'digital').toLowerCase()
+      }));
+    }
+
+    function render(rows) {
+      const normalized = normalizeProducts(rows);
+      resultsCount.textContent = String(normalized.length);
+
+      if (!normalized.length) {
+        productsGrid.innerHTML = '<p class="muted">Nenhum resultado encontrado.</p>';
+        return;
+      }
+
+      productsGrid.innerHTML = normalized.map((product) => `
+        <article class="card">
+          <span class="badge">${productEmoji(product.tipo)} ${product.tipo}</span>
+          <strong>${product.nome}</strong>
+          <span class="muted">${product.descricao || 'Produto oficial da plataforma Ordo Caoti.'}</span>
+          <span class="price">${formatMoney(product.preco)}</span>
+          <button class="btn" type="button" data-add="${product.id}">Adicionar ao carrinho</button>
+        </article>
+      `).join('');
+
+      productsGrid.querySelectorAll('[data-add]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          await addToCart(Number(button.getAttribute('data-add')), button);
+        });
+      });
+    }
+
+    function applyLocalFilters() {
+      const query = String(searchInput.value || '').trim().toLowerCase();
+      let filtered = [...products];
+
+      if (selectedCategory) {
+        filtered = filtered.filter((product) => product.tipo === selectedCategory);
+      }
+      if (query) {
+        filtered = filtered.filter((product) =>
+          String(product.nome).toLowerCase().includes(query)
+          || String(product.descricao).toLowerCase().includes(query)
+        );
+      }
+      render(filtered);
+    }
+
+    async function searchViaApi(query) {
+      if (searchAbort) searchAbort.abort();
+      searchAbort = new AbortController();
+
+      const url = runtime.apiUrl(`/api/search?scope=produtos&limit=30&q=${encodeURIComponent(query)}`);
+      const response = await fetch(url, { signal: searchAbort.signal });
+      if (!response.ok) {
+        throw new Error('Busca remota indisponivel.');
+      }
+      const data = await response.json();
+      return normalizeProducts(data?.results || []);
+    }
+
+    async function handleSearch() {
+      const query = String(searchInput.value || '').trim();
+      if (query.length < 2) {
+        applyLocalFilters();
+        return;
+      }
+
+      try {
+        const remote = await searchViaApi(query);
+        let filtered = remote;
+        if (selectedCategory) {
+          filtered = remote.filter((product) => product.tipo === selectedCategory);
+        }
+        render(filtered);
+        setStatus(`Busca online: ${filtered.length} resultado(s).`);
+      } catch (error) {
+        if (error?.name !== 'AbortError') {
+          applyLocalFilters();
+          setStatus('Busca online indisponivel. Filtro local aplicado.');
+        }
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        const response = await fetch(runtime.apiUrl('/produtos'));
+        if (!response.ok) throw new Error('Falha ao carregar produtos.');
+        products = normalizeProducts(await response.json());
+        applyLocalFilters();
+      } catch (error) {
+        setStatus(error.message);
+      }
+    }
+
+    async function addToCart(productId, button) {
+      const token = getToken();
+      if (!token) {
+        window.location.href = runtime.appRoute('/login', 'login.html');
+        return;
+      }
+
+      button.disabled = true;
+      const label = button.textContent;
+      button.textContent = 'Adicionando...';
+
+      try {
+        const response = await fetch(runtime.apiUrl('/loja/carrinho'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            produto_id: productId,
+            tipo_item: 'produto',
+            quantidade: 1
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao adicionar no carrinho.');
+        cartCount.textContent = String(Number(cartCount.textContent || '0') + 1);
+        setStatus('Produto adicionado ao carrinho.');
+      } catch (error) {
+        setStatus(error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = label;
+      }
+    }
+
+    categoryButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        selectedCategory = String(button.getAttribute('data-category') || '').trim().toLowerCase();
+        if (String(searchInput.value || '').trim().length >= 2) {
+          handleSearch();
+        } else {
+          applyLocalFilters();
+        }
+      });
+    });
+
+    searchInput.addEventListener('input', () => {
+      handleSearch();
+    });
+
+    loadProducts();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

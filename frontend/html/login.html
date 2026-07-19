@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Academico - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #121417;
+      --card: #1a1f29;
+      --line: #39465c;
+      --text: #edf2ff;
+      --muted: #a9b7d0;
+      --accent: #e7bf58;
+      --error: #ff8e99;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 16% 20%, #2b3e58 0%, transparent 42%),
+        radial-gradient(circle at 85% 84%, #30413b 0%, transparent 46%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .login-card {
+      width: min(440px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.2rem;
+    }
+    h1 {
+      margin: 0 0 1rem;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 0.9rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.3rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    input,
+    select,
+    button {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #101722;
+      color: var(--text);
+      padding: 0.7rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: var(--accent);
+      color: #1b1205;
+      font-weight: 700;
+      border-color: #c39d3f;
+      cursor: pointer;
+    }
+    .session-options {
+      display: grid;
+      gap: 0.4rem;
+      margin-bottom: 0.95rem;
+    }
+    .session-options label {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 0;
+      color: #c2cde2;
+    }
+    .session-options input {
+      width: auto;
+      padding: 0;
+      margin: 0;
+    }
+    .links {
+      border-top: 1px solid var(--line);
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+    .links a {
+      color: #ffd77f;
+      text-decoration: none;
+      font-size: 0.92rem;
+    }
+    .error-msg {
+      background: rgba(255, 95, 110, 0.15);
+      border: 1px solid rgba(255, 95, 110, 0.38);
+      color: var(--error);
+      border-radius: 8px;
+      padding: 0.65rem;
+      margin-bottom: 0.8rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="login-card">
+    <h1 data-i18n="login.title">Acesso Academico</h1>
+    <div class="form-group">
+      <label for="lang-switch" data-i18n="lang.label">Idioma</label>
+      <select id="lang-switch" data-lang-switch></select>
+    </div>
+
+    <div id="errorMsg" class="error-msg" role="alert"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="perfil_login">Perfil academico de entrada</label>
+        <select id="perfil_login" name="perfil_login">
+          <option value="cliente">Cliente (Loja)</option>
+          <option value="neofito">Neofito</option>
+          <option value="mago_n1">Mago N1</option>
+          <option value="mago_n2">Mago N2</option>
+          <option value="sabio">Sabio (professor autorizado)</option>
+          <option value="mestre">Mestre (administrador)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" required placeholder="Digite seu e-mail">
+      </div>
+
+      <div class="form-group">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" required placeholder="Sua senha">
+      </div>
+
+      <div class="session-options">
+        <label><input type="radio" name="session_type" value="persistent" checked> Permanecer conectado (30 dias)</label>
+        <label><input type="radio" name="session_type" value="session"> Encerrar ao fechar o navegador</label>
+      </div>
+
+      <button type="submit">Entrar no Portal Academico</button>
+    </form>
+
+    <nav class="links">
+      <a data-app-route="/login/loja/cliente" data-app-file="login-loja-cliente.html" href="./login-loja-cliente.html">Login Cliente (Loja)</a>
+      <a data-app-route="/login/loja/lojista" data-app-file="login-loja-lojista.html" href="./login-loja-lojista.html">Login Lojista</a>
+      <a data-app-route="/login/ti" data-app-file="login-ti.html" href="./login-ti.html">Acesso T.I.</a>
+      <a data-app-route="/manutencao-ti" data-app-file="manutencao-ti.html" href="./manutencao-ti.html">Manutencao de T.I.</a>
+      <a href="./cadastro-fundadores-bootstrap.html">Bootstrap dos Fundadores</a>
+      <a href="./cadastro-neofitos.html">Cadastro rapido de Neofitos</a>
+      <a href="./cadastro-magos-n1.html">Cadastro rapido de Magos N1</a>
+      <a href="./cadastro-magos-n2.html">Cadastro rapido de Magos N2</a>
+      <a href="./cadastro-sabios.html">Cadastro rapido de Sabios</a>
+      <a href="./cadastro-ti.html">Cadastro rapido de TI</a>
+      <a href="./biblioteca-livros.html">📚 Biblioteca de Livros</a>
+      <a data-app-route="/regras" data-app-file="regras.html" href="./regras.html">Nao tem conta? Cadastre-se</a>
+      <a data-app-route="/redefinir-senha" data-app-file="redefinir-senha.html" href="./redefinir-senha.html">Esqueci minha senha</a>
+      <a data-app-route="/recuperar-usuario" data-app-file="esqueci-minha-senha.html" href="./esqueci-minha-senha.html">Esqueci meu usuario</a>
+    </nav>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {}
+    };
+
+    runtime.bindAppRoutes();
+
+    const loginForm = document.getElementById('loginForm');
+    const perfilSelect = document.getElementById('perfil_login');
+    const emailInput = document.getElementById('email');
+    const senhaInput = document.getElementById('senha');
+    const errorMsg = document.getElementById('errorMsg');
+
+    function routeForProfile(profile, tipoUsuario) {
+      const selected = String(profile || '').toLowerCase();
+      const type = String(tipoUsuario || '').toLowerCase();
+
+      if (selected === 'cliente') return runtime.appRoute('/dashboard-cliente', 'dashboard-cliente.html');
+      if (selected === 'mestre') return runtime.appRoute('/admin/master', 'area-adm-1.html');
+      if (selected === 'sabio') {
+        if (type === 'admin') return runtime.appRoute('/admin/master', 'area-adm-1.html');
+        return runtime.appRoute('/dashboard-professor', 'dashboard-professor.html');
+      }
+      if (['mago_n2', 'mago_n1', 'neofito'].includes(selected)) {
+        return runtime.appRoute('/dashboard-aluno', 'dashboard-aluno.html');
+      }
+      if (type === 'admin') return runtime.appRoute('/admin/master', 'area-adm-1.html');
+      if (type === 'professor') return runtime.appRoute('/dashboard-professor', 'dashboard-professor.html');
+      if (type === 'aluno') return runtime.appRoute('/dashboard-aluno', 'dashboard-aluno.html');
+      return runtime.appRoute('/dashboard', 'dashboard.html');
+    }
+
+    function showError(message) {
+      errorMsg.textContent = message;
+      errorMsg.style.display = 'block';
+    }
+
+    function hideError() {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      hideError();
+
+      const perfilLogin = perfilSelect.value;
+      const email = emailInput.value.trim().toLowerCase();
+      const senha = senhaInput.value;
+      const sessionType = document.querySelector('input[name="session_type"]:checked')?.value || 'persistent';
+
+      try {
+        const response = await fetch(runtime.apiUrl('/login'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha, session_type: sessionType, perfil_login: perfilLogin })
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data?.erro || 'Falha ao autenticar.');
+        }
+
+        if (sessionType === 'persistent') {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
+        } else {
+          sessionStorage.setItem('token', data.token);
+          sessionStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+
+        const serverHome = String(data?.user?.home_route || '').trim();
+        if (serverHome) {
+          const isBackendRoute = runtime.isBackendRouteMode && runtime.isBackendRouteMode();
+          if (isBackendRoute) {
+            window.location.href = serverHome;
+            return;
+          }
+          const staticMap = {
+            '/admin/master': 'area-adm-1.html',
+            '/dashboard-professor': 'dashboard-professor.html',
+            '/dashboard-aluno': 'dashboard-aluno.html',
+            '/dashboard-cliente': 'dashboard-cliente.html',
+            '/dashboard-lojista': 'dashboard-lojista.html',
+            '/dashboard-TI': 'dashboard-TI.html',
+            '/dashboard': 'dashboard.html'
+          };
+          if (Object.prototype.hasOwnProperty.call(staticMap, serverHome)) {
+            window.location.href = runtime.appRoute(serverHome, staticMap[serverHome]);
+            return;
+          }
+        }
+
+        window.location.href = routeForProfile(data?.user?.perfil_login || perfilLogin, data?.user?.tipo || data?.user?.tipo_usuario);
+      } catch (error) {
+        showError(error.message || 'Erro ao conectar com o servidor.');
+      }
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

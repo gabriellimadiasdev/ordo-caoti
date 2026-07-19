@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reunioes e Aulas Ao Vivo | Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/site-global.css" />
+  <style>
+    body { margin: 0; padding: 1.25rem 0 4.5rem; }
+    .wrap { width: min(1080px, calc(100% - 2rem)); margin: 0 auto; }
+    .hero { margin-bottom: 1rem; border-left: 3px solid var(--oc-yellow); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .card { border: 1px solid var(--oc-border); border-radius: 8px; background: var(--oc-panel); padding: 1.15rem; }
+    label { display: grid; gap: 0.4rem; margin-bottom: 0.85rem; }
+    input { width: 100%; min-height: 46px; border-radius: 6px; padding: 0.7rem; }
+    button { min-height: 44px; border-radius: 6px; padding: 0.6rem 0.9rem; font-weight: 700; cursor: pointer; }
+    .rooms { margin-top: 1rem; }
+    .rooms ul { display: grid; gap: 0.5rem; margin: 0.9rem 0 0; padding: 0; list-style: none; }
+    .rooms li { border-left: 2px solid var(--oc-lilac); padding: 0.55rem 0.7rem; background: var(--oc-black-soft); }
+    .muted { color: var(--oc-muted); }
+    .status { min-height: 1.45rem; margin: 0.85rem 0 0; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .wrap { width: min(100% - 1rem, 1080px); } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero card oc-reveal" aria-labelledby="page-title">
+      <h1 id="page-title">Daily.co: Reunioes e aulas ao vivo</h1>
+      <p class="muted">Salas privadas para diretoria, coordenacao, professores e aulas ao vivo com gravacao na nuvem.</p>
+    </section>
+
+    <section class="grid">
+      <article class="card oc-reveal">
+        <h2>Criar sala</h2>
+        <label>Nome da sala<input id="roomName" maxlength="63" pattern="[a-z0-9-]+" placeholder="aula-matematica-2026" /></label>
+        <label>Titulo<input id="roomTitle" maxlength="120" placeholder="Aula de Matematica Nivel 2" /></label>
+        <button id="createRoomBtn" class="primary" type="button">Criar sala Daily</button>
+        <p id="createStatus" class="muted status" role="status"></p>
+      </article>
+
+      <article class="card oc-reveal">
+        <h2>Entrar em sala</h2>
+        <label>Nome da sala<input id="joinRoomName" maxlength="63" pattern="[a-z0-9-]+" placeholder="aula-matematica-2026" /></label>
+        <button id="joinBtn" class="primary" type="button">Entrar na sala</button>
+        <p id="joinStatus" class="muted status" role="status"></p>
+      </article>
+    </section>
+
+    <section class="card rooms oc-reveal">
+      <h2>Salas recentes</h2>
+      <button id="loadRoomsBtn" type="button">Atualizar lista</button>
+      <ul id="roomsList" aria-live="polite"></ul>
+    </section>
+  </main>
+
+  <script>
+    function getAuthHeaders() {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+      return { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' };
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, { ...options, headers: { ...getAuthHeaders(), ...(options.headers || {}) } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.erro || payload?.detalhes || 'Falha na requisicao.');
+      return payload;
+    }
+
+    function setButtonBusy(button, busy, label) {
+      if (busy) button.dataset.label = button.textContent;
+      button.disabled = busy;
+      button.textContent = busy ? label : (button.dataset.label || button.textContent);
+    }
+
+    document.getElementById('createRoomBtn').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      const status = document.getElementById('createStatus');
+      setButtonBusy(button, true, 'Criando...');
+      status.textContent = 'Criando sala...';
+      try {
+        const name = document.getElementById('roomName').value.trim();
+        const title = document.getElementById('roomTitle').value.trim();
+        const result = await api('/api/daily/rooms', { method: 'POST', body: JSON.stringify({ name, title }) });
+        status.textContent = `Sala criada: ${result?.room?.name || name}`;
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        setButtonBusy(button, false);
+      }
+    });
+
+    document.getElementById('joinBtn').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      const status = document.getElementById('joinStatus');
+      setButtonBusy(button, true, 'Preparando...');
+      status.textContent = 'Gerando acesso...';
+      try {
+        const roomName = document.getElementById('joinRoomName').value.trim();
+        const tokenResult = await api(`/api/daily/rooms/${encodeURIComponent(roomName)}/tokens`, { method: 'POST', body: JSON.stringify({ is_owner: false }) });
+        const cfg = await api('/api/daily/config');
+        status.textContent = 'Abrindo sala em nova aba...';
+        window.open(`${cfg.domain}/${roomName}?t=${encodeURIComponent(tokenResult.token)}`, '_blank', 'noopener');
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        setButtonBusy(button, false);
+      }
+    });
+
+    document.getElementById('loadRoomsBtn').addEventListener('click', async () => {
+      const list = document.getElementById('roomsList');
+      list.replaceChildren(Object.assign(document.createElement('li'), { textContent: 'Carregando...' }));
+      try {
+        const result = await api('/api/daily/rooms');
+        const rooms = result.rooms || [];
+        if (!rooms.length) return list.replaceChildren(Object.assign(document.createElement('li'), { textContent: 'Nenhuma sala encontrada.' }));
+        const items = rooms.slice(0, 20).map((room) => {
+          const item = document.createElement('li');
+          const name = document.createElement('strong');
+          name.textContent = room.name || 'Sala sem nome';
+          item.append(name, document.createTextNode(` - ${room.url || '-'}`));
+          return item;
+        });
+        list.replaceChildren(...items);
+      } catch (error) {
+        list.replaceChildren(Object.assign(document.createElement('li'), { textContent: error.message }));
+      }
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

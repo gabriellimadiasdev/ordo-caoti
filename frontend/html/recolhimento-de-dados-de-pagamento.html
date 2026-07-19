@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f16">
+  <style>
+    :root {
+      --bg: #0a1017;
+      --panel: #152131;
+      --line: #355172;
+      --text: #edf4ff;
+      --muted: #afc4de;
+      --accent: #e7bf52;
+      --ok: #4ed07a;
+      --bad: #ff8b96;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 13% 12%, #273b55 0%, transparent 43%),
+        radial-gradient(circle at 86% 86%, #2a4239 0%, transparent 47%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 0.8rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.85rem;
+    }
+    h1, h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+    .group {
+      margin-bottom: 0.75rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    input,
+    select,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #101b2b;
+      color: var(--text);
+      padding: 0.65rem;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #241806;
+      border-color: #c69b37;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .summary-total {
+      border-top: 1px solid #345172;
+      padding-top: 0.55rem;
+      margin-top: 0.55rem;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .status {
+      min-height: 20px;
+      margin-top: 0.6rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .status.ok {
+      color: var(--ok);
+    }
+    .status.error {
+      color: var(--bad);
+    }
+    .pix-box {
+      margin-top: 0.7rem;
+      border: 1px solid #355173;
+      border-radius: 10px;
+      padding: 0.7rem;
+      background: #111d2d;
+      display: none;
+    }
+    .pix-box img {
+      max-width: 230px;
+      width: 100%;
+      display: block;
+      margin: 0.55rem auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 6px;
+    }
+    code {
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #fce5a7;
+      font-size: 0.85rem;
+    }
+    @media (max-width: 920px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Checkout Mercado Pago (Orders API v2)</h1>
+      <p class="status">Fluxo interno: a ordem e confirmada no backend e sincronizada por webhook e consulta segura.</p>
+
+      <form id="checkoutForm">
+        <div class="group">
+          <label for="payerEmail">E-mail do pagador</label>
+          <input id="payerEmail" type="email" required placeholder="seu-email@exemplo.com">
+        </div>
+
+        <div class="group">
+          <label for="paymentMethod">Metodo de pagamento</label>
+          <select id="paymentMethod">
+            <option value="pix" selected>PIX (automatico)</option>
+            <option value="credit_card">Cartao de credito (tokenizado)</option>
+            <option value="debit_card">Cartao de debito (tokenizado)</option>
+            <option value="google_pay">Google Pay (quando habilitado no gateway)</option>
+            <option value="apple_pay">Apple Pay (quando habilitado no gateway)</option>
+            <option value="paypal">PayPal (quando habilitado no gateway)</option>
+            <option value="nu_pay">NuPay (quando habilitado no gateway)</option>
+            <option value="manual">Manual (sem transacao imediata)</option>
+          </select>
+          <p class="status">Use tokenizacao do provedor de pagamento. Nunca informe numero de cartao bruto nesta tela.</p>
+        </div>
+
+        <div class="group">
+          <label for="paymentToken">Token de pagamento (quando metodo exigir)</label>
+          <input id="paymentToken" type="text" placeholder="Ex.: token gerado pelo SDK do gateway" />
+        </div>
+
+        <div class="group">
+          <label for="shippingType">Tipo de frete</label>
+          <select id="shippingType">
+            <option value="digital" selected>Entrega digital</option>
+            <option value="expresso">Expresso</option>
+            <option value="padrao">Padrao</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <label for="shippingService">Servico de frete</label>
+          <input id="shippingService" type="text" placeholder="Correios / operador interno">
+        </div>
+
+        <button id="createOrderBtn" class="btn-primary" type="submit">Criar order</button>
+      </form>
+
+      <p id="statusMsg" class="status"></p>
+
+      <div id="pixBox" class="pix-box">
+        <strong>Pagamento PIX</strong>
+        <p><strong>Pedido:</strong> <span id="pixPedido">-</span></p>
+        <p><strong>Order:</strong> <span id="pixOrder">-</span></p>
+        <img id="pixImage" alt="QR code PIX">
+        <p><strong>Codigo copia e cola</strong></p>
+        <code id="pixCode"></code>
+        <button id="syncStatusBtn" type="button">Sincronizar status da order</button>
+      </div>
+    </section>
+
+    <aside class="card">
+      <h2>Resumo</h2>
+      <div class="summary-row"><span>Itens</span><span id="sumItems">-</span></div>
+      <div class="summary-row"><span>Subtotal</span><span id="sumSubtotal">R$ 0,00</span></div>
+      <div class="summary-row summary-total"><span>Total</span><span id="sumTotal">R$ 0,00</span></div>
+
+      <a data-app-route="/loja/carrinho" data-app-file="carrinho-de-compra.html" href="./carrinho-de-compra.html" style="text-decoration:none;">
+        <button type="button">Voltar ao carrinho</button>
+      </a>
+    </aside>
+  </main>
+
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || {
+      apiUrl: (path) => path,
+      appRoute: (_route, file) => `./${file}`,
+      bindAppRoutes: () => {}
+    };
+    runtime.bindAppRoutes();
+
+    const checkoutForm = document.getElementById('checkoutForm');
+    const createOrderBtn = document.getElementById('createOrderBtn');
+    const statusMsg = document.getElementById('statusMsg');
+    const pixBox = document.getElementById('pixBox');
+    const pixImage = document.getElementById('pixImage');
+    const pixPedido = document.getElementById('pixPedido');
+    const pixOrder = document.getElementById('pixOrder');
+    const pixCode = document.getElementById('pixCode');
+
+    const sumItems = document.getElementById('sumItems');
+    const sumSubtotal = document.getElementById('sumSubtotal');
+    const sumTotal = document.getElementById('sumTotal');
+
+    let lastPedidoId = null;
+
+    function getToken() {
+      return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    }
+
+    function formatMoney(value) {
+      return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function setStatus(message, type = '') {
+      statusMsg.textContent = message || '';
+      statusMsg.className = `status ${type}`.trim();
+    }
+
+    async function loadSummary() {
+      const token = getToken();
+      if (!token) {
+        setStatus('Faca login para continuar.', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(runtime.apiUrl('/financeiro/historico'), {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao carregar historico.');
+        const lastOrder = Array.isArray(data?.pedidos) && data.pedidos.length ? data.pedidos[0] : null;
+        if (lastOrder) {
+          sumItems.textContent = '1+';
+          sumSubtotal.textContent = formatMoney(lastOrder.total);
+          sumTotal.textContent = formatMoney(lastOrder.total);
+        }
+      } catch (error) {
+        setStatus(error.message, 'error');
+      }
+    }
+
+    async function syncOrderStatus() {
+      const token = getToken();
+      if (!token || !lastPedidoId) {
+        setStatus('Sem pedido para sincronizar.', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(runtime.apiUrl(`/loja/pedidos/${lastPedidoId}/sincronizar-ordem`), {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao sincronizar order.');
+        setStatus(`Status atualizado: ${data.status}.`, 'ok');
+
+        if (String(data.status).toLowerCase() === 'pago') {
+          const target = runtime.appRoute('/loja/compra-aprovada', 'compra-aprovada.html');
+          window.location.href = `${target}?pedido_id=${encodeURIComponent(lastPedidoId)}&order_id=${encodeURIComponent(data?.mercado_pago?.order_id || '')}`;
+        }
+      } catch (error) {
+        setStatus(error.message, 'error');
+      }
+    }
+
+    checkoutForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const token = getToken();
+      if (!token) {
+        setStatus('Faca login para concluir o pagamento.', 'error');
+        window.location.href = runtime.appRoute('/login', 'login.html');
+        return;
+      }
+
+      const payerEmail = document.getElementById('payerEmail').value.trim();
+      const paymentMethod = document.getElementById('paymentMethod').value;
+      const paymentToken = document.getElementById('paymentToken').value.trim();
+      const shippingType = document.getElementById('shippingType').value;
+      const shippingService = document.getElementById('shippingService').value.trim();
+
+      const payload = {
+        metodo_pagamento: paymentMethod === 'manual' ? 'manual' : paymentMethod,
+        processing_mode: paymentMethod === 'manual' ? 'manual' : 'automatic',
+        payer: { email: payerEmail },
+        tipo_frete: shippingType,
+        servico_frete: shippingService
+      };
+
+      if (paymentMethod !== 'manual') {
+        const methodMap = {
+          pix: { id: 'pix', type: 'bank_transfer' },
+          credit_card: { id: 'master', type: 'credit_card' },
+          debit_card: { id: 'visa', type: 'debit_card' },
+          google_pay: { id: 'google_pay', type: 'wallet_purchase' },
+          apple_pay: { id: 'apple_pay', type: 'wallet_purchase' },
+          paypal: { id: 'paypal', type: 'wallet_purchase' },
+          nu_pay: { id: 'nu_pay', type: 'wallet_purchase' }
+        };
+        const selected = methodMap[paymentMethod] || methodMap.pix;
+        payload.payment_method_id = selected.id;
+        payload.payment_method_type = selected.type;
+        payload.installments = 1;
+        if (paymentToken) {
+          payload.payment_token = paymentToken;
+        }
+      }
+
+      createOrderBtn.disabled = true;
+      setStatus('Criando order no backend...');
+
+      try {
+        const response = await fetch(runtime.apiUrl('/loja/checkout'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha no checkout.');
+
+        lastPedidoId = data.pedido_id;
+        setStatus(`Order criada com sucesso (${data?.mercado_pago?.order_id || 'sem id'}).`, 'ok');
+
+        if (data?.mercado_pago?.qr_code_base64) {
+          pixBox.style.display = 'block';
+          pixPedido.textContent = String(data.pedido_id);
+          pixOrder.textContent = String(data?.mercado_pago?.order_id || '-');
+          pixImage.src = `data:image/png;base64,${data.mercado_pago.qr_code_base64}`;
+          pixCode.textContent = data?.mercado_pago?.qr_code || 'Codigo PIX indisponivel.';
+          return;
+        }
+
+        const approvedRoute = runtime.appRoute('/loja/compra-aprovada', 'compra-aprovada.html');
+        window.location.href = `${approvedRoute}?pedido_id=${encodeURIComponent(data.pedido_id)}&order_id=${encodeURIComponent(data?.mercado_pago?.order_id || '')}`;
+      } catch (error) {
+        setStatus(error.message, 'error');
+        setTimeout(() => {
+          const refusedRoute = runtime.appRoute('/loja/compra-recusada', 'compra-recusada.html');
+          window.location.href = `${refusedRoute}?status_detail=order_creation_failed`;
+        }, 1200);
+      } finally {
+        createOrderBtn.disabled = false;
+      }
+    });
+
+    document.getElementById('syncStatusBtn').addEventListener('click', syncOrderStatus);
+
+    const user = runtime.getUser ? runtime.getUser() : {};
+    if (user?.email) {
+      document.getElementById('payerEmail').value = user.email;
+    }
+
+    loadSummary();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>
