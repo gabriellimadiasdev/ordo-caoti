@@ -1,0 +1,526 @@
+{
+  "generatedBy": "vercel-agent",
+  "project": "ordo-caoti",
+  "routes": [
+    {
+      "route": "/acessibilidade-e-inclusao",
+      "file": "frontend/html/acessibilidade-e-inclusao.html",
+      "kind": "html"
+    },
+    {
+      "route": "/acompanhamento",
+      "file": "frontend/html/acompanhamento.html",
+      "kind": "html"
+    },
+    {
+      "route": "/admin-biblioteca",
+      "file": "frontend/html/admin-biblioteca.html",
+      "kind": "html"
+    },
+    {
+      "route": "/admin-financeiro",
+      "file": "frontend/html/admin-financeiro.html",
+      "kind": "html"
+    },
+    {
+      "route": "/admin-inscricoes-ordem",
+      "file": "frontend/html/admin-inscricoes-ordem.html",
+      "kind": "html"
+    },
+    {
+      "route": "/admin-loja-produtos",
+      "file": "frontend/html/admin-loja-produtos.html",
+      "kind": "html"
+    },
+    {
+      "route": "/aprovacao-de-registro",
+      "file": "frontend/html/aprovacao-de-registro.html",
+      "kind": "html"
+    },
+    {
+      "route": "/aprovacao-financeira",
+      "file": "frontend/html/aprovacao-financeira.html",
+      "kind": "html"
+    },
+    {
+      "route": "/area-adm-1",
+      "file": "frontend/html/area-adm-1.html",
+      "kind": "html"
+    },
+    {
+      "route": "/area-anexar-arquivos",
+      "file": "frontend/html/area-anexar-arquivos.html",
+      "kind": "html"
+    },
+    {
+      "route": "/area-financeira-adm",
+      "file": "frontend/html/area-financeira-adm.html",
+      "kind": "html"
+    },
+    {
+      "route": "/area-financeira-aluno",
+      "file": "frontend/html/area-financeira-aluno.html",
+      "kind": "html"
+    },
+    {
+      "route": "/area-matricula",
+      "file": "frontend/html/area-matricula.html",
+      "kind": "html"
+    },
+    {
+      "route": "/area-professor-anexos",
+      "file": "frontend/html/area-professor-anexos.html",
+      "kind": "html"
+    },
+    {
+      "route": "/biblioteca-livros",
+      "file": "frontend/html/biblioteca-livros.html",
+      "kind": "html"
+    },
+    {
+      "route": "/biblioteca",
+      "file": "frontend/html/biblioteca.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-fundadores-bootstrap",
+      "file": "frontend/html/cadastro-fundadores-bootstrap.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-loja-cliente",
+      "file": "frontend/html/cadastro-loja-cliente.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-magos-n1",
+      "file": "frontend/html/cadastro-magos-n1.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-magos-n2",
+      "file": "frontend/html/cadastro-magos-n2.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-membros",
+      "file": "frontend/html/cadastro-membros.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-neofitos",
+      "file": "frontend/html/cadastro-neofitos.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-produtos",
+      "file": "frontend/html/cadastro-produtos.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-sabios",
+      "file": "frontend/html/cadastro-sabios.html",
+      "kind": "html"
+    },
+    {
+      "route": "/cadastro-ti",
+      "file": "frontend/html/cadastro-ti.html",
+      "kind": "html"
+    },
+    {
+      "route": "/carrinho-de-compra",
+      "file": "frontend/html/carrinho-de-compra.html",
+      "kind": "html"
+    },
+    {
+      "route": "/central-operacoes",
+      "file": "frontend/html/central-operacoes.html",
+      "kind": "html"
+    },
+    {
+      "route": "/chat-cliente",
+      "file": "frontend/html/chat-cliente.html",
+      "kind": "html"
+    },
+    {
+      "route": "/compra-aprovada",
+      "file": "frontend/html/compra-aprovada.html",
+      "kind": "html"
+    },
+    {
+      "route": "/compra-recusada",
+      "file": "frontend/html/compra-recusada.html",
+      "kind": "html"
+    },
+    {
+      "route": "/dashboard-TI",
+      "file": "frontend/html/dashboard-TI.html",
+      "kind": "html"
+    },
+    {
+      "route": "/dashboard-aluno",
+      "file": "frontend/html/dashboard-aluno.html",
+      "kind": "html"
+    },
+    {
+      "route": "/dashboard-cliente-reembolso",
+      "file": "frontend/html/dashboard-cliente-reembolso.html",
+      "kind": "html"
+    },
+    {
+      "route": "/dashboard-lojista",
+      "file": "frontend/html/dashboard-lojista.html",
+      "kind": "html"
+    },
+    {
+      "route": "/dashboard-professor",
+      "file": "frontend/html/dashboard-professor.html",
+      "kind": "html"
+    },
+    {
+      "route": "/diario",
+      "file": "frontend/html/diario.html",
+      "kind": "html"
+    },
+    {
+      "route": "/esqueci-minha-senha",
+      "file": "frontend/html/esqueci-minha-senha.html",
+      "kind": "html"
+    },
+    {
+      "route": "/gerar-descontos",
+      "file": "frontend/html/gerar-descontos.html",
+      "kind": "html"
+    },
+    {
+      "route": "/grimorio",
+      "file": "frontend/html/grimorio.html",
+      "kind": "html"
+    },
+    {
+      "route": "/",
+      "file": "frontend/html/index.html",
+      "kind": "html"
+    },
+    {
+      "route": "/inscrição-finalizar",
+      "file": "frontend/html/inscrição-finalizar.html",
+      "kind": "html"
+    },
+    {
+      "route": "/live-center",
+      "file": "frontend/html/live-center.html",
+      "kind": "html"
+    },
+    {
+      "route": "/login-loja-cliente",
+      "file": "frontend/html/login-loja-cliente.html",
+      "kind": "html"
+    },
+    {
+      "route": "/login-loja-lojista",
+      "file": "frontend/html/login-loja-lojista.html",
+      "kind": "html"
+    },
+    {
+      "route": "/login-ti",
+      "file": "frontend/html/login-ti.html",
+      "kind": "html"
+    },
+    {
+      "route": "/login",
+      "file": "frontend/html/login.html",
+      "kind": "html"
+    },
+    {
+      "route": "/logistica",
+      "file": "frontend/html/logistica.html",
+      "kind": "html"
+    },
+    {
+      "route": "/loja",
+      "file": "frontend/html/loja.html",
+      "kind": "html"
+    },
+    {
+      "route": "/manutencao-ti",
+      "file": "frontend/html/manutencao-ti.html",
+      "kind": "html"
+    },
+    {
+      "route": "/nosssos-mestres",
+      "file": "frontend/html/nosssos-mestres.html",
+      "kind": "html"
+    },
+    {
+      "route": "/offline",
+      "file": "frontend/html/offline.html",
+      "kind": "html"
+    },
+    {
+      "route": "/painel-operacional",
+      "file": "frontend/html/painel-operacional.html",
+      "kind": "html"
+    },
+    {
+      "route": "/politica-de-privacidade",
+      "file": "frontend/html/politica-de-privacidade.html",
+      "kind": "html"
+    },
+    {
+      "route": "/rastreio-correios",
+      "file": "frontend/html/rastreio-correios.html",
+      "kind": "html"
+    },
+    {
+      "route": "/recolhimento-de-dados-de-pagamento",
+      "file": "frontend/html/recolhimento-de-dados-de-pagamento.html",
+      "kind": "html"
+    },
+    {
+      "route": "/recolhimento-de-dados",
+      "file": "frontend/html/recolhimento-de-dados.html",
+      "kind": "html"
+    },
+    {
+      "route": "/recuperar-senha",
+      "file": "frontend/html/recuperar-senha.html",
+      "kind": "html"
+    },
+    {
+      "route": "/redefinir-senha",
+      "file": "frontend/html/redefinir-senha.html",
+      "kind": "html"
+    },
+    {
+      "route": "/reembolso-e-logistica",
+      "file": "frontend/html/reembolso-e-logistica.html",
+      "kind": "html"
+    },
+    {
+      "route": "/regras",
+      "file": "frontend/html/regras.html",
+      "kind": "html"
+    },
+    {
+      "route": "/reunioes-daily",
+      "file": "frontend/html/reunioes-daily.html",
+      "kind": "html"
+    },
+    {
+      "route": "/solicitar-acesso",
+      "file": "frontend/html/solicitar-acesso.html",
+      "kind": "html"
+    },
+    {
+      "route": "/termos-de-uso",
+      "file": "frontend/html/termos-de-uso.html",
+      "kind": "html"
+    },
+    {
+      "route": "/",
+      "file": "index.html",
+      "kind": "html"
+    },
+    {
+      "route": "/offline",
+      "file": "frontend/html/offline.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/legal/politica-privacidade",
+      "file": "frontend/html/politica-de-privacidade.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/legal/termos-de-uso",
+      "file": "frontend/html/termos-de-uso.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/legal/acessibilidade",
+      "file": "frontend/html/acessibilidade-e-inclusao.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/login",
+      "file": "frontend/html/login.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/login-ti",
+      "file": "frontend/html/login-ti.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/login/ti",
+      "file": "frontend/html/login-ti.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/login/loja/cliente",
+      "file": "frontend/html/login-loja-cliente.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/login/loja/lojista",
+      "file": "frontend/html/login-loja-lojista.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/inscricao",
+      "file": "frontend/html/regras.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/registro",
+      "file": "frontend/html/area-matricula.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-membros",
+      "file": "frontend/html/cadastro-membros.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-fundadores",
+      "file": "frontend/html/cadastro-fundadores-bootstrap.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-neofitos",
+      "file": "frontend/html/cadastro-neofitos.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-magos-n1",
+      "file": "frontend/html/cadastro-magos-n1.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-magos-n2",
+      "file": "frontend/html/cadastro-magos-n2.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-sabios",
+      "file": "frontend/html/cadastro-sabios.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-ti",
+      "file": "frontend/html/cadastro-ti.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/solicitar-acesso",
+      "file": "frontend/html/solicitar-acesso.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/recuperar-senha",
+      "file": "frontend/html/recuperar-senha.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/recuperar-usuario",
+      "file": "frontend/html/esqueci-minha-senha.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/redefinir-senha",
+      "file": "frontend/html/redefinir-senha.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/dashboard",
+      "file": "frontend/html/dashboard.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/dashboard-aluno",
+      "file": "frontend/html/dashboard-aluno.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/dashboard-professor",
+      "file": "frontend/html/dashboard-professor.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/dashboard-cliente",
+      "file": "frontend/html/dashboard-cliente.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/dashboard-lojista",
+      "file": "frontend/html/dashboard-lojista.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/regras",
+      "file": "frontend/html/regras.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/loja",
+      "file": "frontend/html/loja.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/biblioteca",
+      "file": "frontend/html/biblioteca-livros.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/diario",
+      "file": "frontend/html/diario.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/grimorio",
+      "file": "frontend/html/grimorio.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/dashboard-TI",
+      "file": "frontend/html/dashboard-TI.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/dashboard-ti",
+      "file": "frontend/html/dashboard-TI.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/manutencao-ti",
+      "file": "frontend/html/manutencao-ti.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/admin/aprovacao-registro",
+      "file": "frontend/html/aprovacao-de-registro.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/admin/aprovacao-de-registro",
+      "file": "frontend/html/aprovacao-de-registro.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/ti/admin/aprovacao-registro",
+      "file": "frontend/html/aprovacao-de-registro.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "ti",
+      "file": "frontend/html/admin",
+      "kind": "html-alias"
+    },
+    {
+      "route": "admin",
+      "file": "frontend/html/ti",
+      "kind": "html-alias"
+    }
+  ]
+}

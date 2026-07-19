@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'node:path';
+import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import jwt from 'jsonwebtoken';
@@ -12,6 +13,9 @@ const app = express();
 const rootDir = __dirname;
 const frontendDir = path.join(rootDir, 'frontend');
 const htmlDir = path.join(frontendDir, 'html');
+const siteMemoryPath = path.join(rootDir, 'site-memory.json');
+const siteMemory = fs.existsSync(siteMemoryPath) ? JSON.parse(fs.readFileSync(siteMemoryPath, 'utf8')) : { routes: [] };
+const deployVersion = process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || Date.now().toString();
 
 const staticOptions = {
   etag: true,
@@ -22,6 +26,10 @@ const staticOptions = {
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  res.setHeader('X-Ordo-Caoti-Version', deployVersion);
+  next();
+});
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
@@ -92,6 +100,7 @@ const protectedTiHtmlRoutes = new Map([
   ['/dashboard-TI', 'dashboard-TI.html'],
   ['/dashboard-ti', 'dashboard-TI.html'],
   ['/manutencao-ti', 'manutencao-ti.html'],
+  ['/ti/criar-login', 'ti-criar-login.html'],
   ['/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
   ['/admin/aprovacao-de-registro', 'aprovacao-de-registro.html'],
   ['/ti/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
@@ -735,6 +744,17 @@ app.post('/perfil/trocar', authenticateRequest, async (req, res) => {
   res.json({ ok: true, user: publicUser(req.user, req.userNivel, selected.id), perfil_ativo: selected, perfis_disponiveis: perfis });
 });
 
+
+app.get('/site-memory.json', (_req, res) => res.json(siteMemory));
+app.get('/api/site-memory', (_req, res) => res.json({ ok: true, version: deployVersion, ...siteMemory }));
+app.get('/api/site-version', (_req, res) => res.json({ ok: true, version: deployVersion, generated_at: new Date().toISOString() }));
+
+app.get('/api/route-exists', (req, res) => {
+  const route = String(req.query?.route || '/').trim() || '/';
+  const found = siteMemory.routes.find((item) => item.route === route || `/${path.basename(item.file || '')}` === route);
+  res.json({ ok: true, route, exists: Boolean(found), match: found || null });
+});
+
 app.post('/logout', (_req, res) => {
   res.cookie('oc_session', '', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 0, path: '/' });
   res.json({ ok: true });
@@ -1030,13 +1050,79 @@ app.get('/manutencao/status', async (req, res) => {
   }
 });
 
+
+function coerceUserTypeAndLevel(body = {}) {
+  const requested = resolveRequestedAccess(body);
+  const tipo = String(body.tipo_usuario || requested.tipoUsuario || 'aluno').trim().toLowerCase();
+  if (['cliente','lojista','professor','admin','ti'].includes(tipo)) {
+    return { tipoUsuario: tipo, nivelCodigo: tipo === 'ti' ? 'ti' : (body.nivel_codigo ? normalizeNivelCodigo(body.nivel_codigo) : (tipo === 'cliente' ? 'cliente' : 'neofito')) };
+  }
+  return { tipoUsuario: requested.tipoUsuario, nivelCodigo: requested.nivelCodigo };
+}
+
+app.post('/admin/criar-login', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const nome = String(req.body?.nome || '').trim();
+  const email = normalizeEmail(req.body?.email);
+  const senha = String(req.body?.senha || '');
+  const ativo = req.body?.ativo !== false;
+  const { tipoUsuario, nivelCodigo } = coerceUserTypeAndLevel(req.body || {});
+  if (!nome || !email || !senha) return res.status(400).json({ erro: 'nome, email e senha são obrigatórios.' });
+  if (senha.length < 4) return res.status(400).json({ erro: 'A senha precisa ter pelo menos 4 caracteres.' });
+  try {
+    await ensureAuthSchema();
+    const senhaHash = hashPassword(senha);
+    const { rows } = await pool.query(
+      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
+       VALUES ($1,$2,$3,$4,$5,NOW(),true)
+       ON CONFLICT (email) DO UPDATE
+       SET nome=EXCLUDED.nome, senha_hash=EXCLUDED.senha_hash, tipo_usuario=EXCLUDED.tipo_usuario, ativo=EXCLUDED.ativo, must_change_password=true
+       RETURNING id,nome,email,tipo_usuario,ativo,must_change_password`,
+      [nome, email, senhaHash, tipoUsuario, ativo]
+    );
+    const user = rows[0];
+    await pool.query(
+      `INSERT INTO usuario_niveis (usuario_id, nivel_codigo, atualizado_em)
+       VALUES ($1,$2,NOW())
+       ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo=EXCLUDED.nivel_codigo, atualizado_em=NOW()`,
+      [user.id, nivelCodigo]
+    );
+    res.status(201).json({ ok: true, usuario: publicUser(user, nivelCodigo) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao criar login.' });
+  }
+});
+
+app.get('/admin/usuarios-resumo', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  if (!pool) return res.json([]);
+  await ensureAuthSchema();
+  const { rows } = await pool.query(
+    `SELECT u.id,u.nome,u.email,u.tipo_usuario,u.ativo,u.must_change_password,n.nivel_codigo,u.data_cadastro
+     FROM usuarios u LEFT JOIN usuario_niveis n ON n.usuario_id=u.id
+     ORDER BY u.data_cadastro DESC LIMIT 200`
+  );
+  res.json(rows);
+});
+
+app.use((req, res, next) => {
+  if (req.method !== 'GET') return next();
+  if (req.path.startsWith('/api') || req.path.startsWith('/admin') || req.path.startsWith('/ti') || req.path.includes('.')) return next();
+  const route = siteMemory.routes.find((item) => item.route === req.path && item.file && fs.existsSync(path.join(rootDir, item.file)));
+  if (route) return res.sendFile(path.join(rootDir, route.file));
+  return next();
+});
+
 app.get('/api/status', async (_req, res) => {
   const db = await databaseHealth();
   res.json({ ok: true, name: 'ordo-caoti', mode: 'landing-safe-auth', backend: 'online', database: db.status, db });
 });
 
-app.use((_req, res) => {
-  res.status(404).json({ erro: 'Rota não encontrada.' });
+app.use((req, res) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    return res.status(200).sendFile(path.join(rootDir, 'index.html'));
+  }
+  res.status(404).json({ erro: 'Rota não encontrada.', route: req.path, fallback: 'site-memory' });
 });
 
 export default app;

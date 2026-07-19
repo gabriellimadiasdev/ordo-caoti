@@ -120,6 +120,21 @@
     document.body.appendChild(wrap);
   }
 
+
+  async function checkSiteVersion() {
+    try {
+      const response = await fetch('/api/site-version', { cache: 'no-store' });
+      const data = await response.json();
+      if (!data?.version) return;
+      const key = 'oc_site_version';
+      const previous = sessionStorage.getItem(key);
+      sessionStorage.setItem(key, data.version);
+      if (previous && previous !== data.version) {
+        window.location.reload();
+      }
+    } catch (_) {}
+  }
+
   window.ordoRuntime = {
     apiUrl,
     appRoute,
@@ -131,11 +146,14 @@
     apiFetch,
     switchProfile,
     renderProfileSwitcher,
+    checkSiteVersion,
     isBackendRouteMode: () => true,
   };
 
   document.addEventListener('DOMContentLoaded', () => {
     bindAppRoutes();
     renderProfileSwitcher();
+    checkSiteVersion();
+    setInterval(checkSiteVersion, 60000);
   });
 })();
