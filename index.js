@@ -1,1 +1,1 @@
-require('./frontend/js/server');
+module.exports = require('./frontend/js/server');
