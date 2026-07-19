@@ -282,3 +282,7 @@ Para restaurar a interface que você criou, adicione o seu `index.html` na raiz 
 - `GET /health/db` — retorna JSON com status do banco e versão.
 
 Essas rotas usam `DATABASE_URL`. Se a variável ainda não existir em Production, retornam `missing_DATABASE_URL`.
+
+## Correção para preservar o visual original
+
+A landing page alternativa foi removida para não descaracterizar o site. A rota `/` serve somente o `index.html` original quando ele existir na raiz do repositório. Se o arquivo estiver ausente, a página mostra um aviso simples informando que o `index.html` precisa ser restaurado.

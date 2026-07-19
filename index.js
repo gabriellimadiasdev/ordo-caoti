@@ -459,30 +459,32 @@ const publicEndpoints = [
   'GET /meetings'
 ];
 
-function landingPage() {
-  const dbStatus = sql ? '<span class="status ok">Banco configurado</span>' : '<span class="status warn">Banco pendente</span>';
-  return htmlPage('Ordo Caoti', `
-    <section class="hero card">
-      <p class="muted">Plataforma Ordo Caoti</p>
-      <h1>Portal operacional, loja, biblioteca e sala digital</h1>
-      <p class="muted">Backend ativo na Vercel com módulos de usuários, T.I., biblioteca, loja, pagamentos, aulas/reuniões e integrações configuráveis.</p>
-      <p>${dbStatus}</p>
-      <div class="actions">
-        <a class="button" href="/ti/login">Entrar na área de T.I.</a>
-        <a class="button secondary" href="/biblioteca">Abrir biblioteca</a>
-        <a class="button secondary" href="/status">Ver status</a>
-      </div>
-    </section>
-    <section class="grid" style="margin-top: 18px;">
-      <div class="card"><h2>Loja</h2><p>Produtos, serviços, pedidos, Mercado Pago, Mercado Livre, frete e repasse a vendedores.</p></div>
-      <div class="card"><h2>Sala digital</h2><p>Aulas, reuniões, chat, lousa, reações, provas, gravações e salas paralelas.</p></div>
-      <div class="card"><h2>Biblioteca</h2><p>Livros, materiais, embeds autorizados e fontes científicas como SciELO e PubMed.</p></div>
-      <div class="card"><h2>Governança</h2><p>Hierarquia Mestre, T.I., Soberano, Elevado, Mago Iniciado e Neófito com aprovação de Mestres.</p></div>
-    </section>
-    <section class="card" style="margin-top: 18px;">
-      <h2>Configuração pendente</h2>
-      <p class="muted">Se o painel indicar banco pendente, aceite os termos da Neon e conecte a variável <code>DATABASE_URL</code> em produção. A página inicial continuará funcionando enquanto isso.</p>
-    </section>`);
+function missingIndexPage() {
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>index.html ausente</title>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #111827; }
+    main { max-width: 760px; margin: 12vh auto; padding: 24px; }
+    .box { border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
+    a { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="box">
+      <h1>Seu index.html original não está no deploy</h1>
+      <p>Eu removi a landing page alternativa para não descaracterizar o visual que você criou.</p>
+      <p>Coloque o seu <code>index.html</code> e o CSS/assets originais na raiz do repositório. A rota <code>/</code> já está configurada para servir exatamente esse arquivo quando ele existir.</p>
+      <p>APIs continuam disponíveis em <a href="/api/status">/api/status</a>.</p>
+    </div>
+  </main>
+</body>
+</html>`;
 }
 
 app.get('/', asyncRoute(async (_req, res) => {
@@ -491,7 +493,7 @@ app.get('/', asyncRoute(async (_req, res) => {
     return res.type('html').send(html);
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error;
-    return res.type('html').send(landingPage());
+    return res.status(404).type('html').send(missingIndexPage());
   }
 }));
 
