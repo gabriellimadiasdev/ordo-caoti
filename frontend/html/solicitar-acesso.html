@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solicitar Acesso - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111827;color:#eef2ff;font-family:"Segoe UI",Tahoma,sans-serif;padding:1rem}
+    .card{width:min(620px,100%);background:#1a2740;border:1px solid #314a70;border-radius:12px;padding:1rem}h1{margin:0 0 .4rem;color:#f0c458}.muted{color:#b3c4de;font-size:.92rem}label{display:block;margin:.7rem 0 .2rem;color:#c0cfe5}input,select,textarea,button{width:100%;box-sizing:border-box;border:1px solid #3a567f;border-radius:8px;background:#0f1a2c;color:#eef2ff;padding:.7rem}button{margin-top:.8rem;background:#f0c458;color:#2c1f00;font-weight:700;cursor:pointer}.msg{margin-top:.7rem;padding:.6rem;border:1px solid #3a567f;border-radius:8px;display:none}.ok{border-color:#22c55e;color:#bbf7d0}.err{border-color:#ef4444;color:#fecaca}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Solicitar acesso</h1>
+    <p class="muted">Use este formulário se você já é membro, cliente ou T.I. e precisa que admin/T.I. aprove seu acesso.</p>
+    <form id="formAcesso">
+      <label for="nome">Nome</label><input id="nome" required />
+      <label for="email">Email</label><input id="email" type="email" required />
+      <label for="senha">Senha desejada</label><input id="senha" type="password" minlength="6" required />
+      <label for="tipo">Tipo de acesso</label>
+      <select id="tipo" required>
+        <option value="membro">Membro da Ordem</option>
+        <option value="cliente">Cliente da loja</option>
+        <option value="ti">T.I.</option>
+      </select>
+      <label for="nivel">Hierarquia do membro</label>
+      <select id="nivel">
+        <option value="neofito">Neófito</option>
+        <option value="mago_n1">Mago N1</option>
+        <option value="mago_n2">Mago N2</option>
+        <option value="sabio">Sábio / Soberano</option>
+        <option value="mestre_fundador">Mestre</option>
+      </select>
+      <label for="observacao">Observação para aprovação</label>
+      <textarea id="observacao" rows="3" placeholder="Explique quem você é, seu vínculo e qual acesso precisa."></textarea>
+      <button type="submit">Enviar para aprovação</button>
+    </form>
+    <div class="msg" id="msg"></div>
+  </main>
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || { apiUrl: (p) => p };
+    const msg = document.getElementById('msg');
+    function show(text, ok=false){ msg.style.display='block'; msg.className=`msg ${ok?'ok':'err'}`; msg.textContent=text; }
+    document.getElementById('tipo').addEventListener('change', (event) => {
+      document.getElementById('nivel').disabled = event.target.value !== 'membro';
+    });
+    document.getElementById('formAcesso').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      msg.style.display='none';
+      const tipo = document.getElementById('tipo').value;
+      const payload = {
+        nome: nome.value.trim(),
+        email: email.value.trim().toLowerCase(),
+        senha: senha.value,
+        tipo_solicitado: tipo,
+        nivel_codigo: tipo === 'membro' ? nivel.value : tipo,
+        observacao: observacao.value.trim()
+      };
+      try {
+        const response = await fetch(runtime.apiUrl('/api/solicitacoes-acesso'), { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao solicitar acesso.');
+        show('Solicitação enviada. Aguarde aprovação de admin/T.I. antes de fazer login.', true);
+        event.target.reset();
+      } catch (error) { show(error.message || 'Falha inesperada.'); }
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

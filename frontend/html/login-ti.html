@@ -75,6 +75,7 @@
       <button type="submit">Entrar no Dashboard T.I.</button>
     </form>
     <p id="msg" class="msg"></p>
+    <p style="margin:.8rem 0 0;color:#aec5de;">Precisa de acesso T.I.? <a href="/cadastro-ti" style="color:#f1bf4b;">Solicite aprovação</a>.</p>
   </main>
 
   <script src="../js/runtime-api.js"></script>
@@ -98,7 +99,7 @@
         const response = await fetch(runtime.apiUrl('/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, senha, session_type: 'persistent' })
+          body: JSON.stringify({ email, senha, session_type: 'persistent', perfil_login: 'ti' })
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.erro || 'Falha ao autenticar.');

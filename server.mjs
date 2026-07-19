@@ -67,6 +67,10 @@ const htmlRoutes = new Map([
   ['/cadastro-magos-n2', 'cadastro-magos-n2.html'],
   ['/cadastro-sabios', 'cadastro-sabios.html'],
   ['/cadastro-ti', 'cadastro-ti.html'],
+  ['/solicitar-acesso', 'solicitar-acesso.html'],
+  ['/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
+  ['/admin/aprovacao-de-registro', 'aprovacao-de-registro.html'],
+  ['/ti/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
   ['/recuperar-senha', 'recuperar-senha.html'],
   ['/recuperar-usuario', 'esqueci-minha-senha.html'],
   ['/redefinir-senha', 'redefinir-senha.html'],
@@ -157,6 +161,24 @@ async function ensureAuthSchema() {
         usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
         nivel_codigo VARCHAR(30) NOT NULL DEFAULT 'neofito',
         atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS solicitacoes_acesso (
+        id SERIAL PRIMARY KEY,
+        nome TEXT NOT NULL,
+        email TEXT NOT NULL,
+        senha_hash TEXT NOT NULL,
+        tipo_solicitado VARCHAR(30) NOT NULL DEFAULT 'membro',
+        nivel_codigo VARCHAR(30) NOT NULL DEFAULT 'neofito',
+        observacao TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'pendente',
+        usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        decidido_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        decidido_em TIMESTAMPTZ,
+        motivo_recusa TEXT,
+        criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (email, status)
       )
     `);
     await pool.query(`
@@ -284,6 +306,224 @@ app.post('/login', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ erro: 'Falha ao autenticar.' });
+  }
+});
+
+
+async function authenticateRequest(req, res, next) {
+  if (!requireDatabase(res)) return;
+  const header = String(req.headers.authorization || '');
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!token) return res.status(401).json({ erro: 'Token ausente.' });
+
+  try {
+    await ensureAuthSchema();
+    const payload = jwt.verify(token, jwtSecret);
+    const { rows } = await pool.query('SELECT id, nome, email, tipo_usuario, ativo FROM usuarios WHERE id = $1 LIMIT 1', [payload.id]);
+    const user = rows[0];
+    if (!user || user.ativo === false) return res.status(401).json({ erro: 'Sessão inválida.' });
+    const nivelResult = await pool.query('SELECT nivel_codigo FROM usuario_niveis WHERE usuario_id = $1', [user.id]).catch(() => ({ rows: [] }));
+    req.user = user;
+    req.userNivel = nivelResult.rows[0]?.nivel_codigo || (user.tipo_usuario === 'ti' ? 'ti' : 'neofito');
+    next();
+  } catch (_error) {
+    return res.status(401).json({ erro: 'Token inválido ou expirado.' });
+  }
+}
+
+function requireAdminOrTi(req, res, next) {
+  if (!['admin', 'ti'].includes(String(req.user?.tipo_usuario || '').toLowerCase())) {
+    return res.status(403).json({ erro: 'Acesso restrito a admin ou T.I.' });
+  }
+  next();
+}
+
+function resolveRequestedAccess(body = {}) {
+  const raw = String(body.tipo_solicitado || body.tipo || body.perfil || 'membro').trim().toLowerCase();
+  if (raw === 'cliente') return { tipoSolicitado: 'cliente', tipoUsuario: 'cliente', nivelCodigo: 'cliente' };
+  if (raw === 'ti' || raw === 't.i.') return { tipoSolicitado: 'ti', tipoUsuario: 'ti', nivelCodigo: 'ti' };
+  const nivelCodigo = normalizeNivelCodigo(body.nivel_codigo || raw || 'neofito');
+  return { tipoSolicitado: 'membro', tipoUsuario: 'aluno', nivelCodigo };
+}
+
+app.post('/api/solicitacoes-acesso', async (req, res) => {
+  if (!requireDatabase(res)) return;
+  const nome = String(req.body?.nome || '').trim();
+  const email = normalizeEmail(req.body?.email);
+  const senha = String(req.body?.senha || '');
+  const observacao = String(req.body?.observacao || '').trim() || null;
+  const { tipoSolicitado, nivelCodigo } = resolveRequestedAccess(req.body || {});
+
+  if (!nome || !email || !senha) return res.status(400).json({ erro: 'nome, email e senha são obrigatórios.' });
+  if (senha.length < 6) return res.status(400).json({ erro: 'A senha precisa ter pelo menos 6 caracteres.' });
+
+  try {
+    await ensureAuthSchema();
+    const existingUser = await pool.query('SELECT id FROM usuarios WHERE lower(email) = lower($1) LIMIT 1', [email]);
+    if (existingUser.rows.length) return res.status(409).json({ erro: 'Já existe usuário com este email. Use o login ou solicite recuperação de senha.' });
+    const senhaHash = await bcrypt.hash(senha, 10);
+    const result = await pool.query(
+      `INSERT INTO solicitacoes_acesso (nome, email, senha_hash, tipo_solicitado, nivel_codigo, observacao, status, criado_em)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pendente', NOW())
+       ON CONFLICT (email, status) DO UPDATE
+       SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_solicitado = EXCLUDED.tipo_solicitado,
+           nivel_codigo = EXCLUDED.nivel_codigo, observacao = EXCLUDED.observacao, criado_em = NOW()
+       RETURNING id, nome, email, tipo_solicitado, nivel_codigo, status, criado_em`,
+      [nome, email, senhaHash, tipoSolicitado, nivelCodigo, observacao]
+    );
+    res.status(201).json({ ok: true, solicitacao: result.rows[0], mensagem: 'Solicitação enviada para aprovação de admin/T.I.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao registrar solicitação.' });
+  }
+});
+
+app.get('/admin/solicitacoes-acesso', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  const status = String(req.query?.status || 'pendente').trim().toLowerCase();
+  try {
+    await ensureAuthSchema();
+    const { rows } = await pool.query(
+      `SELECT id, nome, email, tipo_solicitado, nivel_codigo, observacao, status, criado_em, decidido_em, motivo_recusa
+       FROM solicitacoes_acesso
+       WHERE status = $1
+       ORDER BY criado_em ASC`,
+      [status]
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao listar solicitações.' });
+  }
+});
+
+app.post('/admin/solicitacoes-acesso/:id/aprovar', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: 'Solicitação inválida.' });
+  const client = await pool.connect();
+  try {
+    await ensureAuthSchema();
+    await client.query('BEGIN');
+    const requestResult = await client.query('SELECT * FROM solicitacoes_acesso WHERE id = $1 FOR UPDATE', [id]);
+    const request = requestResult.rows[0];
+    if (!request) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ erro: 'Solicitação não encontrada.' });
+    }
+    if (request.status !== 'pendente') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ erro: 'Solicitação já processada.' });
+    }
+    const { tipoUsuario, nivelCodigo } = resolveRequestedAccess(request);
+    const inserted = await client.query(
+      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro)
+       VALUES ($1, $2, $3, $4, true, NOW())
+       ON CONFLICT (email) DO UPDATE
+       SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_usuario = EXCLUDED.tipo_usuario, ativo = true
+       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro`,
+      [request.nome, request.email, request.senha_hash, tipoUsuario]
+    );
+    const user = inserted.rows[0];
+    await client.query(
+      `INSERT INTO usuario_niveis (usuario_id, nivel_codigo, atualizado_em)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = EXCLUDED.nivel_codigo, atualizado_em = NOW()`,
+      [user.id, nivelCodigo]
+    );
+    await client.query(
+      `UPDATE solicitacoes_acesso
+       SET status = 'aprovado', usuario_id = $2, decidido_por = $3, decidido_em = NOW()
+       WHERE id = $1`,
+      [id, user.id, req.user.id]
+    );
+    await client.query('COMMIT');
+    res.json({ ok: true, usuario: publicUser(user, nivelCodigo), solicitacao_id: id });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao aprovar solicitação.' });
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/admin/solicitacoes-acesso/:id/rejeitar', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  const id = Number(req.params.id);
+  const motivo = String(req.body?.motivo || '').trim() || null;
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: 'Solicitação inválida.' });
+  try {
+    await ensureAuthSchema();
+    const result = await pool.query(
+      `UPDATE solicitacoes_acesso
+       SET status = 'rejeitado', motivo_recusa = $2, decidido_por = $3, decidido_em = NOW()
+       WHERE id = $1 AND status = 'pendente'
+       RETURNING id, nome, email, status`,
+      [id, motivo, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ erro: 'Solicitação pendente não encontrada.' });
+    res.json({ ok: true, solicitacao: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao rejeitar solicitação.' });
+  }
+});
+
+app.get('/admin/membros-pendentes', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  try {
+    await ensureAuthSchema();
+    const { rows } = await pool.query(
+      `SELECT id, nome, email, tipo_solicitado, nivel_codigo, criado_em AS data_cadastro
+       FROM solicitacoes_acesso
+       WHERE status = 'pendente'
+       ORDER BY criado_em ASC`
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao carregar membros pendentes.' });
+  }
+});
+
+app.post('/admin/aprovar-membro', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  const id = Number(req.body?.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: 'Solicitação inválida.' });
+  const client = await pool.connect();
+  try {
+    await ensureAuthSchema();
+    await client.query('BEGIN');
+    const requestResult = await client.query('SELECT * FROM solicitacoes_acesso WHERE id = $1 FOR UPDATE', [id]);
+    const request = requestResult.rows[0];
+    if (!request || request.status !== 'pendente') {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ erro: 'Solicitação pendente não encontrada.' });
+    }
+    const { tipoUsuario, nivelCodigo } = resolveRequestedAccess(request);
+    const inserted = await client.query(
+      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro)
+       VALUES ($1, $2, $3, $4, true, NOW())
+       ON CONFLICT (email) DO UPDATE
+       SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_usuario = EXCLUDED.tipo_usuario, ativo = true
+       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro`,
+      [request.nome, request.email, request.senha_hash, tipoUsuario]
+    );
+    const user = inserted.rows[0];
+    await client.query(
+      `INSERT INTO usuario_niveis (usuario_id, nivel_codigo, atualizado_em)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = EXCLUDED.nivel_codigo, atualizado_em = NOW()`,
+      [user.id, nivelCodigo]
+    );
+    await client.query(
+      `UPDATE solicitacoes_acesso SET status = 'aprovado', usuario_id = $2, decidido_por = $3, decidido_em = NOW() WHERE id = $1`,
+      [id, user.id, req.user.id]
+    );
+    await client.query('COMMIT');
+    res.json({ ok: true, usuario: publicUser(user, nivelCodigo), solicitacao_id: id });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao aprovar membro.' });
+  } finally {
+    client.release();
   }
 });
 
