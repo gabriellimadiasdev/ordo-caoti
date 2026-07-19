@@ -269,3 +269,9 @@ As páginas HTML usam layout fluido com CSS responsivo. Os endpoints REST/JSON p
 - `GET /api/status` — status JSON técnico do backend.
 
 A página inicial não depende do banco; se `DATABASE_URL` ainda não estiver conectada, ela mostra aviso de banco pendente em vez de exibir JSON cru.
+
+## Preservação do `index.html`
+
+A rota `/` agora tenta servir o arquivo `index.html` original do projeto. Se esse arquivo não existir no repositório/deploy, o backend usa uma landing page de fallback.
+
+Para restaurar a interface que você criou, adicione o seu `index.html` na raiz do repositório e faça deploy. As melhorias de backend continuam disponíveis nas rotas de API, como `/api/status`, `/ti`, `/biblioteca`, `/usuarios`, `/catalog/items` e demais endpoints.

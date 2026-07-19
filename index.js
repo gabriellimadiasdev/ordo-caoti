@@ -1,4 +1,5 @@
 import express from 'express';
+import { readFile } from 'node:fs/promises';
 import crypto, { randomUUID } from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 
@@ -482,9 +483,15 @@ function landingPage() {
     </section>`);
 }
 
-app.get('/', (_req, res) => {
-  res.type('html').send(landingPage());
-});
+app.get('/', asyncRoute(async (_req, res) => {
+  try {
+    const html = await readFile(new URL('./index.html', import.meta.url), 'utf8');
+    return res.type('html').send(html);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+    return res.type('html').send(landingPage());
+  }
+}));
 
 app.get('/api/status', (_req, res) => {
   res.json({
