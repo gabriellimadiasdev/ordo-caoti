@@ -145,13 +145,50 @@ function tipoUsuarioForNivel(nivelCodigo) {
   return nivelCodigo === 'ti' ? 'ti' : 'aluno';
 }
 
+
+const profileCatalog = {
+  cliente: { id: 'cliente', label: 'Cliente', home_route: '/dashboard-cliente' },
+  neofito: { id: 'neofito', label: 'Neófito', home_route: '/dashboard-aluno' },
+  mago_n1: { id: 'mago_n1', label: 'Mago N1', home_route: '/dashboard-aluno' },
+  mago_n2: { id: 'mago_n2', label: 'Mago Elevado', home_route: '/dashboard-aluno' },
+  sabio: { id: 'sabio', label: 'Sábio / Soberano', home_route: '/dashboard-aluno' },
+  mestre_fundador: { id: 'mestre_fundador', label: 'Mestre', home_route: '/admin/master' },
+  lojista: { id: 'lojista', label: 'Lojista', home_route: '/dashboard-lojista' },
+  professor: { id: 'professor', label: 'Professor', home_route: '/dashboard-professor' },
+  admin: { id: 'admin', label: 'Admin', home_route: '/admin/master' },
+  ti: { id: 'ti', label: 'T.I.', home_route: '/dashboard-TI' },
+};
+
+const hierarchyProfiles = ['neofito', 'mago_n1', 'mago_n2', 'sabio', 'mestre_fundador'];
+
+function availableProfilesForUser(user = {}, nivelCodigo = 'neofito') {
+  const profiles = new Set();
+  const tipo = String(user.tipo_usuario || '').toLowerCase();
+  const nivel = normalizeNivelCodigo(nivelCodigo);
+
+  if (tipo === 'cliente') profiles.add('cliente');
+  if (tipo === 'lojista') profiles.add('lojista');
+  if (tipo === 'professor') profiles.add('professor');
+  if (tipo === 'admin') profiles.add('admin');
+  if (tipo === 'ti') profiles.add('ti');
+
+  if (tipo === 'aluno' || tipo === 'admin' || tipo === 'ti') {
+    const idx = hierarchyProfiles.indexOf(nivel);
+    const max = idx >= 0 ? idx : 0;
+    hierarchyProfiles.slice(0, max + 1).forEach((profile) => profiles.add(profile));
+  }
+
+  if (tipo === 'admin') profiles.add('ti');
+  if (tipo === 'ti') ['neofito', 'mago_n1', 'mago_n2'].forEach((profile) => profiles.add(profile));
+
+  return [...profiles].filter((id) => profileCatalog[id]).map((id) => profileCatalog[id]);
+}
+
 function homeRouteForUser(user, nivelCodigo = 'neofito', requestedProfile = '') {
-  if (requestedProfile === 'ti' || user.tipo_usuario === 'ti') return '/dashboard-TI';
-  if (requestedProfile === 'admin' || user.tipo_usuario === 'admin') return '/admin/master';
-  if (requestedProfile === 'professor' || user.tipo_usuario === 'professor') return '/dashboard-professor';
-  if (requestedProfile === 'lojista' || user.tipo_usuario === 'lojista') return '/dashboard-lojista';
-  if (requestedProfile === 'cliente' || user.tipo_usuario === 'cliente') return '/dashboard-cliente';
-  return '/dashboard-aluno';
+  const available = availableProfilesForUser(user, nivelCodigo);
+  const requested = String(requestedProfile || '').toLowerCase();
+  const selected = available.find((profile) => profile.id === requested) || available[0] || profileCatalog.neofito;
+  return selected.home_route;
 }
 
 async function ensureAuthSchema() {
@@ -253,6 +290,9 @@ function requireDatabase(res) {
 }
 
 function publicUser(user, nivelCodigo, profile = '') {
+  const perfisDisponiveis = availableProfilesForUser(user, nivelCodigo);
+  const requested = String(profile || '').toLowerCase();
+  const selected = perfisDisponiveis.find((item) => item.id === requested) || perfisDisponiveis[0] || profileCatalog.neofito;
   return {
     id: user.id,
     nome: user.nome,
@@ -261,9 +301,11 @@ function publicUser(user, nivelCodigo, profile = '') {
     tipo_usuario: user.tipo_usuario,
     nivel_codigo: nivelCodigo || 'neofito',
     nivel: { nivel_codigo: nivelCodigo || 'neofito' },
-    roles: [user.tipo_usuario, nivelCodigo || 'neofito'].filter(Boolean),
-    perfil_login: profile || user.tipo_usuario,
-    home_route: homeRouteForUser(user, nivelCodigo, profile),
+    roles: [user.tipo_usuario, nivelCodigo || 'neofito', ...perfisDisponiveis.map((item) => item.id)].filter(Boolean),
+    perfil_login: selected.id,
+    perfil_ativo: selected,
+    perfis_disponiveis: perfisDisponiveis,
+    home_route: selected.home_route,
     must_change_password: Boolean(user.must_change_password),
   };
 }
@@ -650,6 +692,21 @@ function noDbFallback(res, payload) {
 async function optionalUser(req) {
   try { return await verifyActiveUserFromRequest(req); } catch { return null; }
 }
+
+
+app.get('/me/perfis', authenticateRequest, async (req, res) => {
+  res.json({ ok: true, user: publicUser(req.user, req.userNivel, req.user?.perfil_login), perfis: availableProfilesForUser(req.user, req.userNivel) });
+});
+
+app.post('/perfil/trocar', authenticateRequest, async (req, res) => {
+  const requested = String(req.body?.perfil_login || req.body?.perfil || '').trim().toLowerCase();
+  const perfis = availableProfilesForUser(req.user, req.userNivel);
+  const selected = perfis.find((profile) => profile.id === requested);
+  if (!selected) {
+    return res.status(403).json({ erro: 'Perfil indisponível para este usuário.', perfis_disponiveis: perfis });
+  }
+  res.json({ ok: true, user: publicUser(req.user, req.userNivel, selected.id), perfil_ativo: selected, perfis_disponiveis: perfis });
+});
 
 app.post('/logout', (_req, res) => {
   res.cookie('oc_session', '', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 0, path: '/' });

@@ -14,7 +14,7 @@ async function request(path, options = {}) {
   return { response, body };
 }
 
-const publicPaths = ['/', '/login', '/login-ti', '/solicitar-acesso', '/regras', '/api/status', '/produtos'];
+const publicPaths = ['/', '/login', '/login-ti', '/solicitar-acesso', '/regras', '/api/status', '/produtos', '/js/runtime-api.js'];
 for (const path of publicPaths) {
   const { response } = await request(path);
   assert.ok(response.status < 500, `${path} returned ${response.status}`);
@@ -26,6 +26,15 @@ const signup = await request('/api/solicitacoes-acesso', {
   body: JSON.stringify({ nome: 'Teste Smoke', email: `smoke-${Date.now()}@example.com`, senha: '123456', tipo_solicitado: 'cliente' }),
 });
 assert.ok([201, 503].includes(signup.response.status), `signup returned ${signup.response.status}`);
+
+
+if (signup.response.status === 201) {
+  const email = signup.body?.solicitacao?.email;
+  assert.ok(email, 'signup returned email');
+}
+
+const noAuthProfiles = await request('/me/perfis');
+assert.ok([401, 503].includes(noAuthProfiles.response.status), `profiles returned ${noAuthProfiles.response.status}`);
 
 server.close();
 console.log('smoke ok');
