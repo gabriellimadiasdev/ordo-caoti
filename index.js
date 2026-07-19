@@ -396,6 +396,14 @@ app.get('/', (_req, res) => {
       'GET/POST /usuarios/:id/emails',
       'GET /usuarios/:id/identidades',
       'GET/POST /usuarios/:id/mfa/*',
+      'GET/POST /catalog/items',
+      'POST /orders',
+      'POST /orders/:id/payments/:provider',
+      'GET/POST /meetings',
+      'POST /meetings/:id/breakout-rooms',
+      'GET/POST /meetings/:id/messages',
+      'POST /meetings/:id/whiteboard/events',
+      'POST /meetings/:id/activities',
       'POST /usuarios/:id/mfa/:method/challenge',
       'POST /usuarios/:id/mfa/:method/verify'
     ]
@@ -900,6 +908,651 @@ app.delete(['/usuarios/:id', '/users/:id'], asyncRoute(async (req, res) => {
   }
 
   return res.status(204).send();
+}));
+
+const commerceIntegrations = {
+  mercado_pago: {
+    label: 'Mercado Pago',
+    accessTokenEnv: 'MERCADO_PAGO_ACCESS_TOKEN',
+    publicKeyEnv: 'MERCADO_PAGO_PUBLIC_KEY',
+    webhookSecretEnv: 'MERCADO_PAGO_WEBHOOK_SECRET'
+  },
+  mercado_livre: {
+    label: 'Mercado Livre',
+    clientIdEnv: 'MERCADO_LIVRE_CLIENT_ID',
+    clientSecretEnv: 'MERCADO_LIVRE_CLIENT_SECRET',
+    accessTokenEnv: 'MERCADO_LIVRE_ACCESS_TOKEN',
+    refreshTokenEnv: 'MERCADO_LIVRE_REFRESH_TOKEN'
+  },
+  generic_store: {
+    label: 'Loja genérica',
+    apiUrlEnv: 'STORE_API_URL',
+    apiKeyEnv: 'STORE_API_KEY'
+  },
+  pos: {
+    label: 'Venda presencial',
+    apiUrlEnv: 'POS_API_URL',
+    apiKeyEnv: 'POS_API_KEY'
+  }
+};
+
+const classroomProviders = {
+  daily: {
+    label: 'Daily.co',
+    apiKeyEnv: 'DAILY_API_KEY',
+    apiUrl: 'https://api.daily.co/v1'
+  },
+  livekit: {
+    label: 'LiveKit',
+    apiUrlEnv: 'LIVEKIT_API_URL',
+    apiKeyEnv: 'LIVEKIT_API_KEY',
+    apiSecretEnv: 'LIVEKIT_API_SECRET'
+  },
+  generic_video: {
+    label: 'Provedor de vídeo genérico',
+    apiUrlEnv: 'VIDEO_PROVIDER_API_URL',
+    apiKeyEnv: 'VIDEO_PROVIDER_API_KEY'
+  }
+};
+
+
+function isCommerceConfigured(provider) {
+  const config = commerceIntegrations[provider];
+  if (!config) return false;
+  if (provider === 'mercado_pago') return Boolean(process.env[config.accessTokenEnv]);
+  if (provider === 'mercado_livre') return Boolean(process.env[config.accessTokenEnv] || (process.env[config.clientIdEnv] && process.env[config.clientSecretEnv]));
+  return Boolean(process.env[config.apiUrlEnv] && process.env[config.apiKeyEnv]);
+}
+
+function isClassroomProviderConfigured(provider) {
+  const config = classroomProviders[provider];
+  if (!config) return false;
+  if (provider === 'daily') return Boolean(process.env[config.apiKeyEnv]);
+  if (provider === 'livekit') return Boolean(process.env[config.apiUrlEnv] && process.env[config.apiKeyEnv] && process.env[config.apiSecretEnv]);
+  return Boolean(process.env[config.apiUrlEnv] && process.env[config.apiKeyEnv]);
+}
+
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+async function createMercadoPagoPreference(order) {
+  const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  if (!accessToken) return null;
+
+  const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      external_reference: order.id,
+      items: order.items.map(item => ({
+        id: item.item_id,
+        title: item.name,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unit_price),
+        currency_id: order.currency || 'BRL'
+      })),
+      back_urls: {
+        success: process.env.CHECKOUT_SUCCESS_URL,
+        pending: process.env.CHECKOUT_PENDING_URL,
+        failure: process.env.CHECKOUT_FAILURE_URL
+      },
+      notification_url: process.env.MERCADO_PAGO_WEBHOOK_URL
+    })
+  });
+
+  if (!response.ok) throw new Error('mercado_pago_preference_failed');
+  return response.json();
+}
+
+async function createDailyRoom(meeting) {
+  const apiKey = process.env.DAILY_API_KEY;
+  if (!apiKey) return null;
+
+  const response = await fetch('https://api.daily.co/v1/rooms', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: meeting.id,
+      privacy: 'private',
+      properties: {
+        enable_chat: true,
+        enable_screenshare: true,
+        enable_recording: 'cloud',
+        enable_breakout_rooms: true,
+        exp: Math.floor(new Date(meeting.ends_at).getTime() / 1000)
+      }
+    })
+  });
+
+  if (!response.ok) throw new Error('daily_room_creation_failed');
+  return response.json();
+}
+
+async function ensureCommerceAndClassroomSchema() {
+  await ensureSchema();
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS catalog_items (
+      id UUID PRIMARY KEY,
+      type TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      price NUMERIC(12,2) NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'BRL',
+      inventory_quantity INTEGER,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT catalog_item_type_check CHECK (type IN ('product', 'service'))
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS sales_channels (
+      id UUID PRIMARY KEY,
+      provider TEXT NOT NULL,
+      name TEXT NOT NULL,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      config JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS orders (
+      id UUID PRIMARY KEY,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      channel TEXT NOT NULL DEFAULT 'digital',
+      status TEXT NOT NULL DEFAULT 'draft',
+      subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+      total NUMERIC(12,2) NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'BRL',
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id UUID PRIMARY KEY,
+      order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      item_id UUID REFERENCES catalog_items(id) ON DELETE SET NULL,
+      name TEXT NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1,
+      unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+      total NUMERIC(12,2) NOT NULL DEFAULT 0,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS payments (
+      id UUID PRIMARY KEY,
+      order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'BRL',
+      provider_reference TEXT,
+      checkout_url TEXT,
+      raw_response JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS meetings (
+      id UUID PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      host_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      provider TEXT NOT NULL DEFAULT 'daily',
+      provider_room_id TEXT,
+      join_url TEXT,
+      starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      ends_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '1 hour',
+      settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS meeting_participants (
+      id UUID PRIMARY KEY,
+      meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      display_name TEXT,
+      role TEXT NOT NULL DEFAULT 'student',
+      joined_at TIMESTAMPTZ,
+      left_at TIMESTAMPTZ,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS meeting_rooms (
+      id UUID PRIMARY KEY,
+      meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'main',
+      provider_room_id TEXT,
+      join_url TEXT,
+      settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT meeting_room_type_check CHECK (type IN ('main', 'breakout'))
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS meeting_messages (
+      id UUID PRIMARY KEY,
+      meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+      room_id UUID REFERENCES meeting_rooms(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      message TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS whiteboard_events (
+      id UUID PRIMARY KEY,
+      meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+      room_id UUID REFERENCES meeting_rooms(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      event_type TEXT NOT NULL,
+      payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS meeting_recordings (
+      id UUID PRIMARY KEY,
+      meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'requested',
+      recording_url TEXT,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS meeting_reactions (
+      id UUID PRIMARY KEY,
+      meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+      room_id UUID REFERENCES meeting_rooms(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      reaction TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS classroom_activities (
+      id UUID PRIMARY KEY,
+      meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      questions JSONB NOT NULL DEFAULT '[]'::jsonb,
+      settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+      starts_at TIMESTAMPTZ,
+      ends_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT classroom_activity_type_check CHECK (type IN ('exam', 'quiz', 'poll', 'question', 'assignment'))
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS classroom_responses (
+      id UUID PRIMARY KEY,
+      activity_id UUID NOT NULL REFERENCES classroom_activities(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+      score NUMERIC(8,2),
+      submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+}
+
+function serializeCatalogItem(item) {
+  return {
+    id: item.id,
+    type: item.type,
+    name: item.name,
+    description: item.description,
+    price: Number(item.price),
+    currency: item.currency,
+    inventoryQuantity: item.inventory_quantity,
+    isActive: item.is_active,
+    metadata: item.metadata,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
+  };
+}
+
+function serializeMeeting(meeting) {
+  return {
+    id: meeting.id,
+    title: meeting.title,
+    description: meeting.description,
+    hostUserId: meeting.host_user_id,
+    provider: meeting.provider,
+    providerRoomId: meeting.provider_room_id,
+    joinUrl: meeting.join_url,
+    startsAt: meeting.starts_at,
+    endsAt: meeting.ends_at,
+    settings: meeting.settings,
+    createdAt: meeting.created_at,
+    updatedAt: meeting.updated_at
+  };
+}
+
+app.get('/commerce/integrations', (_req, res) => {
+  res.json({
+    integrations: Object.entries(commerceIntegrations).map(([id, config]) => ({
+      id,
+      label: config.label,
+      configured: isCommerceConfigured(id)
+    }))
+  });
+});
+
+app.get('/catalog/items', asyncRoute(async (_req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const items = await sql`SELECT * FROM catalog_items ORDER BY created_at DESC`;
+  res.json({ items: items.map(serializeCatalogItem) });
+}));
+
+app.post('/catalog/items', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+
+  const type = String(req.body?.type || 'product');
+  const name = String(req.body?.name || '').trim();
+  if (!['product', 'service'].includes(type)) return res.status(400).json({ errors: ['type deve ser product ou service.'] });
+  if (!name) return res.status(400).json({ errors: ['name é obrigatório.'] });
+
+  const saved = await sql`
+    INSERT INTO catalog_items (id, type, name, description, price, currency, inventory_quantity, metadata)
+    VALUES (${randomUUID()}, ${type}, ${name}, ${req.body?.description || null}, ${toNumber(req.body?.price)}, ${req.body?.currency || 'BRL'}, ${req.body?.inventoryQuantity ?? null}, ${JSON.stringify(req.body?.metadata || {})}::jsonb)
+    RETURNING *
+  `;
+
+  res.status(201).json({ item: serializeCatalogItem(saved[0]) });
+}));
+
+app.post('/orders', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+
+  const items = Array.isArray(req.body?.items) ? req.body.items : [];
+  if (items.length === 0) return res.status(400).json({ errors: ['items é obrigatório.'] });
+
+  const normalizedItems = items.map(item => ({
+    item_id: item.itemId || null,
+    name: String(item.name || 'Item'),
+    quantity: Math.max(1, Number.parseInt(item.quantity || 1, 10)),
+    unit_price: toNumber(item.unitPrice ?? item.price),
+    metadata: item.metadata || {}
+  })).map(item => ({ ...item, total: item.quantity * item.unit_price }));
+
+  const total = normalizedItems.reduce((sum, item) => sum + item.total, 0);
+  const orders = await sql`
+    INSERT INTO orders (id, user_id, channel, status, subtotal, total, currency, metadata)
+    VALUES (${randomUUID()}, ${req.body?.userId || null}, ${req.body?.channel || 'digital'}, 'pending_payment', ${total}, ${total}, ${req.body?.currency || 'BRL'}, ${JSON.stringify(req.body?.metadata || {})}::jsonb)
+    RETURNING *
+  `;
+
+  for (const item of normalizedItems) {
+    await sql`
+      INSERT INTO order_items (id, order_id, item_id, name, quantity, unit_price, total, metadata)
+      VALUES (${randomUUID()}, ${orders[0].id}, ${item.item_id}, ${item.name}, ${item.quantity}, ${item.unit_price}, ${item.total}, ${JSON.stringify(item.metadata)}::jsonb)
+    `;
+  }
+
+  res.status(201).json({ order: orders[0], items: normalizedItems });
+}));
+
+app.get('/orders/:id', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const orders = await sql`SELECT * FROM orders WHERE id = ${req.params.id} LIMIT 1`;
+  if (orders.length === 0) return res.status(404).json({ errors: ['Pedido não encontrado.'] });
+  const items = await sql`SELECT * FROM order_items WHERE order_id = ${req.params.id} ORDER BY created_at ASC`;
+  const payments = await sql`SELECT * FROM payments WHERE order_id = ${req.params.id} ORDER BY created_at DESC`;
+  res.json({ order: orders[0], items, payments });
+}));
+
+app.post('/orders/:id/payments/:provider', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+
+  const provider = req.params.provider;
+  if (!commerceIntegrations[provider]) return res.status(404).json({ errors: ['Provedor de pagamento/venda não suportado.'] });
+
+  const orders = await sql`SELECT * FROM orders WHERE id = ${req.params.id} LIMIT 1`;
+  if (orders.length === 0) return res.status(404).json({ errors: ['Pedido não encontrado.'] });
+  const items = await sql`SELECT * FROM order_items WHERE order_id = ${req.params.id} ORDER BY created_at ASC`;
+
+  let providerResponse = null;
+  let checkoutUrl = null;
+  let status = 'pending_configuration';
+
+  if (provider === 'mercado_pago' && isCommerceConfigured(provider)) {
+    providerResponse = await createMercadoPagoPreference({ ...orders[0], items });
+    checkoutUrl = providerResponse.init_point || providerResponse.sandbox_init_point || null;
+    status = 'checkout_created';
+  }
+
+  const payments = await sql`
+    INSERT INTO payments (id, order_id, provider, status, amount, currency, provider_reference, checkout_url, raw_response)
+    VALUES (${randomUUID()}, ${orders[0].id}, ${provider}, ${status}, ${orders[0].total}, ${orders[0].currency}, ${providerResponse?.id || null}, ${checkoutUrl}, ${JSON.stringify(providerResponse || {})}::jsonb)
+    RETURNING *
+  `;
+
+  res.status(201).json({ payment: payments[0], checkoutUrl, configured: isCommerceConfigured(provider) });
+}));
+
+app.post('/webhooks/mercado-pago', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  res.json({ received: true, provider: 'mercado_pago', event: req.body || {} });
+}));
+
+app.post('/webhooks/mercado-livre', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  res.json({ received: true, provider: 'mercado_livre', event: req.body || {} });
+}));
+
+app.get('/classroom/providers', (_req, res) => {
+  res.json({
+    providers: Object.entries(classroomProviders).map(([id, config]) => ({
+      id,
+      label: config.label,
+      configured: isClassroomProviderConfigured(id)
+    })),
+    capabilities: ['audio', 'video', 'chat', 'whiteboard', 'screenshare', 'breakout_rooms', 'recording', 'backgrounds', 'appearance_filters', 'reactions', 'live_exams', 'quizzes', 'polls', 'questions']
+  });
+});
+
+app.get('/meetings', asyncRoute(async (_req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const meetings = await sql`SELECT * FROM meetings ORDER BY starts_at DESC`;
+  res.json({ meetings: meetings.map(serializeMeeting) });
+}));
+
+app.post('/meetings', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+
+  const title = String(req.body?.title || '').trim();
+  if (!title) return res.status(400).json({ errors: ['title é obrigatório.'] });
+
+  const meetingId = randomUUID();
+  const provider = req.body?.provider || 'daily';
+  const startsAt = req.body?.startsAt || new Date().toISOString();
+  const endsAt = req.body?.endsAt || new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const baseSettings = {
+    chat: true,
+    whiteboard: true,
+    screenshare: true,
+    audio: true,
+    video: true,
+    breakoutRooms: true,
+    recording: true,
+    virtualBackgrounds: true,
+    appearanceFilters: true,
+    reactions: true,
+    liveActivities: true,
+    ...(req.body?.settings || {})
+  };
+
+  let providerRoom = null;
+  if (provider === 'daily' && isClassroomProviderConfigured('daily')) {
+    providerRoom = await createDailyRoom({ id: meetingId, ends_at: endsAt });
+  }
+
+  const meetings = await sql`
+    INSERT INTO meetings (id, title, description, host_user_id, provider, provider_room_id, join_url, starts_at, ends_at, settings)
+    VALUES (${meetingId}, ${title}, ${req.body?.description || null}, ${req.body?.hostUserId || null}, ${provider}, ${providerRoom?.id || providerRoom?.name || null}, ${providerRoom?.url || null}, ${startsAt}, ${endsAt}, ${JSON.stringify(baseSettings)}::jsonb)
+    RETURNING *
+  `;
+
+  await sql`
+    INSERT INTO meeting_rooms (id, meeting_id, name, type, provider_room_id, join_url, settings)
+    VALUES (${randomUUID()}, ${meetingId}, 'Sala principal', 'main', ${providerRoom?.id || providerRoom?.name || null}, ${providerRoom?.url || null}, ${JSON.stringify(baseSettings)}::jsonb)
+  `;
+
+  res.status(201).json({ meeting: serializeMeeting(meetings[0]), providerConfigured: isClassroomProviderConfigured(provider) });
+}));
+
+app.get('/meetings/:id', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const meetings = await sql`SELECT * FROM meetings WHERE id = ${req.params.id} LIMIT 1`;
+  if (meetings.length === 0) return res.status(404).json({ errors: ['Reunião/aula não encontrada.'] });
+  const rooms = await sql`SELECT * FROM meeting_rooms WHERE meeting_id = ${req.params.id} ORDER BY created_at ASC`;
+  const activities = await sql`SELECT * FROM classroom_activities WHERE meeting_id = ${req.params.id} ORDER BY created_at DESC`;
+  res.json({ meeting: serializeMeeting(meetings[0]), rooms, activities });
+}));
+
+app.post('/meetings/:id/breakout-rooms', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+
+  const count = Math.max(1, Number.parseInt(req.body?.count || 1, 10));
+  const created = [];
+  for (let index = 1; index <= count; index += 1) {
+    const rooms = await sql`
+      INSERT INTO meeting_rooms (id, meeting_id, name, type, settings)
+      VALUES (${randomUUID()}, ${req.params.id}, ${req.body?.prefix || 'Sala'} || ' ' || ${index}, 'breakout', ${JSON.stringify(req.body?.settings || {})}::jsonb)
+      RETURNING *
+    `;
+    created.push(rooms[0]);
+  }
+
+  res.status(201).json({ rooms: created });
+}));
+
+app.get('/meetings/:id/messages', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const messages = await sql`SELECT * FROM meeting_messages WHERE meeting_id = ${req.params.id} ORDER BY created_at ASC`;
+  res.json({ messages });
+}));
+
+app.post('/meetings/:id/messages', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const message = String(req.body?.message || '').trim();
+  if (!message) return res.status(400).json({ errors: ['message é obrigatório.'] });
+  const saved = await sql`
+    INSERT INTO meeting_messages (id, meeting_id, room_id, user_id, message)
+    VALUES (${randomUUID()}, ${req.params.id}, ${req.body?.roomId || null}, ${req.body?.userId || null}, ${message})
+    RETURNING *
+  `;
+  res.status(201).json({ message: saved[0] });
+}));
+
+app.post('/meetings/:id/whiteboard/events', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const saved = await sql`
+    INSERT INTO whiteboard_events (id, meeting_id, room_id, user_id, event_type, payload)
+    VALUES (${randomUUID()}, ${req.params.id}, ${req.body?.roomId || null}, ${req.body?.userId || null}, ${req.body?.eventType || 'draw'}, ${JSON.stringify(req.body?.payload || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(201).json({ event: saved[0] });
+}));
+
+app.post('/meetings/:id/reactions', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const reaction = String(req.body?.reaction || '').trim();
+  if (!reaction) return res.status(400).json({ errors: ['reaction é obrigatório.'] });
+  const saved = await sql`
+    INSERT INTO meeting_reactions (id, meeting_id, room_id, user_id, reaction)
+    VALUES (${randomUUID()}, ${req.params.id}, ${req.body?.roomId || null}, ${req.body?.userId || null}, ${reaction})
+    RETURNING *
+  `;
+  res.status(201).json({ reaction: saved[0] });
+}));
+
+app.post('/meetings/:id/recordings', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const saved = await sql`
+    INSERT INTO meeting_recordings (id, meeting_id, provider, status, metadata)
+    VALUES (${randomUUID()}, ${req.params.id}, ${req.body?.provider || 'daily'}, 'requested', ${JSON.stringify(req.body?.metadata || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(202).json({ recording: saved[0], providerConfigured: isClassroomProviderConfigured(req.body?.provider || 'daily') });
+}));
+
+app.post('/meetings/:id/activities', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const type = String(req.body?.type || 'quiz');
+  const title = String(req.body?.title || '').trim();
+  if (!['exam', 'quiz', 'poll', 'question', 'assignment'].includes(type)) return res.status(400).json({ errors: ['type inválido.'] });
+  if (!title) return res.status(400).json({ errors: ['title é obrigatório.'] });
+  const saved = await sql`
+    INSERT INTO classroom_activities (id, meeting_id, type, title, questions, settings, starts_at, ends_at)
+    VALUES (${randomUUID()}, ${req.params.id}, ${type}, ${title}, ${JSON.stringify(req.body?.questions || [])}::jsonb, ${JSON.stringify(req.body?.settings || {})}::jsonb, ${req.body?.startsAt || null}, ${req.body?.endsAt || null})
+    RETURNING *
+  `;
+  res.status(201).json({ activity: saved[0] });
+}));
+
+app.post('/activities/:id/responses', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureCommerceAndClassroomSchema();
+  const saved = await sql`
+    INSERT INTO classroom_responses (id, activity_id, user_id, answers, score)
+    VALUES (${randomUUID()}, ${req.params.id}, ${req.body?.userId || null}, ${JSON.stringify(req.body?.answers || {})}::jsonb, ${req.body?.score ?? null})
+    RETURNING *
+  `;
+  res.status(201).json({ response: saved[0] });
 }));
 
 app.use((_req, res) => {

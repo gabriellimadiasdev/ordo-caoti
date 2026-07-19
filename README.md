@@ -78,3 +78,89 @@ Callbacks OAuth:
 - OIDC personalizado: `/auth/oidc/callback`
 
 A tabela `users` e as tabelas auxiliares de e-mails, identidades OAuth, estados OAuth, MFA e desafios MFA são criadas automaticamente na primeira chamada às rotas protegidas por banco.
+
+## Loja, serviços, produtos e pagamentos
+
+Rotas de catálogo e pedidos:
+
+- `GET /commerce/integrations` — lista Mercado Pago, Mercado Livre, loja genérica e venda presencial/POS.
+- `GET /catalog/items` — lista produtos e serviços.
+- `POST /catalog/items` — cria produto ou serviço com `type`, `name`, `price`, `currency`, estoque e metadados.
+- `POST /orders` — cria pedido para venda digital, presencial ou canal externo.
+- `GET /orders/:id` — consulta pedido, itens e pagamentos.
+- `POST /orders/:id/payments/:provider` — cria pagamento/checkout por provedor.
+- `POST /webhooks/mercado-pago` — recebe eventos do Mercado Pago.
+- `POST /webhooks/mercado-livre` — recebe eventos do Mercado Livre.
+
+Provedores preparados:
+
+- `mercado_pago` — cria preferência de checkout quando `MERCADO_PAGO_ACCESS_TOKEN` estiver configurado.
+- `mercado_livre` — estrutura de canal/webhook pronta para sincronização de anúncios e pedidos.
+- `generic_store` — integração genérica por API.
+- `pos` — estrutura para venda presencial/POS.
+
+Variáveis recomendadas para loja:
+
+- `MERCADO_PAGO_ACCESS_TOKEN`
+- `MERCADO_PAGO_PUBLIC_KEY`
+- `MERCADO_PAGO_WEBHOOK_SECRET`
+- `MERCADO_PAGO_WEBHOOK_URL`
+- `MERCADO_LIVRE_CLIENT_ID`
+- `MERCADO_LIVRE_CLIENT_SECRET`
+- `MERCADO_LIVRE_ACCESS_TOKEN`
+- `MERCADO_LIVRE_REFRESH_TOKEN`
+- `STORE_API_URL`
+- `STORE_API_KEY`
+- `POS_API_URL`
+- `POS_API_KEY`
+- `CHECKOUT_SUCCESS_URL`
+- `CHECKOUT_PENDING_URL`
+- `CHECKOUT_FAILURE_URL`
+
+## Reuniões, aulas e sala digital
+
+Rotas de sala/aula:
+
+- `GET /classroom/providers` — lista provedores e capacidades.
+- `GET /meetings` — lista reuniões/aulas.
+- `POST /meetings` — cria aula/reunião com chat, áudio, vídeo, lousa, apresentação de tela, gravação, reações, planos de fundo/filtros e atividades ao vivo habilitadas nas configurações.
+- `GET /meetings/:id` — consulta reunião, salas e atividades.
+- `POST /meetings/:id/breakout-rooms` — cria várias salas paralelas.
+- `GET /meetings/:id/messages` — lista chat.
+- `POST /meetings/:id/messages` — envia mensagem de chat.
+- `POST /meetings/:id/whiteboard/events` — registra eventos de lousa digital.
+- `POST /meetings/:id/reactions` — registra reações.
+- `POST /meetings/:id/recordings` — solicita gravação.
+- `POST /meetings/:id/activities` — cria prova, quiz, enquete, pergunta ao vivo ou atividade.
+- `POST /activities/:id/responses` — envia respostas de prova/teste/pergunta.
+
+Capacidades modeladas:
+
+- chat;
+- lousa;
+- áudio/vídeo;
+- compartilhamento de tela;
+- salas paralelas;
+- gravações;
+- planos de fundo e filtros de aparência;
+- reações;
+- provas ao vivo;
+- testes/quizzes;
+- perguntas, enquetes e atividades digitais.
+
+Provedores preparados:
+
+- `daily` — cria sala real quando `DAILY_API_KEY` estiver configurada.
+- `livekit` — estrutura pronta para LiveKit.
+- `generic_video` — integração genérica por API.
+
+Variáveis recomendadas para sala digital:
+
+- `DAILY_API_KEY`
+- `LIVEKIT_API_URL`
+- `LIVEKIT_API_KEY`
+- `LIVEKIT_API_SECRET`
+- `VIDEO_PROVIDER_API_URL`
+- `VIDEO_PROVIDER_API_KEY`
+
+As tabelas de catálogo, pedidos, pagamentos, reuniões, salas, chat, lousa, gravações, reações, provas e respostas são criadas automaticamente quando `DATABASE_URL` estiver configurada.
