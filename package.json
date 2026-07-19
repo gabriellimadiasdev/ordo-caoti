@@ -2,10 +2,10 @@
   "name": "ordo-caoti",
   "version": "1.0.0",
   "private": true,
-  "main": "index.js",
+  "main": "server.mjs",
   "scripts": {
-    "start": "node index.js",
-    "check": "node --check index.js && node --check frontend/js/server.js",
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check frontend/js/server.js",
     "test": "node frontend/js/tests/mercadoPagoOrders.test.js && node frontend/js/tests/mercadoPagoReports.test.js",
     "test:bootstrap": "node frontend/js/tests/bootstrapFundadores.test.js"
   },
