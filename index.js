@@ -449,6 +449,8 @@ function asyncRoute(handler) {
 const publicEndpoints = [
   'GET /health',
   'GET /api/status',
+  'GET /db/version',
+  'GET /health/db',
   'GET /status',
   'GET /ti/login',
   'GET /biblioteca',
@@ -505,6 +507,29 @@ app.get('/api/status', (_req, res) => {
 app.get('/health', (_req, res) => {
   res.json({ ok: true, database: Boolean(sql) });
 });
+
+app.get('/db/version', asyncRoute(async (_req, res) => {
+  if (!sql) {
+    return res.status(503).json({
+      ok: false,
+      database: 'missing_DATABASE_URL',
+      message: 'Configure DATABASE_URL em Production para testar o Neon.'
+    });
+  }
+
+  const result = await sql`SELECT version()`;
+  const { version } = result[0];
+  res.type('text/plain').send(version);
+}));
+
+app.get('/health/db', asyncRoute(async (_req, res) => {
+  if (!sql) {
+    return res.status(503).json({ ok: false, database: 'missing_DATABASE_URL' });
+  }
+
+  const result = await sql`SELECT version()`;
+  res.json({ ok: true, database: 'connected', version: result[0].version });
+}));
 
 app.get(['/roles', '/funcoes'], (_req, res) => {
   res.json({

@@ -275,3 +275,10 @@ A página inicial não depende do banco; se `DATABASE_URL` ainda não estiver co
 A rota `/` agora tenta servir o arquivo `index.html` original do projeto. Se esse arquivo não existir no repositório/deploy, o backend usa uma landing page de fallback.
 
 Para restaurar a interface que você criou, adicione o seu `index.html` na raiz do repositório e faça deploy. As melhorias de backend continuam disponíveis nas rotas de API, como `/api/status`, `/ti`, `/biblioteca`, `/usuarios`, `/catalog/items` e demais endpoints.
+
+## Teste Neon
+
+- `GET /db/version` — equivalente ao exemplo `SELECT version()`, retorna texto puro com a versão do Postgres.
+- `GET /health/db` — retorna JSON com status do banco e versão.
+
+Essas rotas usam `DATABASE_URL`. Se a variável ainda não existir em Production, retornam `missing_DATABASE_URL`.
