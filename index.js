@@ -6,12 +6,55 @@ const app = express();
 
 app.use(express.json());
 
-const roles = new Set(['admin', 'usuario']);
+const roleHierarchy = {
+  super_admin: {
+    level: 100,
+    label: 'Super Administrador',
+    permissions: ['*']
+  },
+  admin: {
+    level: 80,
+    label: 'Administrador',
+    permissions: ['users:create', 'users:read', 'users:update', 'users:delete', 'roles:read']
+  },
+  gerente: {
+    level: 60,
+    label: 'Gerente',
+    permissions: ['users:create', 'users:read', 'users:update', 'roles:read']
+  },
+  moderador: {
+    level: 40,
+    label: 'Moderador',
+    permissions: ['users:read', 'users:update', 'roles:read']
+  },
+  usuario: {
+    level: 10,
+    label: 'Usuário',
+    permissions: ['users:read:self']
+  }
+};
+
+const roles = new Set(Object.keys(roleHierarchy));
+const mainUsers = [
+  { name: 'Gabriel Lima', email: 'admin@ordocaoti.com.br', role: 'super_admin' },
+  { name: 'Administrador Ordo Caoti', email: 'administrador@ordocaoti.com.br', role: 'admin' },
+  { name: 'Gerente Ordo Caoti', email: 'gerente@ordocaoti.com.br', role: 'gerente' },
+  { name: 'Moderador Ordo Caoti', email: 'moderador@ordocaoti.com.br', role: 'moderador' }
+];
+
 const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
 let schemaReady;
+let seedReady;
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+function serializeRole(role) {
+  return {
+    id: role,
+    ...roleHierarchy[role]
+  };
 }
 
 function serializeUser(user) {
@@ -20,6 +63,8 @@ function serializeUser(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    hierarchyLevel: roleHierarchy[user.role]?.level ?? 0,
+    permissions: roleHierarchy[user.role]?.permissions ?? [],
     createdAt: user.created_at || user.createdAt,
     updatedAt: user.updated_at || user.updatedAt
   };
@@ -37,19 +82,49 @@ function validateDatabase(res) {
 async function ensureSchema() {
   if (!sql) return;
 
-  schemaReady ??= sql`
-    CREATE TABLE IF NOT EXISTS users (
-      id UUID PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      role TEXT NOT NULL DEFAULT 'usuario',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      CONSTRAINT users_role_check CHECK (role IN ('admin', 'usuario'))
-    )
-  `;
+  schemaReady ??= (async () => {
+    await sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        role TEXT NOT NULL DEFAULT 'usuario',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    await sql`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check`;
+    await sql`
+      ALTER TABLE users
+      ADD CONSTRAINT users_role_check
+      CHECK (role IN ('super_admin', 'admin', 'gerente', 'moderador', 'usuario'))
+    `;
+  })();
 
   await schemaReady;
+}
+
+async function ensureMainUsers() {
+  if (!sql) return;
+
+  seedReady ??= (async () => {
+    await ensureSchema();
+
+    for (const user of mainUsers) {
+      await sql`
+        INSERT INTO users (id, name, email, role)
+        VALUES (${randomUUID()}, ${user.name}, ${normalizeEmail(user.email)}, ${user.role})
+        ON CONFLICT (email) DO UPDATE
+        SET
+          name = EXCLUDED.name,
+          role = EXCLUDED.role,
+          updated_at = NOW()
+      `;
+    }
+  })();
+
+  await seedReady;
 }
 
 function validateUserPayload(payload, { partial = false } = {}) {
@@ -106,7 +181,10 @@ app.get('/', (_req, res) => {
       'GET /usuarios/:id',
       'PATCH /usuarios/:id',
       'DELETE /usuarios/:id',
-      'GET /funcoes'
+      'GET /funcoes',
+      'GET /hierarquia',
+      'GET /roles',
+      'GET /usuarios-principais'
     ]
   });
 });
@@ -115,23 +193,54 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, database: Boolean(sql) });
 });
 
-app.get('/funcoes', (_req, res) => {
+app.get(['/roles', '/funcoes'], (_req, res) => {
   res.json({
-    roles: Array.from(roles),
+    roles: Object.keys(roleHierarchy).map(serializeRole),
     functions: [
-      { method: 'GET', path: '/usuarios', description: 'Lista usuários cadastrados.' },
-      { method: 'POST', path: '/usuarios', description: 'Cria usuário com name, email e role opcional.' },
-      { method: 'GET', path: '/usuarios/:id', description: 'Busca usuário por id.' },
-      { method: 'PATCH', path: '/usuarios/:id', description: 'Atualiza name, email ou role.' },
-      { method: 'DELETE', path: '/usuarios/:id', description: 'Remove usuário.' }
+      { method: 'GET', path: '/usuarios', permission: 'users:read', description: 'Lista usuários cadastrados.' },
+      { method: 'POST', path: '/usuarios', permission: 'users:create', description: 'Cria usuário com name, email e role opcional.' },
+      { method: 'GET', path: '/usuarios/:id', permission: 'users:read', description: 'Busca usuário por id.' },
+      { method: 'PATCH', path: '/usuarios/:id', permission: 'users:update', description: 'Atualiza name, email ou role.' },
+      { method: 'DELETE', path: '/usuarios/:id', permission: 'users:delete', description: 'Remove usuário.' },
+      { method: 'GET', path: '/hierarquia', permission: 'roles:read', description: 'Lista hierarquia de papéis.' },
+      { method: 'GET', path: '/usuarios-principais', permission: 'users:read', description: 'Lista usuários principais padrão.' }
     ]
   });
 });
 
+app.get('/hierarquia', (_req, res) => {
+  res.json({
+    hierarchy: Object.keys(roleHierarchy)
+      .map(serializeRole)
+      .sort((a, b) => b.level - a.level)
+  });
+});
+
+app.get('/usuarios-principais', asyncRoute(async (_req, res) => {
+  if (!validateDatabase(res)) return;
+
+  await ensureMainUsers();
+  const users = await sql`
+    SELECT id, name, email, role, created_at, updated_at
+    FROM users
+    WHERE email = ANY(${mainUsers.map(user => normalizeEmail(user.email))})
+    ORDER BY
+      CASE role
+        WHEN 'super_admin' THEN 1
+        WHEN 'admin' THEN 2
+        WHEN 'gerente' THEN 3
+        WHEN 'moderador' THEN 4
+        ELSE 5
+      END
+  `;
+
+  res.json({ users: users.map(serializeUser) });
+}));
+
 app.get(['/usuarios', '/users'], asyncRoute(async (_req, res) => {
   if (!validateDatabase(res)) return;
 
-  await ensureSchema();
+  await ensureMainUsers();
   const users = await sql`
     SELECT id, name, email, role, created_at, updated_at
     FROM users
@@ -150,7 +259,7 @@ app.post(['/usuarios', '/users'], asyncRoute(async (req, res) => {
     return res.status(400).json({ errors });
   }
 
-  await ensureSchema();
+  await ensureMainUsers();
 
   const created = await sql`
     INSERT INTO users (id, name, email, role)
@@ -169,7 +278,7 @@ app.post(['/usuarios', '/users'], asyncRoute(async (req, res) => {
 app.get(['/usuarios/:id', '/users/:id'], asyncRoute(async (req, res) => {
   if (!validateDatabase(res)) return;
 
-  await ensureSchema();
+  await ensureMainUsers();
   const users = await sql`
     SELECT id, name, email, role, created_at, updated_at
     FROM users
@@ -193,7 +302,7 @@ app.patch(['/usuarios/:id', '/users/:id'], asyncRoute(async (req, res) => {
     return res.status(400).json({ errors });
   }
 
-  await ensureSchema();
+  await ensureMainUsers();
 
   const updates = {
     name: values.name,
@@ -222,7 +331,7 @@ app.patch(['/usuarios/:id', '/users/:id'], asyncRoute(async (req, res) => {
 app.delete(['/usuarios/:id', '/users/:id'], asyncRoute(async (req, res) => {
   if (!validateDatabase(res)) return;
 
-  await ensureSchema();
+  await ensureMainUsers();
   const deleted = await sql`
     DELETE FROM users
     WHERE id = ${req.params.id}
@@ -247,6 +356,10 @@ app.use((error, _req, res, _next) => {
 
   if (error?.code === '22P02') {
     return res.status(400).json({ errors: ['Identificador inválido.'] });
+  }
+
+  if (error?.code === '23514') {
+    return res.status(400).json({ errors: ['Role inválido para a hierarquia configurada.'] });
   }
 
   console.error(error);
