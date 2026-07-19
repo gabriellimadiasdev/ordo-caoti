@@ -1,0 +1,19 @@
+{
+  "nav.about": "The order",
+  "nav.products": "Products",
+  "nav.signup": "Sign up",
+  "nav.login": "Login",
+  "landing.cta": "Start your Journey",
+  "shop.title": "Official Store - Ordo Caoti",
+  "shop.search.placeholder": "Search rituals, courses, artifacts...",
+  "shop.login": "Sign in",
+  "shop.buy": "Add to cart",
+  "cart.title": "Shopping Cart",
+  "checkout.title": "Mercado Pago Checkout (Orders API v2)",
+  "dashboard.client": "Client Dashboard (Store + School)",
+  "login.title": "Portal Access",
+  "legal.privacy": "Privacy Policy",
+  "legal.terms": "Terms of Use",
+  "legal.accessibility": "Accessibility and Inclusion",
+  "lang.label": "Language"
+}

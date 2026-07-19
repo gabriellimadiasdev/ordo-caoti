@@ -1,0 +1,45 @@
+
+const { MercadoPagoConfig, Order } = require('mercadopago');
+
+const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+if (!accessToken) {
+  throw new Error('Configure MERCADO_PAGO_ACCESS_TOKEN no ambiente.');
+}
+
+const client = new MercadoPagoConfig({ accessToken });
+const order = new Order(client);
+
+async function createOrderExample() {
+  const body = {
+    type: 'online',
+    processing_mode: 'manual',
+    total_amount: '90.00',
+    external_reference: 'sdk-example-ordo-caoti',
+    description: 'Pedido de exemplo Ordo Caoti',
+    currency: 'BRL',
+    items: [
+      {
+        title: 'Magia de Cura',
+        quantity: 1,
+        unit_price: '90.00',
+        type: 'service'
+      }
+    ]
+  };
+
+  const response = await order.create({
+    body,
+    requestOptions: { idempotencyKey: `sdk-example-${Date.now()}` }
+  });
+
+  console.log('Order criada:', {
+    id: response.id,
+    status: response.status,
+    external_reference: response.external_reference
+  });
+}
+
+createOrderExample().catch((error) => {
+  console.error('Erro ao criar order:', error?.message || error);
+  process.exit(1);
+});

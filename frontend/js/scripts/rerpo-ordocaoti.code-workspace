@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../Fatore"
+		}
+	],
+	"settings": {
+		"chat.tools.terminal.autoApprove": {
+			"npx.cmd": true
+		},
+		"mssql.intelliSense.enableErrorChecking": false,
+		"files.associations": {
+			"backend/sql/ordo-caoti.sql": "postgresql"
+		}
+	}
+}

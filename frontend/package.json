@@ -1,0 +1,26 @@
+{
+  "name": "meu-site-pg",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node ../js/server.js",
+    "test": "node ../js/tests/mercadoPagoOrders.test.js && node ../js/tests/mercadoPagoReports.test.js",
+    "test:bootstrap": "node ../js/tests/bootstrapFundadores.test.js",
+    "report:releases": "node ../js/scripts/generate-releases-report.js",
+    "test-user:create": "node ../js/scripts/create-mercado-test-user.js",
+    "backup:db": "node ../js/scripts/backup-postgres.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.787.0",
+    "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^2.12.0",
+    "multer": "^1.4.5-lts.2",
+    "pg": "^8.12.0"
+  }
+}

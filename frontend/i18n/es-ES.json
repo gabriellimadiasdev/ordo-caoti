@@ -1,0 +1,19 @@
+{
+  "nav.about": "La orden",
+  "nav.products": "Productos",
+  "nav.signup": "Inscribirse",
+  "nav.login": "Iniciar sesión",
+  "landing.cta": "Inicia tu viaje",
+  "shop.title": "Tienda Oficial - Ordo Caoti",
+  "shop.search.placeholder": "Buscar rituales, cursos, artefactos...",
+  "shop.login": "Entrar",
+  "shop.buy": "Agregar al carrito",
+  "cart.title": "Carrito de Compras",
+  "checkout.title": "Checkout Mercado Pago (Orders API v2)",
+  "dashboard.client": "Panel del Cliente (Tienda + Escuela)",
+  "login.title": "Acceso al Portal",
+  "legal.privacy": "Política de Privacidad",
+  "legal.terms": "Términos de Uso",
+  "legal.accessibility": "Accesibilidad e Inclusión",
+  "lang.label": "Idioma"
+}
