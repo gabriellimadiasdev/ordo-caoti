@@ -392,3 +392,66 @@ body.a11y-color-tritanopia {
 }
 .oc-profile-footer label { color: #facc15; font-weight: 700; margin:0; }
 .oc-profile-footer select { width: min(320px,100%); min-height: 40px; border: 1px solid #475569; border-radius: 10px; background: #0f172a; color: #eef2ff; padding: .55rem .7rem; }
+
+/* Etiqueta de acessibilidade lateral */
+.a11y-toolbar {
+  position: fixed;
+  left: 0;
+  top: 34vh;
+  right: auto;
+  bottom: auto;
+  width: min(320px, calc(100vw - 1rem));
+  max-width: 320px;
+  transform: translateX(calc(-100% + 44px));
+  transition: transform .2s ease;
+  border-radius: 0 14px 14px 0;
+  overflow: hidden;
+}
+.a11y-toolbar:hover,
+.a11y-toolbar:focus-within,
+.a11y-toolbar[aria-expanded="true"] { transform: translateX(0); }
+.a11y-toolbar__tab {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 44px;
+  height: 100%;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  border: 0;
+  border-left: 1px solid var(--oc-border-strong);
+  border-radius: 0;
+  background: var(--oc-yellow);
+  color: #171006;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.a11y-toolbar__body {
+  margin-right: 44px;
+  min-width: 240px;
+}
+body.a11y-large-text { font-size: 112%; }
+body.a11y-readable-font, body.a11y-readable-font * { font-family: Arial, Verdana, sans-serif !important; }
+body.a11y-vlibras-enabled { padding-bottom: 0; }
+
+@media (max-width: 640px) {
+  .a11y-toolbar {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    margin: .5rem 0;
+    border-radius: 12px;
+  }
+  .a11y-toolbar__tab {
+    position: static;
+    width: 100%;
+    height: auto;
+    writing-mode: horizontal-tb;
+    transform: none;
+    border-radius: 10px 10px 0 0;
+    min-height: 40px;
+  }
+  .a11y-toolbar__body { margin-right: 0; }
+  .a11y-toolbar[aria-expanded="false"] .a11y-toolbar__body { display: none; }
+}

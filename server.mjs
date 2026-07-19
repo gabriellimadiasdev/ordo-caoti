@@ -88,6 +88,7 @@ const htmlRoutes = new Map([
   ['/dashboard-professor', 'dashboard-professor.html'],
   ['/dashboard-cliente', 'dashboard-cliente.html'],
   ['/dashboard-lojista', 'dashboard-lojista.html'],
+  ['/lojista/financeiro', 'lojista-financeiro.html'],
   ['/regras', 'regras.html'],
   ['/loja', 'loja.html'],
   ['/biblioteca', 'biblioteca-livros.html'],
@@ -710,6 +711,10 @@ async function ensureCoreTables() {
   if (!pool) return;
   await ensureAuthSchema();
   await pool.query(`CREATE TABLE IF NOT EXISTS produtos (id SERIAL PRIMARY KEY, nome TEXT NOT NULL, descricao TEXT, preco NUMERIC(12,2) NOT NULL DEFAULT 0, tipo TEXT DEFAULT 'digital', estoque INTEGER DEFAULT 0, ativo BOOLEAN DEFAULT true, vendedor_id INTEGER, deleted_at TIMESTAMPTZ, data_criacao TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS marketplace_publicacoes (id SERIAL PRIMARY KEY, produto_id INTEGER, lojista_id INTEGER, canal TEXT NOT NULL, status TEXT DEFAULT 'rascunho', checkout_url TEXT, payload JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS lojista_saldos (lojista_id INTEGER PRIMARY KEY, saldo_disponivel NUMERIC(12,2) DEFAULT 0, saldo_pendente NUMERIC(12,2) DEFAULT 0, atualizado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS repasses_lojista (id SERIAL PRIMARY KEY, lojista_id INTEGER, valor NUMERIC(12,2) NOT NULL, metodo TEXT NOT NULL, destino TEXT, status TEXT DEFAULT 'pendente', criado_em TIMESTAMPTZ DEFAULT NOW(), processado_em TIMESTAMPTZ)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS produto_assistente_memoria (id SERIAL PRIMARY KEY, lojista_id INTEGER, produto_id INTEGER, pergunta TEXT, resposta TEXT, sugestao JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS pedidos (id SERIAL PRIMARY KEY, usuario_id INTEGER, descricao TEXT, total NUMERIC(12,2) DEFAULT 0, status TEXT DEFAULT 'pendente', data_pedido TIMESTAMPTZ DEFAULT NOW(), metadata JSONB DEFAULT '{}'::jsonb)`);
   await pool.query(`CREATE TABLE IF NOT EXISTS diario_pessoal (id SERIAL PRIMARY KEY, usuario_id INTEGER, titulo TEXT, conteudo_texto TEXT, sentimento TEXT, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS grimorio_pessoal (id SERIAL PRIMARY KEY, usuario_id INTEGER, titulo TEXT, tipo_registro TEXT DEFAULT 'anotacao', conteudo_texto TEXT, tags JSONB DEFAULT '[]'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
@@ -901,6 +906,107 @@ app.put('/lojista/produtos/:id', authenticateRequest, async (req, res) => {
 app.delete('/lojista/produtos/:id', authenticateRequest, async (req, res) => {
   if (pool) { await ensureCoreTables(); await pool.query('UPDATE produtos SET deleted_at=NOW(), ativo=false WHERE id=$1 AND (vendedor_id=$2 OR $3 = ANY($4::text[]))', [Number(req.params.id), req.user.id, req.user.tipo_usuario, ['admin','ti']]); }
   res.json({ ok: true });
+});
+
+
+const marketplaceChannels = ['mercado_pago', 'mercado_livre', 'shopee', 'tiktok_shop', 'nuvemshop', 'shopify'];
+
+function productCheckoutUrl(req, produtoId) {
+  const origin = `${req.protocol}://${req.get('host')}`;
+  return `${origin}/loja?produto=${encodeURIComponent(produtoId)}`;
+}
+
+function buildProductAssistantSuggestion(input = {}) {
+  const nome = String(input.nome || 'Produto Ordo Caoti').trim();
+  const tipo = String(input.tipo || 'fisico').trim();
+  const custo = Number(input.custo || 0);
+  const gastos = Number(input.gastos || input.gastos_estimados || 0);
+  const margemBase = Math.max(custo + gastos, Number(input.preco_base || 0));
+  const precoSugerido = Math.max(Number(input.preco || 0), margemBase > 0 ? margemBase / 0.8 : 80);
+  const lucroEstimado = Math.max(precoSugerido - custo - gastos, 0);
+  const lojista = lucroEstimado * 0.8;
+  const ordo = lucroEstimado * 0.2;
+  const perguntas = [
+    `Qual problema ${nome} resolve para o cliente?`,
+    'Quais materiais, itens de fabricação ou horas de serviço entram no custo?',
+    'O produto é pronta entrega, sob encomenda ou digital?',
+    'Qual prazo realista de entrega ou execução?',
+    'Quais dúvidas, objeções ou medos o cliente costuma ter antes de comprar?',
+    'Há variações de tamanho, cor, turma, duração, bônus ou garantia?'
+  ];
+  return {
+    nome,
+    tipo,
+    categoria: input.categoria || (tipo === 'servico' ? 'Serviços' : 'Loja Ordo Caoti'),
+    estoque: Number(input.estoque || 0),
+    sob_encomenda: Boolean(input.sob_encomenda || tipo === 'servico'),
+    descricao_melhorada: `${nome} foi estruturado para apresentar valor claro, benefícios objetivos, composição/custo transparente e compra segura dentro da Ordo Caoti.`,
+    perguntas_cliente: perguntas,
+    precificacao: {
+      preco_sugerido: Number(precoSugerido.toFixed(2)),
+      custo_estimado: Number(custo.toFixed(2)),
+      gastos_estimados: Number(gastos.toFixed(2)),
+      lucro_estimado: Number(lucroEstimado.toFixed(2)),
+      repasse_lojista_80: Number(lojista.toFixed(2)),
+      repasse_ordo_20: Number(ordo.toFixed(2)),
+      preferencia_mestre: 'Caio Zanoni'
+    }
+  };
+}
+
+app.post('/lojista/produtos/assistente', authenticateRequest, async (req, res) => {
+  const sugestao = buildProductAssistantSuggestion(req.body || {});
+  if (pool) {
+    await ensureCoreTables();
+    await pool.query('INSERT INTO produto_assistente_memoria (lojista_id, pergunta, resposta, sugestao) VALUES ($1,$2,$3,$4::jsonb)', [req.user.id, 'assistente_produto', JSON.stringify(req.body || {}), JSON.stringify(sugestao)]).catch(() => {});
+  }
+  res.json({ ok: true, sugestao });
+});
+
+app.get('/lojista/marketplaces', authenticateRequest, (_req, res) => {
+  res.json({ ok: true, channels: marketplaceChannels.map((id) => ({ id, configured: Boolean(process.env[id.toUpperCase() + '_ACCESS_TOKEN'] || process.env[id.toUpperCase() + '_API_KEY']), checkout_policy: 'redirect_to_ordocaoti' })) });
+});
+
+app.post('/lojista/produtos/:id/publicar-marketplaces', authenticateRequest, async (req, res) => {
+  const produtoId = Number(req.params.id);
+  const canais = Array.isArray(req.body?.canais) && req.body.canais.length ? req.body.canais : marketplaceChannels;
+  const checkout = productCheckoutUrl(req, produtoId);
+  if (pool) await ensureCoreTables();
+  const publicacoes = [];
+  for (const canal of canais.filter((c) => marketplaceChannels.includes(String(c)))) {
+    const payload = { canal, produto_id: produtoId, checkout_url: checkout, redirect: 'ordocaoti' };
+    if (pool) {
+      const { rows } = await pool.query('INSERT INTO marketplace_publicacoes (produto_id, lojista_id, canal, status, checkout_url, payload) VALUES ($1,$2,$3,$4,$5,$6::jsonb) RETURNING *', [produtoId, req.user.id, canal, 'preparado', checkout, JSON.stringify(payload)]);
+      publicacoes.push(rows[0]);
+    } else publicacoes.push(payload);
+  }
+  res.json({ ok: true, checkout_url: checkout, publicacoes });
+});
+
+app.get('/lojista/saldo', authenticateRequest, async (req, res) => {
+  if (!pool) return res.json({ saldo_disponivel: 0, saldo_pendente: 0, offline: true });
+  await ensureCoreTables();
+  const { rows } = await pool.query('INSERT INTO lojista_saldos (lojista_id) VALUES ($1) ON CONFLICT (lojista_id) DO UPDATE SET atualizado_em=NOW() RETURNING *', [req.user.id]);
+  res.json(rows[0]);
+});
+
+app.post('/lojista/repasses', authenticateRequest, async (req, res) => {
+  const valor = Number(req.body?.valor || 0);
+  const metodo = String(req.body?.metodo || 'pix').toLowerCase();
+  const destino = String(req.body?.destino || '').trim();
+  if (!['pix','boleto','transferencia','manual'].includes(metodo)) return res.status(400).json({ erro: 'Método de repasse inválido.' });
+  if (valor <= 0) return res.status(400).json({ erro: 'Valor deve ser maior que zero.' });
+  if (!pool) return res.status(201).json({ ok: true, offline: true, repasse: { valor, metodo, destino, status: 'pendente' } });
+  await ensureCoreTables();
+  const { rows } = await pool.query('INSERT INTO repasses_lojista (lojista_id, valor, metodo, destino) VALUES ($1,$2,$3,$4) RETURNING *', [req.user.id, valor, metodo, destino]);
+  res.status(201).json({ ok: true, repasse: rows[0] });
+});
+
+app.get('/lojista/repasses', authenticateRequest, async (req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM repasses_lojista WHERE lojista_id=$1 ORDER BY criado_em DESC LIMIT 100', [req.user.id]);
+  res.json(rows);
 });
 
 app.get('/professor/materias', authenticateRequest, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM materias WHERE ativo=true ORDER BY id DESC'); res.json(rows); });

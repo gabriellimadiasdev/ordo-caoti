@@ -243,6 +243,11 @@
       "kind": "html"
     },
     {
+      "route": "/lojista-financeiro",
+      "file": "frontend/html/lojista-financeiro.html",
+      "kind": "html"
+    },
+    {
       "route": "/manutencao-ti",
       "file": "frontend/html/manutencao-ti.html",
       "kind": "html"
@@ -470,6 +475,11 @@
     {
       "route": "/dashboard-lojista",
       "file": "frontend/html/dashboard-lojista.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/lojista/financeiro",
+      "file": "frontend/html/lojista-financeiro.html",
       "kind": "html-alias"
     },
     {
