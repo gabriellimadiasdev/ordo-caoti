@@ -1,12 +1,14 @@
 import express from 'express';
 import { randomUUID } from 'node:crypto';
+import { neon } from '@neondatabase/serverless';
 
 const app = express();
 
 app.use(express.json());
 
-const users = new Map();
 const roles = new Set(['admin', 'usuario']);
+const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
+let schemaReady;
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -18,17 +20,36 @@ function serializeUser(user) {
     name: user.name,
     email: user.email,
     role: user.role,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt
+    createdAt: user.created_at || user.createdAt,
+    updatedAt: user.updated_at || user.updatedAt
   };
 }
 
-function findUserByEmail(email) {
-  for (const user of users.values()) {
-    if (user.email === email) return user;
-  }
+function validateDatabase(res) {
+  if (sql) return true;
 
-  return null;
+  res.status(503).json({
+    errors: ['DATABASE_URL não está configurada. Conecte o banco Neon ao projeto na Vercel.']
+  });
+  return false;
+}
+
+async function ensureSchema() {
+  if (!sql) return;
+
+  schemaReady ??= sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      role TEXT NOT NULL DEFAULT 'usuario',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT users_role_check CHECK (role IN ('admin', 'usuario'))
+    )
+  `;
+
+  await schemaReady;
 }
 
 function validateUserPayload(payload, { partial = false } = {}) {
@@ -58,7 +79,17 @@ function validateUserPayload(payload, { partial = false } = {}) {
     values: {
       name,
       email,
-      role: role || 'usuario'
+      role: role ?? (partial ? undefined : 'usuario')
+    }
+  };
+}
+
+function asyncRoute(handler) {
+  return async (req, res, next) => {
+    try {
+      await handler(req, res, next);
+    } catch (error) {
+      next(error);
     }
   };
 }
@@ -67,6 +98,7 @@ app.get('/', (_req, res) => {
   res.json({
     name: 'ordo-caoti-backend',
     status: 'ok',
+    database: sql ? 'configured' : 'missing_DATABASE_URL',
     endpoints: [
       'GET /health',
       'GET /usuarios',
@@ -80,7 +112,7 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, database: Boolean(sql) });
 });
 
 app.get('/funcoes', (_req, res) => {
@@ -96,52 +128,64 @@ app.get('/funcoes', (_req, res) => {
   });
 });
 
-app.get(['/usuarios', '/users'], (_req, res) => {
-  res.json({ users: Array.from(users.values()).map(serializeUser) });
-});
+app.get(['/usuarios', '/users'], asyncRoute(async (_req, res) => {
+  if (!validateDatabase(res)) return;
 
-app.post(['/usuarios', '/users'], (req, res) => {
+  await ensureSchema();
+  const users = await sql`
+    SELECT id, name, email, role, created_at, updated_at
+    FROM users
+    ORDER BY created_at DESC
+  `;
+
+  res.json({ users: users.map(serializeUser) });
+}));
+
+app.post(['/usuarios', '/users'], asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+
   const { errors, values } = validateUserPayload(req.body || {});
 
   if (errors.length > 0) {
     return res.status(400).json({ errors });
   }
 
-  if (findUserByEmail(values.email)) {
+  await ensureSchema();
+
+  const created = await sql`
+    INSERT INTO users (id, name, email, role)
+    VALUES (${randomUUID()}, ${values.name}, ${values.email}, ${values.role})
+    ON CONFLICT (email) DO NOTHING
+    RETURNING id, name, email, role, created_at, updated_at
+  `;
+
+  if (created.length === 0) {
     return res.status(409).json({ errors: ['Já existe um usuário com este email.'] });
   }
 
-  const now = new Date().toISOString();
-  const user = {
-    id: randomUUID(),
-    name: values.name,
-    email: values.email,
-    role: values.role,
-    createdAt: now,
-    updatedAt: now
-  };
+  return res.status(201).json({ user: serializeUser(created[0]) });
+}));
 
-  users.set(user.id, user);
+app.get(['/usuarios/:id', '/users/:id'], asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
 
-  return res.status(201).json({ user: serializeUser(user) });
-});
+  await ensureSchema();
+  const users = await sql`
+    SELECT id, name, email, role, created_at, updated_at
+    FROM users
+    WHERE id = ${req.params.id}
+    LIMIT 1
+  `;
 
-app.get(['/usuarios/:id', '/users/:id'], (req, res) => {
-  const user = users.get(req.params.id);
-
-  if (!user) {
+  if (users.length === 0) {
     return res.status(404).json({ errors: ['Usuário não encontrado.'] });
   }
 
-  return res.json({ user: serializeUser(user) });
-});
+  return res.json({ user: serializeUser(users[0]) });
+}));
 
-app.patch(['/usuarios/:id', '/users/:id'], (req, res) => {
-  const user = users.get(req.params.id);
-
-  if (!user) {
-    return res.status(404).json({ errors: ['Usuário não encontrado.'] });
-  }
+app.patch(['/usuarios/:id', '/users/:id'], asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
 
   const { errors, values } = validateUserPayload(req.body || {}, { partial: true });
 
@@ -149,29 +193,64 @@ app.patch(['/usuarios/:id', '/users/:id'], (req, res) => {
     return res.status(400).json({ errors });
   }
 
-  if (values.email && values.email !== user.email && findUserByEmail(values.email)) {
-    return res.status(409).json({ errors: ['Já existe um usuário com este email.'] });
-  }
+  await ensureSchema();
 
-  if (values.name) user.name = values.name;
-  if (values.email) user.email = values.email;
-  if (values.role) user.role = values.role;
-  user.updatedAt = new Date().toISOString();
+  const updates = {
+    name: values.name,
+    email: values.email,
+    role: values.role
+  };
 
-  return res.json({ user: serializeUser(user) });
-});
+  const users = await sql`
+    UPDATE users
+    SET
+      name = COALESCE(${updates.name ?? null}, name),
+      email = COALESCE(${updates.email ?? null}, email),
+      role = COALESCE(${updates.role ?? null}, role),
+      updated_at = NOW()
+    WHERE id = ${req.params.id}
+    RETURNING id, name, email, role, created_at, updated_at
+  `;
 
-app.delete(['/usuarios/:id', '/users/:id'], (req, res) => {
-  if (!users.has(req.params.id)) {
+  if (users.length === 0) {
     return res.status(404).json({ errors: ['Usuário não encontrado.'] });
   }
 
-  users.delete(req.params.id);
+  return res.json({ user: serializeUser(users[0]) });
+}));
+
+app.delete(['/usuarios/:id', '/users/:id'], asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+
+  await ensureSchema();
+  const deleted = await sql`
+    DELETE FROM users
+    WHERE id = ${req.params.id}
+    RETURNING id
+  `;
+
+  if (deleted.length === 0) {
+    return res.status(404).json({ errors: ['Usuário não encontrado.'] });
+  }
+
   return res.status(204).send();
-});
+}));
 
 app.use((_req, res) => {
   res.status(404).json({ errors: ['Rota não encontrada.'] });
+});
+
+app.use((error, _req, res, _next) => {
+  if (error?.code === '23505') {
+    return res.status(409).json({ errors: ['Já existe um usuário com este email.'] });
+  }
+
+  if (error?.code === '22P02') {
+    return res.status(400).json({ errors: ['Identificador inválido.'] });
+  }
+
+  console.error(error);
+  return res.status(500).json({ errors: ['Erro interno do servidor.'] });
 });
 
 export default app;
