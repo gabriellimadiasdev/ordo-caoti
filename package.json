@@ -10,7 +10,8 @@
     "test:bootstrap": "node frontend/js/tests/bootstrapFundadores.test.js",
     "local": "node server.mjs",
     "dev": "node server.mjs",
-    "env:pull": "vercel env pull .env.local --scope ordo-caoti"
+    "env:pull": "vercel env pull .env.local --scope ordo-caoti",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "engines": {
     "node": "24.x"

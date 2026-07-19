@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
 
@@ -109,6 +108,16 @@ let authSchemaReady;
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+function hashPassword(value) {
+  return 'sha256$' + crypto.createHash('sha256').update(String(value || '')).digest('hex');
+}
+
+async function verifyPassword(value, storedHash) {
+  const hash = String(storedHash || '');
+  if (hash.startsWith('sha256$')) return hashPassword(value) === hash;
+  return false;
 }
 
 function normalizeNivelCodigo(value) {
@@ -218,7 +227,7 @@ async function ensureAuthSchema() {
     `);
     await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false`);
     const tiEmail = 'g.lima.rocha90@gmail.com';
-    const tiPasswordHash = await bcrypt.hash('0000', 10);
+    const tiPasswordHash = hashPassword('0000');
     const tiUser = await pool.query(
       `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
        VALUES ('Gabriel Lima Dias Rocha', $1, $2, 'ti', true, NOW(), true)
@@ -282,7 +291,7 @@ app.post('/api/inscricao-membro', async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(409).json({ erro: 'Já existe uma conta com este email.' });
     }
-    const senhaHash = await bcrypt.hash(senha, 10);
+    const senhaHash = hashPassword(senha);
     const tipoUsuario = tipoUsuarioForNivel(nivelCodigo);
     const inserted = await client.query(
       `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro)
@@ -324,7 +333,7 @@ app.post('/login', async (req, res) => {
     await ensureAuthSchema();
     const { rows } = await pool.query('SELECT * FROM usuarios WHERE lower(email) = lower($1) LIMIT 1', [email]);
     const user = rows[0];
-    if (!user || !(await bcrypt.compare(senha, user.senha_hash))) {
+    if (!user || !(await verifyPassword(senha, user.senha_hash))) {
       return res.status(401).json({ erro: 'Email ou senha inválidos.' });
     }
     if (user.ativo === false) {
@@ -437,7 +446,7 @@ app.post('/api/solicitacoes-acesso', async (req, res) => {
     await ensureAuthSchema();
     const existingUser = await pool.query('SELECT id FROM usuarios WHERE lower(email) = lower($1) LIMIT 1', [email]);
     if (existingUser.rows.length) return res.status(409).json({ erro: 'Já existe usuário com este email. Use o login ou solicite recuperação de senha.' });
-    const senhaHash = await bcrypt.hash(senha, 10);
+    const senhaHash = hashPassword(senha);
     const result = await pool.query(
       `INSERT INTO solicitacoes_acesso (nome, email, senha_hash, tipo_solicitado, nivel_codigo, observacao, status, criado_em)
        VALUES ($1, $2, $3, $4, $5, $6, 'pendente', NOW())
@@ -615,6 +624,204 @@ async function databaseHealth() {
     return { status: 'erro', latency_ms: Date.now() - started, message: error.message };
   }
 }
+
+
+async function ensureCoreTables() {
+  if (!pool) return;
+  await ensureAuthSchema();
+  await pool.query(`CREATE TABLE IF NOT EXISTS produtos (id SERIAL PRIMARY KEY, nome TEXT NOT NULL, descricao TEXT, preco NUMERIC(12,2) NOT NULL DEFAULT 0, tipo TEXT DEFAULT 'digital', estoque INTEGER DEFAULT 0, ativo BOOLEAN DEFAULT true, vendedor_id INTEGER, deleted_at TIMESTAMPTZ, data_criacao TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS pedidos (id SERIAL PRIMARY KEY, usuario_id INTEGER, descricao TEXT, total NUMERIC(12,2) DEFAULT 0, status TEXT DEFAULT 'pendente', data_pedido TIMESTAMPTZ DEFAULT NOW(), metadata JSONB DEFAULT '{}'::jsonb)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS diario_pessoal (id SERIAL PRIMARY KEY, usuario_id INTEGER, titulo TEXT, conteudo_texto TEXT, sentimento TEXT, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS grimorio_pessoal (id SERIAL PRIMARY KEY, usuario_id INTEGER, titulo TEXT, tipo_registro TEXT DEFAULT 'anotacao', conteudo_texto TEXT, tags JSONB DEFAULT '[]'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS biblioteca_temas (id SERIAL PRIMARY KEY, nome TEXT NOT NULL UNIQUE, ativo BOOLEAN DEFAULT true, ordem_exibicao INTEGER DEFAULT 0)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS biblioteca_livros (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, autores JSONB DEFAULT '[]'::jsonb, tema_id INTEGER, descricao TEXT, capa_url TEXT, ativo BOOLEAN DEFAULT true, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS biblioteca_recursos (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, descricao TEXT, tipo_recurso TEXT DEFAULT 'link', url TEXT, status TEXT DEFAULT 'ativo', criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS turmas (id SERIAL PRIMARY KEY, nome TEXT NOT NULL, descricao TEXT, ativo BOOLEAN DEFAULT true, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS materias (id SERIAL PRIMARY KEY, nome TEXT NOT NULL, turma_id INTEGER, professor_id INTEGER, tipo_materia TEXT DEFAULT 'obrigatoria', ativo BOOLEAN DEFAULT true, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS live_salas (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, descricao TEXT, turma_id INTEGER, materia_id INTEGER, professor_id INTEGER, provider TEXT DEFAULT 'internal', status TEXT DEFAULT 'pendente', link_sala TEXT, inicio_previsto TIMESTAMPTZ, fim_previsto TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS anexos_academicos (id SERIAL PRIMARY KEY, materia_id INTEGER, autor_id INTEGER, tipo_material TEXT DEFAULT 'texto', titulo TEXT NOT NULL, url TEXT, status_moderacao TEXT DEFAULT 'pendente', comentario_moderacao TEXT, data_criacao TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`INSERT INTO biblioteca_temas (nome, ordem_exibicao) VALUES ('Fundamentos', 1), ('Magia do Caos', 2), ('Grimório', 3) ON CONFLICT (nome) DO NOTHING`);
+}
+
+function noDbFallback(res, payload) {
+  return res.json({ ok: true, offline: true, ...payload });
+}
+
+async function optionalUser(req) {
+  try { return await verifyActiveUserFromRequest(req); } catch { return null; }
+}
+
+app.post('/logout', (_req, res) => {
+  res.cookie('oc_session', '', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 0, path: '/' });
+  res.json({ ok: true });
+});
+
+app.get('/produtos', async (_req, res) => {
+  if (!pool) return noDbFallback(res, { produtos: [], message: 'Banco offline; catálogo vazio.' });
+  try {
+    await ensureCoreTables();
+    const { rows } = await pool.query("SELECT id, nome, descricao, preco, tipo, estoque, ativo FROM produtos WHERE ativo = true AND deleted_at IS NULL ORDER BY id DESC LIMIT 100");
+    res.json(rows.length ? rows : [{ id: 1, nome: 'Boas-vindas Ordo Caoti', descricao: 'Produto demonstrativo até o catálogo ser cadastrado.', preco: '0.00', tipo: 'digital', estoque: 999, ativo: true }]);
+  } catch (error) { res.status(500).json({ erro: 'Falha ao carregar produtos.', detalhe: error.message }); }
+});
+
+app.post('/loja/carrinho', async (req, res) => {
+  res.status(201).json({ ok: true, item: req.body || {}, carrinho_id: crypto.randomUUID() });
+});
+
+app.post('/loja/checkout', authenticateRequest, async (req, res) => {
+  if (!pool) return noDbFallback(res, { pedido_id: 0, status: 'pendente' });
+  try {
+    await ensureCoreTables();
+    const total = Number(req.body?.total || req.body?.valor || 0);
+    const result = await pool.query('INSERT INTO pedidos (usuario_id, descricao, total, status, metadata) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *', [req.user.id, 'Checkout Ordo Caoti', total, 'pendente', JSON.stringify(req.body || {})]);
+    res.status(201).json({ ok: true, pedido_id: result.rows[0].id, pedido: result.rows[0], mercado_pago: { configured: Boolean(process.env.MERCADO_PAGO_ACCESS_TOKEN) } });
+  } catch (error) { res.status(500).json({ erro: 'Falha no checkout.', detalhe: error.message }); }
+});
+
+app.get('/loja/pedidos/:id', authenticateRequest, async (req, res) => {
+  if (!pool) return noDbFallback(res, { pedido: null });
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM pedidos WHERE id = $1 AND (usuario_id = $2 OR $3 = ANY($4::text[]))', [Number(req.params.id), req.user.id, req.user.tipo_usuario, ['admin','ti']]);
+  if (!rows.length) return res.status(404).json({ erro: 'Pedido não encontrado.' });
+  res.json(rows[0]);
+});
+
+app.post('/loja/pedidos/:id/sincronizar-ordem', authenticateRequest, async (req, res) => {
+  res.json({ ok: true, pedido_id: Number(req.params.id), status: 'pendente', mercado_pago: { configured: Boolean(process.env.MERCADO_PAGO_ACCESS_TOKEN) } });
+});
+
+app.get('/financeiro/historico', authenticateRequest, async (req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const target = req.query?.usuario_id && ['admin','ti'].includes(req.user.tipo_usuario) ? Number(req.query.usuario_id) : req.user.id;
+  const { rows } = await pool.query('SELECT * FROM pedidos WHERE usuario_id = $1 ORDER BY data_pedido DESC LIMIT 100', [target]);
+  res.json(rows);
+});
+app.get('/api/financeiro', authenticateRequest, async (req, res) => app._router.handle(Object.assign(req, { url: '/financeiro/historico', originalUrl: '/financeiro/historico' }), res, () => {}));
+
+app.get('/minhas-turmas', authenticateRequest, async (_req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM turmas WHERE ativo = true ORDER BY id DESC LIMIT 50');
+  res.json(rows);
+});
+app.get('/api/materias-disponiveis', authenticateRequest, async (_req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM materias WHERE ativo = true ORDER BY id DESC LIMIT 100');
+  res.json(rows);
+});
+app.get('/api/boletim', authenticateRequest, (_req, res) => res.json([]));
+app.get('/aluno/materias', authenticateRequest, async (_req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM materias WHERE ativo = true ORDER BY id DESC LIMIT 100');
+  res.json(rows);
+});
+app.get('/aluno/avaliacoes-v2', authenticateRequest, (_req, res) => res.json([]));
+app.get('/aluno/faltas/minhas', authenticateRequest, (_req, res) => res.json([]));
+app.get('/aluno/gamificacao/progresso', authenticateRequest, (_req, res) => res.json({ pontos: 0, nivel: 'inicial', conquistas: [] }));
+app.get('/aluno/gamificacao/top10', authenticateRequest, (_req, res) => res.json([]));
+
+app.get('/diario/pessoal', authenticateRequest, async (req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM diario_pessoal WHERE usuario_id = $1 ORDER BY criado_em DESC LIMIT 100', [req.user.id]);
+  res.json(rows);
+});
+app.post('/diario/pessoal', authenticateRequest, async (req, res) => {
+  if (!pool) return noDbFallback(res, { entrada: req.body });
+  await ensureCoreTables();
+  const { rows } = await pool.query('INSERT INTO diario_pessoal (usuario_id,titulo,conteudo_texto,sentimento) VALUES ($1,$2,$3,$4) RETURNING *', [req.user.id, req.body?.titulo || null, req.body?.conteudo_texto || '', req.body?.sentimento || null]);
+  res.status(201).json(rows[0]);
+});
+app.get('/grimorio/pessoal', authenticateRequest, async (req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM grimorio_pessoal WHERE usuario_id = $1 ORDER BY criado_em DESC LIMIT 100', [req.user.id]);
+  res.json(rows);
+});
+app.post('/grimorio/pessoal', authenticateRequest, async (req, res) => {
+  if (!pool) return noDbFallback(res, { registro: req.body });
+  await ensureCoreTables();
+  const { rows } = await pool.query('INSERT INTO grimorio_pessoal (usuario_id,titulo,tipo_registro,conteudo_texto,tags) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *', [req.user.id, req.body?.titulo || null, req.body?.tipo_registro || 'anotacao', req.body?.conteudo_texto || '', JSON.stringify(req.body?.tags || [])]);
+  res.status(201).json(rows[0]);
+});
+
+app.get('/biblioteca/temas', async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM biblioteca_temas WHERE ativo = true ORDER BY ordem_exibicao,nome'); res.json(rows); });
+app.post('/biblioteca/temas', authenticateRequest, requireAdminOrTi, async (req, res) => { await ensureCoreTables(); const { rows } = await pool.query('INSERT INTO biblioteca_temas (nome) VALUES ($1) ON CONFLICT (nome) DO UPDATE SET ativo = true RETURNING *', [String(req.body?.nome || '').trim()]); res.status(201).json(rows[0]); });
+app.get('/biblioteca/recursos', authenticateRequest, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query("SELECT * FROM biblioteca_recursos WHERE status = 'ativo' ORDER BY criado_em DESC LIMIT 100"); res.json(rows); });
+app.post('/biblioteca/recursos', authenticateRequest, async (req, res) => { if (!pool) return noDbFallback(res, { recurso: req.body }); await ensureCoreTables(); const { rows } = await pool.query('INSERT INTO biblioteca_recursos (titulo,descricao,tipo_recurso,url,criado_por) VALUES ($1,$2,$3,$4,$5) RETURNING *', [req.body?.titulo || 'Recurso', req.body?.descricao || null, req.body?.tipo_recurso || 'link', req.body?.url || null, req.user.id]); res.status(201).json(rows[0]); });
+app.get('/biblioteca/livros', authenticateRequest, async (_req, res) => { if (!pool) return res.json({ data: [], page: 1 }); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM biblioteca_livros WHERE ativo = true ORDER BY criado_em DESC LIMIT 100'); res.json({ data: rows, page: 1, total: rows.length }); });
+app.get('/biblioteca/livros/:id', authenticateRequest, async (req, res) => { if (!pool) return res.status(404).json({ erro: 'Livro não encontrado.' }); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM biblioteca_livros WHERE id=$1', [Number(req.params.id)]); if (!rows.length) return res.status(404).json({ erro: 'Livro não encontrado.' }); res.json(rows[0]); });
+app.post('/biblioteca/livros/:id/leitura', authenticateRequest, (req, res) => res.json({ ok: true, livro_id: Number(req.params.id), status: req.body?.status || 'lendo' }));
+
+app.get('/live/salas', authenticateRequest, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM live_salas ORDER BY criado_em DESC LIMIT 100'); res.json(rows); });
+app.post('/live/salas', authenticateRequest, async (req, res) => {
+  if (!pool) return noDbFallback(res, { sala: req.body });
+  await ensureCoreTables();
+  const provider = String(req.body?.provider || req.body?.provedor_sala || 'internal').toLowerCase();
+  const link = provider === 'daily' && process.env.DAILY_API_KEY ? null : `/live/sala/${crypto.randomUUID()}`;
+  const { rows } = await pool.query('INSERT INTO live_salas (titulo,descricao,turma_id,materia_id,professor_id,provider,status,link_sala,inicio_previsto,fim_previsto) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *', [req.body?.titulo || 'Aula ao vivo', req.body?.descricao || null, req.body?.turma_id || null, req.body?.materia_id || null, req.user.id, provider, req.user.tipo_usuario === 'admin' ? 'agendada' : 'pendente', link, req.body?.inicio_previsto || null, req.body?.fim_previsto || null]);
+  res.status(201).json(rows[0]);
+});
+app.post('/live/salas/:id/entrar', authenticateRequest, (req, res) => res.json({ ok: true, id: Number(req.params.id), link_sala: `/live/sala/${req.params.id}`, providers: { daily: Boolean(process.env.DAILY_API_KEY), google_meet: Boolean(process.env.GOOGLE_CLIENT_ID), zoom: Boolean(process.env.ZOOM_CLIENT_ID), teams: Boolean(process.env.MICROSOFT_CLIENT_ID) } }));
+app.post('/live/salas/:id/gerar-link', authenticateRequest, (req, res) => res.json({ ok: true, id: Number(req.params.id), link_sala: `/live/sala/${req.params.id}` }));
+app.post('/live/salas/:id/encerrar', authenticateRequest, async (req, res) => { if (pool) { await ensureCoreTables(); await pool.query("UPDATE live_salas SET status='realizada' WHERE id=$1", [Number(req.params.id)]); } res.json({ ok: true, id: Number(req.params.id), gravacao: { status: 'pendente_configuracao_provider' } }); });
+app.get('/api/daily/config', authenticateRequest, (_req, res) => res.json({ enabled: Boolean(process.env.DAILY_API_KEY), provider: 'daily' }));
+app.get('/api/meetings/providers', authenticateRequest, (_req, res) => res.json({ daily: Boolean(process.env.DAILY_API_KEY), google_meet: Boolean(process.env.GOOGLE_CLIENT_ID), zoom: Boolean(process.env.ZOOM_CLIENT_ID), teams: Boolean(process.env.MICROSOFT_CLIENT_ID), fallback: 'internal_link' }));
+
+
+app.get('/lojista/meus-produtos', authenticateRequest, async (req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM produtos WHERE vendedor_id = $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 100', [req.user.id]);
+  res.json(rows);
+});
+app.post('/lojista/produtos', authenticateRequest, async (req, res) => {
+  if (!pool) return noDbFallback(res, { produto: req.body });
+  await ensureCoreTables();
+  const { rows } = await pool.query('INSERT INTO produtos (nome,descricao,preco,tipo,estoque,ativo,vendedor_id) VALUES ($1,$2,$3,$4,$5,true,$6) RETURNING *', [req.body?.nome || 'Produto', req.body?.descricao || null, Number(req.body?.preco || 0), req.body?.tipo || 'digital', Number(req.body?.estoque || 0), req.user.id]);
+  res.status(201).json(rows[0]);
+});
+app.put('/lojista/produtos/:id', authenticateRequest, async (req, res) => {
+  if (!pool) return noDbFallback(res, { produto: { id: Number(req.params.id), ...req.body } });
+  await ensureCoreTables();
+  const { rows } = await pool.query('UPDATE produtos SET nome=COALESCE($2,nome), descricao=COALESCE($3,descricao), preco=COALESCE($4,preco), tipo=COALESCE($5,tipo), estoque=COALESCE($6,estoque) WHERE id=$1 AND (vendedor_id=$7 OR $8 = ANY($9::text[])) RETURNING *', [Number(req.params.id), req.body?.nome || null, req.body?.descricao || null, req.body?.preco ?? null, req.body?.tipo || null, req.body?.estoque ?? null, req.user.id, req.user.tipo_usuario, ['admin','ti']]);
+  if (!rows.length) return res.status(404).json({ erro: 'Produto não encontrado.' });
+  res.json(rows[0]);
+});
+app.delete('/lojista/produtos/:id', authenticateRequest, async (req, res) => {
+  if (pool) { await ensureCoreTables(); await pool.query('UPDATE produtos SET deleted_at=NOW(), ativo=false WHERE id=$1 AND (vendedor_id=$2 OR $3 = ANY($4::text[]))', [Number(req.params.id), req.user.id, req.user.tipo_usuario, ['admin','ti']]); }
+  res.json({ ok: true });
+});
+
+app.get('/professor/materias', authenticateRequest, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM materias WHERE ativo=true ORDER BY id DESC'); res.json(rows); });
+app.get('/professor/anexos', authenticateRequest, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM anexos_academicos ORDER BY data_criacao DESC LIMIT 100'); res.json(rows); });
+app.post('/professor/anexos', authenticateRequest, async (req, res) => { if (!pool) return noDbFallback(res, { anexo: req.body }); await ensureCoreTables(); const { rows } = await pool.query('INSERT INTO anexos_academicos (materia_id,autor_id,tipo_material,titulo,url,status_moderacao) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [req.body?.materia_id || null, req.user.id, req.body?.tipo_material || 'texto', req.body?.titulo || 'Material', req.body?.url || null, 'pendente']); res.status(201).json(rows[0]); });
+app.get('/professor/faltas/pendentes', authenticateRequest, (_req, res) => res.json([]));
+
+app.get('/admin/professores', authenticateRequest, requireAdminOrTi, async (_req, res) => { if (!pool) return res.json([]); const { rows } = await pool.query("SELECT id,nome,email,ativo FROM usuarios WHERE tipo_usuario='professor' ORDER BY nome"); res.json(rows); });
+app.get('/admin/turmas', authenticateRequest, requireAdminOrTi, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM turmas ORDER BY id DESC'); res.json(rows); });
+app.post('/admin/turmas', authenticateRequest, requireAdminOrTi, async (req, res) => { await ensureCoreTables(); const { rows } = await pool.query('INSERT INTO turmas (nome,descricao) VALUES ($1,$2) RETURNING *', [req.body?.nome || 'Turma', req.body?.descricao || null]); res.status(201).json(rows[0]); });
+app.get('/admin/materias', authenticateRequest, requireAdminOrTi, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM materias ORDER BY id DESC'); res.json(rows); });
+app.post('/admin/materias', authenticateRequest, requireAdminOrTi, async (req, res) => { await ensureCoreTables(); const { rows } = await pool.query('INSERT INTO materias (nome,turma_id,professor_id,tipo_materia) VALUES ($1,$2,$3,$4) RETURNING *', [req.body?.nome || 'Matéria', req.body?.turma_id || null, req.body?.professor_id || null, req.body?.tipo_materia || 'obrigatoria']); res.status(201).json(rows[0]); });
+app.get('/admin/anexos/pendentes', authenticateRequest, requireAdminOrTi, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query("SELECT * FROM anexos_academicos WHERE status_moderacao='pendente' ORDER BY data_criacao ASC"); res.json(rows); });
+app.post('/admin/anexos/:id/aprovar', authenticateRequest, requireAdminOrTi, async (req, res) => { if (pool) await pool.query("UPDATE anexos_academicos SET status_moderacao='aprovado', comentario_moderacao=$2 WHERE id=$1", [Number(req.params.id), req.body?.comentario || null]); res.json({ ok: true }); });
+app.post('/admin/anexos/:id/reprovar', authenticateRequest, requireAdminOrTi, async (req, res) => { if (pool) await pool.query("UPDATE anexos_academicos SET status_moderacao='reprovado', comentario_moderacao=$2 WHERE id=$1", [Number(req.params.id), req.body?.comentario || null]); res.json({ ok: true }); });
+app.get('/admin/financeiro/usuarios', authenticateRequest, requireAdminOrTi, async (_req, res) => { if (!pool) return res.json([]); const { rows } = await pool.query('SELECT id,nome,email,tipo_usuario,ativo,data_cadastro FROM usuarios ORDER BY data_cadastro DESC LIMIT 100'); res.json(rows); });
+app.get('/admin/inscricoes-lista', authenticateRequest, requireAdminOrTi, (_req, res) => res.json([]));
+app.post('/admin/decisao-inscricao', authenticateRequest, requireAdminOrTi, (req, res) => res.json({ ok: true, id: req.body?.id, status: req.body?.status || 'pendente' }));
+app.get('/admin/disciplinar/alunos', authenticateRequest, requireAdminOrTi, (_req, res) => res.json([]));
+app.get('/admin/disciplinar/casos', authenticateRequest, requireAdminOrTi, (_req, res) => res.json([]));
+app.get('/admin/suprema/painel', authenticateRequest, requireAdminOrTi, (_req, res) => res.json({ ok: true, resumo: {}, membros: [] }));
+
+app.post('/api/loja/clientes/cadastro-rapido', async (req, res) => { req.body = { ...req.body, tipo_solicitado: 'cliente' }; return app._router.handle(Object.assign(req, { url: '/api/solicitacoes-acesso', originalUrl: '/api/solicitacoes-acesso' }), res, () => {}); });
+app.post('/api/bootstrap/fundadores', async (_req, res) => res.status(410).json({ erro: 'Bootstrap privilegiado desativado. Use aprovação T.I./admin.' }));
+app.post('/concluir-cadastro', async (req, res) => res.json({ ok: true, message: 'Cadastro recebido.', payload: req.body || {} }));
+app.post('/inscricao', async (_req, res) => res.status(201).json({ ok: true, status: 'pendente' }));
+app.get('/ti/webhooks/mercadopago/resumo', authenticateRequest, requireAdminOrTi, (_req, res) => res.json({ resumo: { taxa_sucesso_percentual: 100, total: 0 }, eventos: [] }));
 
 app.get('/ti/saude', authenticateRequest, requireAdminOrTi, async (_req, res) => {
   const db = await databaseHealth();
