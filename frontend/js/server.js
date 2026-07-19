@@ -135,11 +135,11 @@ app.use('/i18n', express.static(path.join(FRONTEND_DIR, 'i18n'), STATIC_CACHE_OP
 app.use('/uploads', express.static(FRONTEND_UPLOADS_DIR, { ...STATIC_CACHE_OPTIONS, immutable: false, maxAge: '1h' }));
 app.use('/frontend', express.static(FRONTEND_DIR, STATIC_CACHE_OPTIONS));
 
-const DATABASE_URL = String(process.env.DATABASE_URL || '').trim();
+const DATABASE_URL = String(process.env.DATABASE_URL || process.env.DATABASE1_URL || process.env.POSTGRES_URL || '').trim();
 const IS_DATABASE_URL_SUSPECT = /postgresql:\/\/[^:]+:eyJ[a-zA-Z0-9._-]+@/i.test(DATABASE_URL);
 
 if (!DATABASE_URL) {
-  throw new Error('Configuracao insegura: DATABASE_URL obrigatorio para iniciar o servidor.');
+  throw new Error('Configuracao insegura: DATABASE_URL, DATABASE1_URL ou POSTGRES_URL obrigatorio para iniciar o servidor.');
 }
 
 if (IS_DATABASE_URL_SUSPECT) {
@@ -180,7 +180,7 @@ const FRONTEND_PUBLIC_BASE_URL =
   process.env.FRONTEND_PUBLIC_BASE_URL || 'http://localhost:3000/frontend/html';
 const APP_PREFERENCES_VERSION = process.env.APP_PREFERENCES_VERSION || '2026.04';
 const TERMO_PRIVACIDADE_VERSAO = process.env.TERMO_PRIVACIDADE_VERSAO || '2026.04';
-const JWT_SECRET = String(process.env.JWT_SECRET || '').trim();
+const JWT_SECRET = String(process.env.JWT_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || process.env.IT_SESSION_SECRET || '').trim();
 const ADMIN_AREA_SHARED_PASSCODE = String(process.env.ADMIN_AREA_SHARED_PASSCODE || '').trim();
 const BOOTSTRAP_ADMIN_CAIO_EMAIL = String(process.env.BOOTSTRAP_ADMIN_CAIO_EMAIL || 'contatocaiozanoni@gmail.com').trim().toLowerCase();
 const BOOTSTRAP_ADMIN_DAYENNE_EMAIL = String(process.env.BOOTSTRAP_ADMIN_DAYENNE_EMAIL || 'dayeekennedy@gmail.com').trim().toLowerCase();
@@ -226,17 +226,6 @@ const NIVEL_RANKING = Object.freeze(
   Object.fromEntries(NIVEL_HIERARCHY.map((nivel, index) => [nivel, index + 1]))
 );
 
-const NIVEL_RANKING = Object.freeze({
-  neofito: 1,
-  mago_n1: 2,
-  mago_n2: 3,
-  mago_n3: 4,
-  mentor: 5,
-  sabio: 6,
-  mestre: 7,
-  mestre_fundador: 8,
-  ti: 9
-});
 
 const FOUNDERS_EMAILS = new Set([
   BOOTSTRAP_ADMIN_CAIO_EMAIL,

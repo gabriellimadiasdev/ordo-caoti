@@ -1,1 +1,1 @@
-
+require('./frontend/js/server');

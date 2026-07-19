@@ -1,14 +1,30 @@
 {
-  "scripts": {},
+  "name": "ordo-caoti",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "check": "node --check index.js && node --check frontend/js/server.js",
+    "test": "node frontend/js/tests/mercadoPagoOrders.test.js && node frontend/js/tests/mercadoPagoReports.test.js",
+    "test:bootstrap": "node frontend/js/tests/bootstrapFundadores.test.js"
+  },
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
-    "@google-apps/meet": "^0.7.1",
-    "@google-cloud/local-auth": "^2.1.0",
+    "@aws-sdk/client-s3": "^3.787.0",
+    "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@supabase/supabase-js": "^2.103.0",
-    "express": "^5.2.1",
-    "flask": "^0.2.10",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.1",
+    "jsonwebtoken": "^9.0.2",
     "mercadopago": "^2.12.0",
-    "pg": "^8.20.0",
-    "pip": "^0.0.1",
-    "postgres": "^3.4.9"
+    "multer": "^1.4.5-lts.2",
+    "pg": "^8.12.0"
   }
 }
