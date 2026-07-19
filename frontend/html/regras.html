@@ -1,144 +1,205 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Termo de AdesÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o - Ordo Caoti</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: #f0f0f0;
-            margin: 0;
-            padding: 2rem;
-            line-height: 1.6;
-        }
-        .contract-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #2a2a2a;
-            padding: 3rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border: 1px solid #333;
-        }
-        h1 { color: #ffc400; text-align: center; text-transform: uppercase; }
-        h2 { color: #c8a2c8; border-bottom: 1px solid #444; padding-bottom: 0.5rem; margin-top: 2rem; }
-        p, li { color: #ccc; text-align: justify; }
-        ul { padding-left: 1.5rem; }
-        .highlight { color: #ffc400; font-weight: bold; }
-        
-        .action-area {
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid #555;
-            text-align: center;
-        }
-        .btn-next {
-            background-color: #ffc400;
-            color: #000;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 1rem;
-        }
-        .btn-next:hover { background-color: #e0ac00; }
-        .print-btn {
-            background: transparent; border: 1px solid #c8a2c8; color: #c8a2c8;
-            padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-bottom: 1rem;
-        }
-    </style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Termo de Adesão - Ordo Caoti</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #1a1a1a;
+      color: #f0f0f0;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    .contract-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #2a2a2a;
+      padding: 3rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      border: 1px solid #333;
+    }
+    h1 { color: #ffc400; text-align: center; text-transform: uppercase; }
+    h2 { color: #c8a2c8; border-bottom: 1px solid #444; padding-bottom: 0.5rem; margin-top: 2rem; }
+    p, li { color: #ccc; text-align: justify; }
+    ul { padding-left: 1.5rem; }
+    a { color: #ffc400; }
+    .highlight { color: #ffc400; font-weight: bold; }
+    .action-area { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #555; text-align: center; }
+    .btn-next, .btn-choice {
+      background-color: #ffc400;
+      color: #000;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 5px;
+      font-size: 1.05rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin: 0.5rem;
+    }
+    .btn-next:hover, .btn-choice:hover { background-color: #e0ac00; }
+    .btn-choice.secondary { background: transparent; color: #ffc400; border: 1px solid #ffc400; }
+    .print-btn { background: transparent; border: 1px solid #c8a2c8; color: #c8a2c8; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-bottom: 1rem; }
+    .aviso-erro { color: #ff6b6b; font-size: 0.95rem; margin-top: 0.5rem; display: none; }
+    #form-area { display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #555; }
+    #form-area h2 { border-bottom: none; text-align: center; color: #ffc400; }
+    #form-area p.instrucao { text-align: center; color: #ccc; }
+    .form-wrapper { position: relative; width: 100%; background-color: #1e1e1e; border: 1px solid #444; border-radius: 8px; overflow: hidden; }
+    .form-wrapper iframe { display: block; width: 100%; border: none; height: 1400px; background-color: #ffffff; }
+    .form-loading { text-align: center; color: #999; padding: 2rem; font-style: italic; }
+    .cadastro-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; margin-top: 1.5rem; }
+    .btn-voltar { background: transparent; border: 1px solid #666; color: #ccc; padding: 0.6rem 1.4rem; border-radius: 5px; cursor: pointer; margin-top: 1.5rem; font-size: 0.95rem; }
+    .btn-voltar:hover { border-color: #ffc400; color: #ffc400; }
+    @media (max-width: 600px) {
+      body { padding: 1rem; }
+      .contract-container { padding: 1.5rem; }
+      .form-wrapper iframe { height: 1600px; }
+    }
+  </style>
   <link rel="stylesheet" href="../css/responsivo.css">
   <link rel="stylesheet" href="../css/app-shell.css">
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#0b0f16">
 </head>
 <body>
+  <div class="contract-container">
+    <div id="contrato-texto">
+      <div style="text-align: right;">
+        <button class="print-btn" onclick="window.print()">Imprimir / Salvar PDF</button>
+      </div>
 
-    <div class="contract-container">
-        <div style="text-align: right;">
-            <button class="print-btn" onclick="window.print()">ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Imprimir / Salvar PDF</button>
-        </div>
+      <h1>Termo de Adesão, Conduta e Uso de Direitos</h1>
+      <p style="text-align: center; font-style: italic;">Ordo Caoti</p>
 
-        <h1>Termo de Adesão, Conduta e Uso de Direitos</h1>
-        <p style="text-align: center; font-style: italic;">Ordo Caoti</p>
+      <p>Pelo presente instrumento eletrônico, eu, na qualidade de postulante inscrito(a), declaro, para todos os fins legais e espirituais, minha livre e espontânea vontade de ingressar como membro da Ordo Caoti, reconhecendo, compreendendo e aceitando integralmente as normas, valores e compromissos aqui estabelecidos.</p>
 
-        <p>Pelo presente instrumento eletrônico, eu, postulante inscrito, declaro, para todos os fins legais e espirituais, minha livre e espontânea vontade de ingressar como membro da Ordo Caoti, reconhecendo, compreendendo e aceitando integralmente as normas, valores e compromissos aqui estabelecidos.</p>
+      <h2>I. Natureza e Finalidade da Ordem</h2>
+      <p>A Ordo Caoti é uma ordem espiritual e iniciática voltada ao estudo, à prática e à manifestação consciente da Magia do Caos, tendo por princípios fundamentais a liberdade mágica, o autoconhecimento, o respeito à pluralidade e o equilíbrio entre luz e sombra.</p>
+      <p>A Ordem não se configura como instituição religiosa formal. Sua manutenção é garantida por contribuições mensais de seus membros e por atividades internas. Ao ingressar, o membro estabelece vínculo de natureza filosófica, ética e espiritual, sem caráter empregatício, societário ou comercial.</p>
 
-        <h2>I. Natureza e Finalidade da Ordem</h2>
-        <p>A Ordo Caoti é uma ordem espiritual e iniciática voltada ao estudo, à prática e à manifestação consciente da Magia do Caos, tendo por princípios fundamentais a liberdade mágica, o autoconhecimento, o respeito à pluralidade e o equilíbrio entre luz e sombra.</p>
-        <p>A Ordem não se configura como instituição religiosa formal, sendo sua manutenção garantida por contribuições mensais de seus membros e por atividades internas. Ao ingressar, o membro estabelece um vínculo de natureza filosófica, ética e espiritual, sem caráter empregatício, societário ou comercial.</p>
+      <h2>II. Declaração de Maioridade e Consentimento</h2>
+      <p>O(a) inscrito(a) declara, sob as penas da lei, possuir <strong>18 (dezoito) anos ou mais</strong> na data de aceite deste termo, comprometendo-se a comunicar imediatamente à Ordem qualquer alteração relevante nessa condição. Reconhece, ainda, que sua participação é voluntária e consciente, assumindo plena responsabilidade por suas escolhas, práticas e pelos resultados obtidos em sua jornada mágica e espiritual.</p>
 
-        <h2>II. Declaração de Maioridade e Consentimento</h2>
-        <p>O inscrito declara, sob as penas da lei, possuir <strong>18 (dezoito) anos ou mais</strong> na data de aceite deste termo. Reconhece que sua participação é voluntária e consciente, assumindo plena responsabilidade por suas escolhas, práticas e resultados obtidos em sua jornada mágica e espiritual.</p>
+      <h2>III. Uso de Imagem, Voz e Propriedade Intelectual</h2>
+      <p>O(a) membro autoriza expressamente a Ordo Caoti a registrar, utilizar e divulgar, em materiais internos ou promocionais, digitais ou físicos, sua imagem, voz, gravações, nome espiritual e produções intelectuais e artísticas, desde que relacionados às atividades da Ordem e limitados ao período em que mantiver vínculo ativo.</p>
+      <p>Nos termos do art. 8º, §5º, da Lei nº 13.709/2018 (LGPD), esta autorização poderá ser revogada a qualquer momento, mediante solicitação por escrito à liderança da Ordem, sem prejuízo dos atos já praticados com base no consentimento anteriormente concedido.</p>
+      <p>A propriedade intelectual dos materiais, grimórios, textos, rituais e ensinamentos da Ordem é coletiva e sigilosa, pertencendo à egrégora e ao corpo de membros ativos. É vedada a reprodução, cópia, divulgação ou utilização externa sem autorização expressa e formal da liderança da Ordo Caoti, composta por Caio Zanoni e Dayenne Kennedy.</p>
 
-        <h2>III. Uso de Imagem, Voz e Propriedade Intelectual</h2>
-        <p>O membro autoriza expressamente a Ordo Caoti a registrar, utilizar e divulgar, em materiais internos ou promocionais (digitais ou físicos), sua imagem, voz, gravações, nome espiritual, produções intelectuais e artísticas, desde que relacionados às atividades da Ordem e durante o período em que mantiver vínculo ativo.</p>
-        <p>A propriedade intelectual dos materiais, grimórios, textos, rituais e ensinos da Ordem é coletiva e sigilosa, pertencendo à egrégora e ao corpo de membros ativos, sendo vedada a reprodução, cópia, divulgação ou utilização externa sem autorização expressa e formal da liderança da Ordo Caoti composta por Caio Zanoni e Dayenne Kennedy</p>
+      <h2>IV. Estrutura e Benefícios da Ordem</h2>
+      <ul>
+        <li>Rituais coletivos mensais e práticas de expansão energética.</li>
+        <li>Trilha de Neófitos, com aulas e estudos estruturados.</li>
+        <li>Cursos e workshops temáticos sobre magia, ocultismo e espiritualidade.</li>
+        <li>Caminho das Sombras, voltado ao autoconhecimento e ao shadow work.</li>
+        <li>Caminho da Insolência, voltado ao desenvolvimento crítico e racional.</li>
+        <li>Caminho do Alquimista, voltado à transmutação da própria realidade.</li>
+        <li>Caminho do Mago, voltado ao aprimoramento prático das habilidades mágicas.</li>
+        <li>Grimório interno com rituais, servidores e práticas exclusivas.</li>
+        <li>Egrégora <strong>forte</strong>, protetora e catalisadora do desenvolvimento individual.</li>
+        <li>Acesso à Loja da Ordem, podendo expor ou adquirir produtos.</li>
+        <li>Comunidade interna ativa e plural, com atividades supervisionadas.</li>
+      </ul>
+      <p>O valor mensal da mensalidade é de <strong>R$ 80,00 (oitenta reais)</strong>, destinado à manutenção estrutural, tecnológica e ritualística da Ordem. O valor poderá ser reajustado uma única vez por ano, em até R$ 20,00 (vinte reais) por reajuste, mediante aviso prévio de 30 (trinta) dias ao(à) membro.</p>
 
-        <h2>IV. Estrutura e Benefícios da Ordem</h2>
-        <ul>
-            <li>Rituais coletivos mensais e práticas de expansão energética.</li>
-            <li>Trilha de Neófitos, com aulas e estudos estruturados.</li>
-            <li>Cursos e workshops temáticos sobre magia, ocultismo e espiritualidade.</li>
-            <li>Caminho das sombras, voltado ao autoconhecimento e shadow work.</li>
-            <li>Caminho da Insolência voltado ao desenvolvimento mais crítico e racional.</li>
-            <li>Caminho do alquimista, voltado a alterar a própria realidade transmutando ela.</li>
-            <li>Caminho do Mago, voltado ao aprimoramento das habilidades mágicas de forma prática.</li>
-            <li>Grimório interno com rituais, servidores e práticas exclusivas.</li>
-            <li>Egrégora <strong>FORTE</strong> protetora e catalisadora do desenvolvimento individual.</li>
-            <li>Acesso à Loja da Ordem, podendo expor ou adquirir produtos.</li>
-            <li>Comunidade interna ativa e plural, com atividades supervisionadas.</li>
-        </ul>
-        <p>O valor mensal da MENSALIDADE é de <strong>R$ 80,00 (oitenta reais)</strong> e destinado à manutenção estrutural, tecnológica e ritualística da Ordem, podendo ser ajustado mediante aviso prévio de 30 (trinta) dias, em até R$ 20,00 (vinte reais) por reajuste, uma única vez por ano.</p>
+      <h2>V. Regras de Conduta e Convivência</h2>
+      <ul>
+        <li>Respeito mútuo é obrigatório dentro e fora dos espaços de interação da Ordem.</li>
+        <li>É proibida qualquer forma de abuso, assédio, intimidação, humilhação, ofensa, manipulação energética ou violência, física ou espiritual.</li>
+        <li>O sigilo é princípio sagrado: conteúdos rituais, grimórios e informações internas não devem ser divulgados fora da Ordem.</li>
+        <li>Toda prática que envolva outro membro requer consentimento consciente e verbal de todos os participantes.</li>
+        <li>Hierarquias coercitivas não são toleradas. A experiência confere liderança, mas jamais autoritarismo.</li>
+        <li>O uso de magia direcionada a outro membro sem consentimento é considerado infração grave e sujeito à expulsão imediata.</li>
+        <li>A vulnerabilidade espiritual ou emocional jamais poderá ser explorada.</li>
+        <li>A neutralidade religiosa e a liberdade de crença são garantidas: cada membro caminha sob sua própria fé e cosmologia.</li>
+      </ul>
 
-        <h2>V. Regras de Conduta e Convivência</h2>
-        <ul>
-            <li>Respeito mútuo é obrigatório dentro e fora dos espaços de interação da Ordem.</li>
-            <li>Proibida qualquer forma de abuso, assédio, intimidação, humilhação, ofensa, manipulação energética ou violência, física ou espiritual.</li>
-            <li>O sigilo é princípio sagrado: conteúdos rituais, grimórios e informações internas não devem ser divulgados fora da Ordem.</li>
-            <li>Toda prática que envolva outro membro requer consentimento consciente e verbal de todos os participantes.</li>
-            <li>Hierarquias coercitivas não são toleradas. A experiência confere liderança, mas jamais autoritarismo.</li>
-            <li>O uso de magia direcionada a outro membro sem consentimento é considerada infração grave e sujeita a expulsão imediata.</li>
-            <li>A vulnerabilidade espiritual ou emocional jamais poderá ser explorada.</li>
-            <li>A neutralidade religiosa e a liberdade de crença são garantidas: cada membro caminha sob sua própria fé e cosmologia.</li>
-        </ul>
+      <h2>VI. Penalidades Internas</h2>
+      <p>A violação das regras acima implica sanções conforme a gravidade do ato:</p>
+      <ul>
+        <li>Advertência verbal ou escrita para faltas leves;</li>
+        <li>Suspensão temporária para reincidência ou conduta inadequada;</li>
+        <li>Expulsão definitiva em casos de abuso, assédio, agressão, magia sem consentimento ou sabotagem.</li>
+      </ul>
 
-        <h2>VI. Penalidades Internas</h2>
-        <p>A violação das regras acima implica sanções conforme a gravidade do ato:</p>
-        <ul>
-            <li>Advertência verbal ou escrita para faltas leves;</li>
-            <li>Suspensão temporária para reincidência ou conduta inadequada;</li>
-            <li>Expulsão definitiva em casos de abuso, assédio, agressão, magia sem consentimento ou sabotagem.</li>
-        </ul>
+      <h2>VII. Vigência e Rescisão</h2>
+      <p>Este termo vigorará enquanto o(a) membro mantiver vínculo ativo e contribuições em dia com a Ordem. O desligamento voluntário deve ser comunicado formalmente à liderança da Ordem, com antecedência mínima de 30 (trinta) dias, cessando, a partir da efetivação do desligamento, as autorizações de participação e de uso de imagem previstas na Cláusula III.</p>
 
-        <h2>VII. Vigilância e Rescisão</h2>
-        <p>Este termo vigorará enquanto o membro mantiver vínculo ativo e contribuições em dia com a Ordem. O desligamento voluntário deve ser comunicado formalmente, cessando automaticamente as autorizações de participação.</p>
+      <h2>VIII. Proteção de Dados Pessoais (LGPD)</h2>
+      <p>Os dados pessoais fornecidos pelo(a) membro no momento da inscrição serão tratados pela Ordo Caoti exclusivamente para as finalidades de gestão do vínculo associativo, comunicação interna, organização hierárquica e cobrança da mensalidade, com fundamento no consentimento do titular e na execução deste termo, nos termos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais - LGPD).</p>
+      <p>O(a) membro poderá, a qualquer tempo, solicitar confirmação do tratamento, acesso, correção, portabilidade, eliminação ou revogação do consentimento sobre seus dados pessoais, mediante requerimento enviado aos canais oficiais de contato da Ordo Caoti.</p>
 
-        <h2>VIII. Disposições Finais</h2>
-        <p>O presente termo é regido pelas leis brasileiras (ConstituiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o Federal, CÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³digo Civil, Lei de Direitos Autorais e LGPD). O foro eleito para dirimir eventuais controvÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rsias serÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ o da Comarca de SÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o Paulo/SP.</p>
-        <p>O aceite eletrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´nico ou assinatura digital deste termo equivale, para todos os fins, ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  assinatura fÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­sica e representa plena concordÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ncia com as condiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes estabelecidas.</p>
+      <h2>IX. Disposições Finais</h2>
+      <p>O presente termo é regido pelas leis brasileiras, em especial pela Constituição Federal de 1988, pelo Código Civil, pela Lei de Direitos Autorais e pela Lei Geral de Proteção de Dados Pessoais. Fica eleito o foro da Comarca de Campinas, Estado de São Paulo, para dirimir quaisquer controvérsias decorrentes deste termo, com renúncia expressa a qualquer outro, por mais privilegiado que seja.</p>
+      <p>O aceite eletrônico ou a assinatura digital deste termo equivalem, para todos os fins de direito, à assinatura física, representando plena concordância com as condições ora estabelecidas.</p>
 
- 
-            <br>
-            <label style="display: block; margin-bottom: 1rem; cursor: pointer;">
-                <input type="checkbox" id="checkAceite"> 
-                Declaro que li, compreendi e concordo integralmente com os termos acima, reconhecendo sua validade jurÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­dica, moral e espiritual.
-            </label>
-            <label style="display: block; margin-bottom: 1rem; cursor: pointer;">
-                <input type="checkbox" id="checkPrivacidade">
-                Declaro que li e concordo com a <a href="/legal/politica-privacidade" target="_blank" rel="noopener">PolÃƒÆ’Ã‚Â­tica de Privacidade</a> e os <a href="/legal/termos-de-uso" target="_blank" rel="noopener">Termos de Uso</a>.
-            </label>
-
-            <button onclick="prosseguir()" class="btn-next">Prosseguir para Dados e Pagamento</button>
-        </div>
+      <div class="action-area">
+        <label style="display: block; margin-bottom: 1rem; cursor: pointer;">
+          <input type="checkbox" id="checkAceite">
+          Declaro que li, compreendi e concordo integralmente com os termos acima, reconhecendo sua validade jurídica, moral e espiritual.
+        </label>
+        <label style="display: block; margin-bottom: 1rem; cursor: pointer;">
+          <input type="checkbox" id="checkPrivacidade">
+          Declaro que li e concordo com a <a href="/legal/politica-privacidade" target="_blank" rel="noopener">Política de Privacidade</a> e os <a href="/legal/termos-de-uso" target="_blank" rel="noopener">Termos de Uso</a>.
+        </label>
+        <button id="btnProsseguir" onclick="prosseguir()" class="btn-next">Prosseguir para Dados e Pagamento</button>
+        <div class="aviso-erro" id="avisoErro">Você precisa marcar as duas caixas acima para continuar.</div>
+      </div>
     </div>
 
+    <div id="form-area">
+      <h2>Dados de Cadastro</h2>
+      <p class="instrucao">Preencha o formulário abaixo para concluir sua inscrição. Em seguida, escolha seu cadastro interno para registrar o usuário e sua posição hierárquica no backend administrativo.</p>
+
+      <div class="form-wrapper">
+        <div class="form-loading" id="formLoading">Carregando formulário…</div>
+        <iframe id="googleFormFrame" title="Formulário de Cadastro - Ordo Caoti" src="" data-src="https://docs.google.com/forms/d/e/1cfjFcL-Y3XCDEe_tlsBnuY7nFi_G6048otbPx4dWjRA/viewform?embedded=true" onload="document.getElementById('formLoading').style.display='none';">Carregando…</iframe>
+      </div>
+
+      <h2>Registro Interno e Hierarquia</h2>
+      <p class="instrucao">Use estes cadastros para gravar seu usuário no sistema, com o nível correto para acompanhamento e aprovação administrativa.</p>
+      <div class="cadastro-grid">
+        <a class="btn-choice" href="/cadastro-neofitos">Neófito</a>
+        <a class="btn-choice" href="/cadastro-magos-n1">Mago N1</a>
+        <a class="btn-choice" href="/cadastro-magos-n2">Mago N2</a>
+        <a class="btn-choice" href="/cadastro-sabios">Sábio / Soberano</a>
+        <a class="btn-choice" href="/cadastro-fundadores">Mestre</a>
+        <a class="btn-choice secondary" href="/cadastro-ti">T.I.</a>
+      </div>
+
+      <div style="text-align:center;">
+        <button class="btn-voltar" onclick="voltarParaTermo()">Voltar ao Termo</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function prosseguir() {
+      const aceite = document.getElementById('checkAceite').checked;
+      const privacidade = document.getElementById('checkPrivacidade').checked;
+      const aviso = document.getElementById('avisoErro');
+      if (!aceite || !privacidade) {
+        aviso.style.display = 'block';
+        return;
+      }
+      aviso.style.display = 'none';
+      document.getElementById('contrato-texto').style.display = 'none';
+      const formArea = document.getElementById('form-area');
+      formArea.style.display = 'block';
+      const iframe = document.getElementById('googleFormFrame');
+      if (!iframe.getAttribute('src')) iframe.setAttribute('src', iframe.getAttribute('data-src'));
+      formArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function voltarParaTermo() {
+      document.getElementById('form-area').style.display = 'none';
+      document.getElementById('contrato-texto').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+  <script src="../js/app-shell.js" defer></script>
 </body>
 </html>
