@@ -6,7 +6,7 @@
     neofito: 'Neófito',
     mago_n1: 'Mago Iniciado',
     mago_n2: 'Mago Elevado',
-    sabio: 'Sábio / Soberano',
+    mago_n3: 'Mago Soberano',
     mestre_fundador: 'Mestre',
     lojista: 'Lojista',
     professor: 'Professor',
@@ -92,12 +92,12 @@
 
     const wrap = document.createElement('div');
     wrap.id = 'oc-profile-switcher';
-    wrap.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:9999;background:#101827;color:#eef2ff;border:1px solid #334155;border-radius:12px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.35);font:14px system-ui;max-width:260px';
+    wrap.className = 'oc-profile-footer';
     const label = document.createElement('label');
-    label.textContent = 'Cargo ativo';
-    label.style.cssText = 'display:block;margin-bottom:6px;color:#facc15;font-weight:700';
+    label.setAttribute('for', 'oc-profile-select');
+    label.textContent = 'Trocar perfil';
     const select = document.createElement('select');
-    select.style.cssText = 'width:100%;background:#0f172a;color:#eef2ff;border:1px solid #475569;border-radius:8px;padding:7px';
+    select.id = 'oc-profile-select';
     const active = user?.perfil_login || user?.perfil_ativo?.id || user?.tipo || user?.tipo_usuario;
     for (const profile of profiles) {
       const option = document.createElement('option');
@@ -116,8 +116,15 @@
         select.disabled = false;
       }
     });
+
     wrap.append(label, select);
-    document.body.appendChild(wrap);
+    let existingFooter = document.querySelector('footer');
+    if (!existingFooter) {
+      existingFooter = document.createElement('footer');
+      existingFooter.className = 'oc-runtime-footer';
+      document.body.appendChild(existingFooter);
+    }
+    existingFooter.appendChild(wrap);
   }
 
 

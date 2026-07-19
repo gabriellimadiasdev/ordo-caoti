@@ -75,6 +75,8 @@ const htmlRoutes = new Map([
   ['/cadastro-neofitos', 'cadastro-neofitos.html'],
   ['/cadastro-magos-n1', 'cadastro-magos-n1.html'],
   ['/cadastro-magos-n2', 'cadastro-magos-n2.html'],
+  ['/cadastro-magos-n3', 'cadastro-sabios.html'],
+  ['/cadastro-mago-soberano', 'cadastro-sabios.html'],
   ['/cadastro-sabios', 'cadastro-sabios.html'],
   ['/cadastro-ti', 'cadastro-ti.html'],
   ['/solicitar-acesso', 'solicitar-acesso.html'],
@@ -146,8 +148,8 @@ function normalizeNivelCodigo(value) {
     elevado: 'mago_n2',
     mago_elevado: 'mago_n2',
     mago_n3: 'mago_n3',
-    sabio: 'sabio',
-    soberano: 'sabio',
+    mago_soberano: 'mago_n3',
+    soberano: 'mago_n3',
     mestre: 'mestre_fundador',
     mestre_fundador: 'mestre_fundador',
     ti: 'ti',
@@ -165,7 +167,7 @@ const profileCatalog = {
   neofito: { id: 'neofito', label: 'Neófito', home_route: '/dashboard-aluno' },
   mago_n1: { id: 'mago_n1', label: 'Mago Iniciado', home_route: '/dashboard-aluno' },
   mago_n2: { id: 'mago_n2', label: 'Mago Elevado', home_route: '/dashboard-aluno' },
-  sabio: { id: 'sabio', label: 'Sábio / Soberano', home_route: '/dashboard-aluno' },
+  mago_n3: { id: 'mago_n3', label: 'Mago Soberano', home_route: '/dashboard-aluno' },
   mestre_fundador: { id: 'mestre_fundador', label: 'Mestre', home_route: '/admin/master' },
   lojista: { id: 'lojista', label: 'Lojista', home_route: '/dashboard-lojista' },
   professor: { id: 'professor', label: 'Professor', home_route: '/dashboard-professor' },
@@ -173,7 +175,7 @@ const profileCatalog = {
   ti: { id: 'ti', label: 'T.I.', home_route: '/dashboard-TI' },
 };
 
-const hierarchyProfiles = ['neofito', 'mago_n1', 'mago_n2', 'sabio', 'mestre_fundador'];
+const hierarchyProfiles = ['neofito', 'mago_n1', 'mago_n2', 'mago_n3', 'mestre_fundador'];
 
 function availableProfilesForUser(user = {}, nivelCodigo = 'neofito') {
   const profiles = new Set();
@@ -193,7 +195,7 @@ function availableProfilesForUser(user = {}, nivelCodigo = 'neofito') {
   }
 
   if (tipo === 'admin') profiles.add('ti');
-  if (tipo === 'ti') ['neofito', 'mago_n1', 'mago_n2'].forEach((profile) => profiles.add(profile));
+  if (tipo === 'ti') ['neofito', 'mago_n1', 'mago_n2', 'mago_n3'].forEach((profile) => profiles.add(profile));
 
   return [...profiles].filter((id) => profileCatalog[id]).map((id) => profileCatalog[id]);
 }

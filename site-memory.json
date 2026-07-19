@@ -198,7 +198,7 @@
       "kind": "html"
     },
     {
-      "route": "/",
+      "route": "/index",
       "file": "frontend/html/index.html",
       "kind": "html"
     },
@@ -318,6 +318,11 @@
       "kind": "html"
     },
     {
+      "route": "/ti-criar-login",
+      "file": "frontend/html/ti-criar-login.html",
+      "kind": "html"
+    },
+    {
       "route": "/",
       "file": "index.html",
       "kind": "html"
@@ -400,6 +405,16 @@
     {
       "route": "/cadastro-magos-n2",
       "file": "frontend/html/cadastro-magos-n2.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-magos-n3",
+      "file": "frontend/html/cadastro-sabios.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/cadastro-mago-soberano",
+      "file": "frontend/html/cadastro-sabios.html",
       "kind": "html-alias"
     },
     {
@@ -495,6 +510,11 @@
     {
       "route": "/manutencao-ti",
       "file": "frontend/html/manutencao-ti.html",
+      "kind": "html-alias"
+    },
+    {
+      "route": "/ti/criar-login",
+      "file": "frontend/html/ti-criar-login.html",
       "kind": "html-alias"
     },
     {

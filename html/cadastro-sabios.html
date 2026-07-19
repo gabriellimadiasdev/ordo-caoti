@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cadastro Sabios</title>
+  <title>Cadastro Mago Soberano</title>
   <link rel="stylesheet" href="../css/responsivo.css" />
   <link rel="stylesheet" href="../css/app-shell.css" />
   <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111827;color:#eef2ff;font-family:"Segoe UI",Tahoma,sans-serif;padding:1rem}.card{width:min(520px,100%);background:#1a2740;border:1px solid #314a70;border-radius:12px;padding:1rem}h1{margin:0 0 .4rem;color:#f0c458}.muted{color:#b3c4de;font-size:.92rem}label{display:block;margin:.7rem 0 .2rem;color:#c0cfe5}input,button{width:100%;box-sizing:border-box;border:1px solid #3a567f;border-radius:8px;background:#0f1a2c;color:#eef2ff;padding:.7rem}button{margin-top:.8rem;background:#f0c458;color:#2c1f00;font-weight:700;cursor:pointer}.msg{margin-top:.7rem;padding:.6rem;border:1px solid #3a567f;border-radius:8px;display:none}</style>
 </head>
 <body>
   <main class="card">
-    <h1>Cadastro rapido - Sabio</h1>
-    <p class="muted">Cria acesso de sabio com liberacao imediata para login no navegador.</p>
-    <form id="formCadastro"><label for="nome">Nome</label><input id="nome" required /><label for="email">Email</label><input id="email" type="email" required /><label for="senha">Senha</label><input id="senha" type="password" required /><button type="submit">Criar acesso sabio</button></form>
+    <h1>Cadastro rápido - Mago Soberano</h1>
+    <p class="muted">Cria acesso de Mago Soberano com liberação imediata para login no navegador.</p>
+    <form id="formCadastro"><label for="nome">Nome</label><input id="nome" required /><label for="email">Email</label><input id="email" type="email" required /><label for="senha">Senha</label><input id="senha" type="password" required /><button type="submit">Criar acesso Mago Soberano</button></form>
     <div class="msg" id="msg"></div>
   </main>
   <script src="../js/runtime-api.js"></script>
@@ -23,7 +23,7 @@
     document.getElementById('formCadastro').addEventListener('submit', async (event) => {
       event.preventDefault();
       const msg = document.getElementById('msg');
-      const payload = { nome: nome.value.trim(), email: email.value.trim().toLowerCase(), senha: senha.value, nivel_codigo: 'sabio' };
+      const payload = { nome: nome.value.trim(), email: email.value.trim().toLowerCase(), senha: senha.value, nivel_codigo: 'mago_n3' };
       msg.style.display = 'none';
       try {
         const response = await fetch(apiUrl('/api/inscricao-membro'), { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
