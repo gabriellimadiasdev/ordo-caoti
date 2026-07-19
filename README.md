@@ -187,3 +187,78 @@ Variáveis obrigatórias/recomendadas para a área de T.I.:
 - `SITE_HEALTH_URL` — URL pública que o painel deve testar; se ausente usa `AUTH_BASE_URL` ou `/health`.
 
 A senha não deve ser salva no repositório. Configure-a como variável de ambiente segura na Vercel.
+
+## Hierarquia atualizada e usuários iniciais
+
+Papéis atuais, em ordem de autoridade:
+
+1. `mestre` — Mestre. Autoridade máxima administrativa.
+2. `ti` — T.I. Visualiza saúde e solicita ações; não sobrepõe Mestre.
+3. `soberano` — substitui Sábio / Mago N3.
+4. `elevado` — substitui Mago nível 2 / Mago N2.
+5. `mago_iniciado` — substitui Mago N1 / nível 1.
+6. `neofito` — entrada/demonstração.
+
+Usuários semeados automaticamente quando o banco está configurado:
+
+- Dayenne Kennedy, username `dayeenix`, role `mestre`.
+- Caio Eckert dos Santos Zanoni, username `delerix`, role `mestre`.
+- Gabriel Lima Dias Rocha, username `Luminis Luxblade`, role `ti`.
+- Usuário de demonstração, username `666`, role `neofito`.
+
+As senhas iniciais são salvas como hash e a senha temporária exige troca no primeiro login. Para sobrescrever sem mexer no código, use `SEED_TEMP_PASSWORD_HASH` e `DEMO_PASSWORD_HASH`.
+
+## Login por senha e aprovação dos Mestres
+
+- `POST /auth/password/login` — login por e-mail/username e senha.
+- `POST /auth/password/change` — troca de senha.
+- `POST /ti/impersonate` — T.I. pode simular apenas `neofito`, `mago_iniciado`, `elevado` e `ti`.
+- `POST /ti/users/requests` — T.I. solicita criação de usuário.
+- `GET /approval-requests` — lista solicitações administrativas.
+- `POST /approval-requests/:id/approve` — Mestre aprova solicitação.
+- `POST /approval-requests/:id/reject` — Mestre rejeita solicitação.
+
+## Agenda, notificações e importações
+
+- `GET /agenda/integrations` — status de Gmail, Google Agenda, WhatsApp e Alexa.
+- `POST /agenda/events` — cria eventos com notificações; exige `masterUserId` de Mestre.
+- `POST /imports/:provider` — cria jobs de importação para `google_drive`, `google_classroom`, `gmail` ou `google_calendar`; exige Mestre.
+
+Integrações externas exigem OAuth/chaves dos provedores antes de sincronizar dados reais.
+
+## Uploads, mídia e Vercel Blob
+
+- `POST /uploads/assets` — registra arquivo/imagem/foto/gravação.
+- `POST /catalog/items/:id/assets` — vincula mídia a produto, serviço ou livro.
+
+Use Vercel Blob para armazenamento de arquivos, imagens, vídeos, documentos, uploads de usuários e gravações. Vercel Postgres não é mais first-party; bancos relacionais novos devem usar Neon via Marketplace.
+
+## Pagamentos, frete, wallets e repasse a vendedores
+
+- `POST /sellers/:userId/payout-accounts` — cadastra forma de repasse do vendedor com dados tokenizados pelo provedor.
+- `POST /orders/:id/shipping-quotes` — registra frete no pedido.
+
+Mercado Pago cobre várias formas legais de pagamento no Brasil conforme a conta/produto habilitado. Outras wallets/formas devem ser integradas por provedor compatível e credenciais próprias.
+
+## LGPD e dados do cliente
+
+- `POST /lgpd/requests` — registra pedidos de acesso, exportação, retificação, exclusão ou retirada de consentimento.
+
+Dados sensíveis devem ser minimizados, tokenizados quando possível e protegidos por HTTPS, autenticação e controle de acesso.
+
+## Biblioteca, livros e fontes científicas
+
+- `GET /biblioteca` — página responsiva da biblioteca.
+- `POST /biblioteca/items` — cadastra livro/material/artigo com status de direitos.
+- `GET /biblioteca/fontes/scielo` — redireciona para SciELO.
+- `GET /biblioteca/fontes/pubmed` — redireciona para PubMed.
+- `GET /biblioteca/fontes/google-scholar` — redireciona para Google Scholar.
+
+Embeds/iframes devem usar apenas conteúdo próprio, licenciado, de domínio público ou expressamente autorizado.
+
+## Responsividade e portabilidade
+
+- `GET /status` — página pública responsiva de status.
+- `GET /portability/manifest` — manifesto de portabilidade.
+
+As páginas HTML usam layout fluido com CSS responsivo. Os endpoints REST/JSON permitem frontends em React, Angular, Vue, Svelte ou outros, e backends/clients em Node.js, Ruby, Python, PHP, Go etc.

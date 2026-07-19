@@ -8,39 +8,54 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 const roleHierarchy = {
-  super_admin: {
+  mestre: {
     level: 100,
-    label: 'Super Administrador',
+    label: 'Mestre',
+    legacyLabels: [],
     permissions: ['*']
   },
-  admin: {
-    level: 80,
-    label: 'Administrador',
-    permissions: ['users:create', 'users:read', 'users:update', 'users:delete', 'roles:read']
+  ti: {
+    level: 90,
+    label: 'T.I.',
+    legacyLabels: [],
+    permissions: ['health:read', 'users:request_create', 'users:impersonate_lower_roles', 'integrations:read']
   },
-  gerente: {
-    level: 60,
-    label: 'Gerente',
+  soberano: {
+    level: 80,
+    label: 'Soberano',
+    legacyLabels: ['Sábio', 'Mago N3', 'Mago nível 3'],
     permissions: ['users:create', 'users:read', 'users:update', 'roles:read']
   },
-  moderador: {
-    level: 40,
-    label: 'Moderador',
+  elevado: {
+    level: 60,
+    label: 'Elevado',
+    legacyLabels: ['Mago nível 2', 'Mago N2', 'mago n2'],
     permissions: ['users:read', 'users:update', 'roles:read']
   },
-  usuario: {
+  mago_iniciado: {
+    level: 40,
+    label: 'Mago Iniciado',
+    legacyLabels: ['Mago N1', 'mago nível 1'],
+    permissions: ['users:read:self', 'roles:read']
+  },
+  neofito: {
     level: 10,
-    label: 'Usuário',
+    label: 'Neófito',
+    legacyLabels: [],
     permissions: ['users:read:self']
   }
 };
 
 const roles = new Set(Object.keys(roleHierarchy));
+const seedPasswordHashes = {
+  temporary: process.env.SEED_TEMP_PASSWORD_HASH || '9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0',
+  demo: process.env.DEMO_PASSWORD_HASH || '2a97516c354b68848cdbd8f54a226a0a55b21ed138e207ad6c5cbb9c00aa5aea'
+};
 const mainUsers = [
-  { name: 'Gabriel Lima', email: 'admin@ordocaoti.com.br', role: 'super_admin' },
-  { name: 'Administrador Ordo Caoti', email: 'administrador@ordocaoti.com.br', role: 'admin' },
-  { name: 'Gerente Ordo Caoti', email: 'gerente@ordocaoti.com.br', role: 'gerente' },
-  { name: 'Moderador Ordo Caoti', email: 'moderador@ordocaoti.com.br', role: 'moderador' }
+  { name: 'Dayenne Kennedy', username: 'dayeenix', email: 'dayeekennedy@gmail.com', role: 'mestre', passwordHash: seedPasswordHashes.temporary, mustChangePassword: true },
+  { name: 'Caio Eckert dos Santos Zanoni', username: 'delerix', email: 'contatocaiozanoni@gmail.com', role: 'mestre', passwordHash: seedPasswordHashes.temporary, mustChangePassword: true },
+  { name: 'Gabriel Lima Dias Rocha', username: 'Luminis Luxblade', email: 'g.lima.rocha90@gmail.com', role: 'ti', passwordHash: seedPasswordHashes.temporary, mustChangePassword: true, canImpersonateRoles: ['neofito', 'mago_iniciado', 'elevado', 'ti'] },
+  { name: 'Usuário Demonstração', username: '666', email: 'demo@demo.com', role: 'neofito', passwordHash: seedPasswordHashes.demo, mustChangePassword: false }
 ];
 
 const oauthProviders = {
@@ -191,10 +206,19 @@ function serializeRole(role) {
   };
 }
 
+function hasRoleAtLeast(user, role) {
+  return (roleHierarchy[user?.role]?.level || 0) >= (roleHierarchy[role]?.level || 0);
+}
+
+function canTiImpersonateRole(role) {
+  return ['neofito', 'mago_iniciado', 'elevado', 'ti'].includes(role);
+}
+
 function serializeUser(user) {
   return {
     id: user.id,
     name: user.name,
+    username: user.username,
     email: user.email,
     role: user.role,
     hierarchyLevel: roleHierarchy[user.role]?.level ?? 0,
@@ -221,8 +245,9 @@ async function ensureSchema() {
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY,
         name TEXT NOT NULL,
+        username TEXT UNIQUE,
         email TEXT NOT NULL UNIQUE,
-        role TEXT NOT NULL DEFAULT 'usuario',
+        role TEXT NOT NULL DEFAULT 'neofito',
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
@@ -287,11 +312,46 @@ async function ensureSchema() {
       )
     `;
 
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT UNIQUE`;
+    await sql`ALTER TABLE users ALTER COLUMN role SET DEFAULT 'neofito'`;
     await sql`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check`;
+    await sql`
+      UPDATE users
+      SET role = CASE
+        WHEN role IN ('super_admin', 'admin') THEN 'mestre'
+        WHEN role = 'gerente' THEN 'elevado'
+        WHEN role = 'moderador' THEN 'mago_iniciado'
+        WHEN role = 'usuario' THEN 'neofito'
+        ELSE role
+      END
+    `;
     await sql`
       ALTER TABLE users
       ADD CONSTRAINT users_role_check
-      CHECK (role IN ('super_admin', 'admin', 'gerente', 'moderador', 'usuario'))
+      CHECK (role IN ('mestre', 'ti', 'soberano', 'elevado', 'mago_iniciado', 'neofito'))
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_credentials (
+        user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        password_hash TEXT NOT NULL,
+        must_change_password BOOLEAN NOT NULL DEFAULT true,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS admin_approval_requests (
+        id UUID PRIMARY KEY,
+        requested_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        approved_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        action TEXT NOT NULL,
+        target_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        decided_at TIMESTAMPTZ
+      )
     `;
   })();
 
@@ -306,11 +366,12 @@ async function ensureMainUsers() {
 
     for (const user of mainUsers) {
       const seeded = await sql`
-        INSERT INTO users (id, name, email, role)
-        VALUES (${randomUUID()}, ${user.name}, ${normalizeEmail(user.email)}, ${user.role})
+        INSERT INTO users (id, name, username, email, role)
+        VALUES (${randomUUID()}, ${user.name}, ${user.username}, ${normalizeEmail(user.email)}, ${user.role})
         ON CONFLICT (email) DO UPDATE
         SET
           name = EXCLUDED.name,
+          username = EXCLUDED.username,
           role = EXCLUDED.role,
           updated_at = NOW()
         RETURNING id, email
@@ -325,6 +386,16 @@ async function ensureMainUsers() {
           user_id = EXCLUDED.user_id,
           is_primary = true,
           is_verified = true
+      `;
+
+      await sql`
+        INSERT INTO user_credentials (user_id, password_hash, must_change_password)
+        VALUES (${saved.id}, ${user.passwordHash}, ${Boolean(user.mustChangePassword)})
+        ON CONFLICT (user_id) DO UPDATE
+        SET
+          password_hash = EXCLUDED.password_hash,
+          must_change_password = user_credentials.must_change_password OR EXCLUDED.must_change_password,
+          updated_at = NOW()
       `;
     }
   })();
@@ -359,7 +430,7 @@ function validateUserPayload(payload, { partial = false } = {}) {
     values: {
       name,
       email,
-      role: role ?? (partial ? undefined : 'usuario')
+      role: role ?? (partial ? undefined : 'neofito')
     }
   };
 }
@@ -407,6 +478,12 @@ app.get('/', (_req, res) => {
       'GET /ti/login',
       'GET /ti',
       'GET /ti/health.json',
+      'GET/POST /agenda/events',
+      'POST /imports/:provider',
+      'POST /uploads/assets',
+      'POST /lgpd/requests',
+      'GET/POST /biblioteca',
+      'GET /portability/manifest',
       'POST /usuarios/:id/mfa/:method/challenge',
       'POST /usuarios/:id/mfa/:method/verify'
     ]
@@ -1640,16 +1717,43 @@ function hashPassword(value) {
   return crypto.createHash('sha256').update(String(value || '')).digest('hex');
 }
 
-function verifyItPassword(password) {
-  const configuredHash = process.env.IT_ADMIN_PASSWORD_HASH;
-  const configuredPassword = process.env.IT_ADMIN_PASSWORD;
-  if (configuredHash) return hashPassword(password) === configuredHash;
-  if (configuredPassword) {
-    const provided = Buffer.from(String(password));
-    const expected = Buffer.from(configuredPassword);
-    return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+async function getUserCredentialByEmail(email) {
+  if (!sql) return null;
+  await ensureMainUsers();
+  const users = await sql`
+    SELECT users.id, users.name, users.username, users.email, users.role, credentials.password_hash, credentials.must_change_password
+    FROM users
+    LEFT JOIN user_credentials credentials ON credentials.user_id = users.id
+    WHERE users.email = ${email}
+    LIMIT 1
+  `;
+  return users[0] || null;
+}
+
+async function verifyItPassword(email, password) {
+  const user = await getUserCredentialByEmail(email);
+  const submittedHash = hashPassword(password);
+
+  if (user?.password_hash && submittedHash === user.password_hash && user.role === 'ti') {
+    return { ok: true, user, mustChangePassword: Boolean(user.must_change_password) };
   }
-  return false;
+
+  const configuredHash = process.env.IT_ADMIN_PASSWORD_HASH || seedPasswordHashes.temporary;
+  if (email === itAdminEmail && submittedHash === configuredHash) {
+    return { ok: true, user, mustChangePassword: true };
+  }
+
+  return { ok: false };
+}
+
+async function updateUserPassword(userId, password) {
+  await ensureMainUsers();
+  await sql`
+    INSERT INTO user_credentials (user_id, password_hash, must_change_password)
+    VALUES (${userId}, ${hashPassword(password)}, false)
+    ON CONFLICT (user_id) DO UPDATE
+    SET password_hash = EXCLUDED.password_hash, must_change_password = false, updated_at = NOW()
+  `;
 }
 
 async function getHealthReport(req) {
@@ -1718,22 +1822,56 @@ app.get('/ti/login', (req, res) => {
     </div>`));
 });
 
-app.post('/ti/login', (req, res) => {
+app.post('/ti/login', asyncRoute(async (req, res) => {
   const email = normalizeEmail(req.body?.email);
   const password = String(req.body?.password || '');
-  if (email !== itAdminEmail || !verifyItPassword(password)) {
+  const auth = await verifyItPassword(email, password);
+  if (email !== itAdminEmail || !auth.ok) {
     return res.status(401).type('html').send(htmlPage('Login T.I. Ordo Caoti', `
       <div class="card" style="max-width: 460px; margin: 10vh auto 0;">
         <h1>Acesso negado</h1>
-        <p class="muted">E-mail ou senha inválidos, ou senha ainda não configurada nas variáveis de ambiente.</p>
+        <p class="muted">E-mail ou senha inválidos.</p>
         <a class="button" href="/ti/login">Tentar novamente</a>
       </div>`));
   }
 
-  const token = signItSession({ email, exp: Date.now() + 8 * 60 * 60 * 1000 });
+  const token = signItSession({ email, userId: auth.user?.id, role: 'ti', mustChangePassword: auth.mustChangePassword, exp: Date.now() + 8 * 60 * 60 * 1000 });
   res.setHeader('Set-Cookie', `${itSessionCookie}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800; Secure`);
-  return res.redirect('/ti');
+  return res.redirect(auth.mustChangePassword ? '/ti/password' : '/ti');
+}));
+
+app.get('/ti/password', (req, res) => {
+  if (!requireItAuth(req, res)) return;
+  res.type('html').send(htmlPage('Alterar senha T.I.', `
+    <div class="card" style="max-width: 520px; margin: 10vh auto 0;">
+      <h1>Alterar senha de T.I.</h1>
+      <p class="muted">A senha temporária deve ser trocada no primeiro acesso.</p>
+      <form method="post" action="/ti/password">
+        <label>Nova senha</label>
+        <input name="password" type="password" minlength="8" autocomplete="new-password" required />
+        <label>Confirmar senha</label>
+        <input name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required />
+        <button type="submit">Salvar senha</button>
+      </form>
+    </div>`));
 });
+
+app.post('/ti/password', asyncRoute(async (req, res) => {
+  const session = verifyItSession(parseCookies(req)[itSessionCookie]);
+  if (!session) return res.redirect('/ti/login');
+  if (!sql) return res.status(503).type('html').send(htmlPage('Banco indisponível', '<div class="card"><h1>Banco não configurado</h1><p>Configure DATABASE_URL antes de trocar a senha.</p></div>'));
+  const password = String(req.body?.password || '');
+  const confirmPassword = String(req.body?.confirmPassword || '');
+  if (password.length < 8 || password !== confirmPassword) {
+    return res.status(400).type('html').send(htmlPage('Alterar senha T.I.', '<div class="card"><h1>Senha inválida</h1><p>A senha precisa ter pelo menos 8 caracteres e a confirmação deve ser igual.</p><a class="button" href="/ti/password">Voltar</a></div>'));
+  }
+  const user = await getUserCredentialByEmail(session.email);
+  if (!user?.id) return res.status(404).type('html').send(htmlPage('Usuário não encontrado', '<div class="card"><h1>Usuário não encontrado</h1></div>'));
+  await updateUserPassword(user.id, password);
+  const token = signItSession({ email: session.email, userId: user.id, role: 'ti', mustChangePassword: false, exp: Date.now() + 8 * 60 * 60 * 1000 });
+  res.setHeader('Set-Cookie', `${itSessionCookie}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800; Secure`);
+  res.redirect('/ti');
+}));
 
 app.post('/ti/logout', (_req, res) => {
   res.setHeader('Set-Cookie', `${itSessionCookie}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0; Secure`);
@@ -1747,6 +1885,8 @@ app.get('/ti/health.json', asyncRoute(async (req, res) => {
 
 app.get('/ti', asyncRoute(async (req, res) => {
   if (!requireItAuth(req, res)) return;
+  const session = verifyItSession(parseCookies(req)[itSessionCookie]);
+  if (session?.mustChangePassword) return res.redirect('/ti/password');
   const report = await getHealthReport(req);
   const rows = report.checks.map(check => `<tr><td>${check.name}</td><td><span class="status ${check.status}">${check.status}</span></td><td>${check.message}</td></tr>`).join('');
   res.type('html').send(htmlPage('Painel T.I. Ordo Caoti', `
@@ -1764,6 +1904,423 @@ app.get('/ti', asyncRoute(async (req, res) => {
       <form method="post" action="/ti/logout"><button type="submit">Sair</button></form>
     </div>`));
 }));
+
+app.post('/ti/users/requests', asyncRoute(async (req, res) => {
+  if (!isItAuthenticated(req)) return res.status(401).json({ errors: ['Não autenticado.'] });
+  if (!validateDatabase(res)) return;
+  await ensureMainUsers();
+  const session = verifyItSession(parseCookies(req)[itSessionCookie]);
+  const requestedBy = await getUserCredentialByEmail(session.email);
+  const payload = {
+    name: req.body?.name,
+    username: req.body?.username,
+    email: normalizeEmail(req.body?.email),
+    role: req.body?.role || 'neofito'
+  };
+  if (!payload.email || !payload.name) return res.status(400).json({ errors: ['name e email são obrigatórios.'] });
+  const requests = await sql`
+    INSERT INTO admin_approval_requests (id, requested_by_user_id, action, payload)
+    VALUES (${randomUUID()}, ${requestedBy?.id || null}, 'create_user', ${JSON.stringify(payload)}::jsonb)
+    RETURNING *
+  `;
+  res.status(202).json({ request: requests[0], status: 'pending_master_approval' });
+}));
+
+app.get('/approval-requests', asyncRoute(async (_req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureMainUsers();
+  const requests = await sql`SELECT * FROM admin_approval_requests ORDER BY created_at DESC`;
+  res.json({ requests });
+}));
+
+app.post('/approval-requests/:id/approve', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureMainUsers();
+  const masters = await sql`SELECT * FROM users WHERE id = ${req.body?.masterUserId} AND role = 'mestre' LIMIT 1`;
+  if (masters.length === 0) return res.status(403).json({ errors: ['Somente Mestre pode aprovar esta ação.'] });
+  const requests = await sql`SELECT * FROM admin_approval_requests WHERE id = ${req.params.id} AND status = 'pending' LIMIT 1`;
+  if (requests.length === 0) return res.status(404).json({ errors: ['Solicitação pendente não encontrada.'] });
+  const request = requests[0];
+  let createdUser = null;
+  if (request.action === 'create_user') {
+    const payload = request.payload;
+    const role = roles.has(payload.role) ? payload.role : 'neofito';
+    const users = await sql`
+      INSERT INTO users (id, name, username, email, role)
+      VALUES (${randomUUID()}, ${payload.name}, ${payload.username || null}, ${normalizeEmail(payload.email)}, ${role})
+      ON CONFLICT (email) DO UPDATE
+      SET name = EXCLUDED.name, username = EXCLUDED.username, role = EXCLUDED.role, updated_at = NOW()
+      RETURNING id, name, username, email, role, created_at, updated_at
+    `;
+    createdUser = users[0];
+  }
+  const updated = await sql`
+    UPDATE admin_approval_requests
+    SET status = 'approved', approved_by_user_id = ${masters[0].id}, decided_at = NOW(), target_user_id = ${createdUser?.id || request.target_user_id}
+    WHERE id = ${request.id}
+    RETURNING *
+  `;
+  res.json({ request: updated[0], user: createdUser ? serializeUser(createdUser) : null });
+}));
+
+app.post('/approval-requests/:id/reject', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureMainUsers();
+  const masters = await sql`SELECT id FROM users WHERE id = ${req.body?.masterUserId} AND role = 'mestre' LIMIT 1`;
+  if (masters.length === 0) return res.status(403).json({ errors: ['Somente Mestre pode rejeitar esta ação.'] });
+  const updated = await sql`
+    UPDATE admin_approval_requests
+    SET status = 'rejected', approved_by_user_id = ${masters[0].id}, decided_at = NOW()
+    WHERE id = ${req.params.id} AND status = 'pending'
+    RETURNING *
+  `;
+  if (updated.length === 0) return res.status(404).json({ errors: ['Solicitação pendente não encontrada.'] });
+  res.json({ request: updated[0] });
+}));
+
+
+async function ensureAdvancedSiteSchema() {
+  await ensureCommerceAndClassroomSchema();
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS schedule_events (
+      id UUID PRIMARY KEY,
+      owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      starts_at TIMESTAMPTZ NOT NULL,
+      ends_at TIMESTAMPTZ,
+      source TEXT NOT NULL DEFAULT 'site',
+      external_id TEXT,
+      notification_channels JSONB NOT NULL DEFAULT '[]'::jsonb,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS integration_import_jobs (
+      id UUID PRIMARY KEY,
+      requested_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      provider TEXT NOT NULL,
+      source TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending_configuration',
+      filters JSONB NOT NULL DEFAULT '{}'::jsonb,
+      result JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS uploaded_assets (
+      id UUID PRIMARY KEY,
+      owner_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      related_type TEXT,
+      related_id UUID,
+      kind TEXT NOT NULL,
+      title TEXT,
+      description TEXT,
+      url TEXT,
+      mime_type TEXT,
+      size_bytes INTEGER,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS seller_payout_accounts (
+      id UUID PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      account_type TEXT NOT NULL,
+      account_label TEXT NOT NULL,
+      payout_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+      is_verified BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS shipping_quotes (
+      id UUID PRIMARY KEY,
+      order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL DEFAULT 'manual',
+      origin_postal_code TEXT,
+      destination_postal_code TEXT,
+      amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'BRL',
+      delivery_estimate TEXT,
+      raw_response JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS lgpd_requests (
+      id UUID PRIMARY KEY,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      email TEXT NOT NULL,
+      type TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMPTZ,
+      CONSTRAINT lgpd_request_type_check CHECK (type IN ('access', 'export', 'rectification', 'delete', 'consent_withdrawal'))
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS library_items (
+      id UUID PRIMARY KEY,
+      title TEXT NOT NULL,
+      author TEXT,
+      description TEXT,
+      item_type TEXT NOT NULL DEFAULT 'book',
+      access_type TEXT NOT NULL DEFAULT 'external',
+      source_url TEXT,
+      embed_url TEXT,
+      cover_url TEXT,
+      price NUMERIC(12,2),
+      currency TEXT NOT NULL DEFAULT 'BRL',
+      rights_status TEXT NOT NULL DEFAULT 'requires_review',
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+}
+
+function requireMasterPayload(req, res) {
+  if (!req.body?.masterUserId) {
+    res.status(403).json({ errors: ['Ação exige autorização secundária de Mestre.'] });
+    return null;
+  }
+  return req.body.masterUserId;
+}
+
+async function assertMaster(masterUserId, res) {
+  const masters = await sql`SELECT id, role FROM users WHERE id = ${masterUserId} AND role = 'mestre' LIMIT 1`;
+  if (masters.length === 0) {
+    res.status(403).json({ errors: ['Somente Mestre pode executar ou aprovar esta ação.'] });
+    return null;
+  }
+  return masters[0];
+}
+
+app.get('/status', (_req, res) => {
+  res.type('html').send(htmlPage('Status Ordo Caoti', `
+    <div class="card">
+      <h1>Status público</h1>
+      <p class="muted">Página responsiva de status do projeto.</p>
+      <div class="grid">
+        <div class="card"><h2>Backend</h2><p><span class="status ok">online</span></p></div>
+        <div class="card"><h2>Health</h2><p><a class="button" href="/health">Abrir /health</a></p></div>
+        <div class="card"><h2>Área T.I.</h2><p><a class="button" href="/ti/login">Login T.I.</a></p></div>
+      </div>
+    </div>`));
+});
+
+app.get('/agenda/integrations', (_req, res) => {
+  res.json({
+    integrations: [
+      { id: 'gmail', configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET), capability: 'envio e leitura autorizada por OAuth' },
+      { id: 'google_calendar', configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET), capability: 'sincronização de agenda' },
+      { id: 'whatsapp', configured: Boolean(process.env.WHATSAPP_API_TOKEN), capability: 'notificações' },
+      { id: 'alexa', configured: Boolean(process.env.ALEXA_SKILL_ID), capability: 'alarmes/notificações em dispositivos compatíveis' }
+    ]
+  });
+});
+
+app.post('/agenda/events', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureAdvancedSiteSchema();
+  const masterUserId = requireMasterPayload(req, res);
+  if (!masterUserId) return;
+  const master = await assertMaster(masterUserId, res);
+  if (!master) return;
+  const title = String(req.body?.title || '').trim();
+  if (!title || !req.body?.startsAt) return res.status(400).json({ errors: ['title e startsAt são obrigatórios.'] });
+  const events = await sql`
+    INSERT INTO schedule_events (id, owner_user_id, title, description, starts_at, ends_at, source, notification_channels, metadata)
+    VALUES (${randomUUID()}, ${master.id}, ${title}, ${req.body?.description || null}, ${req.body.startsAt}, ${req.body?.endsAt || null}, ${req.body?.source || 'site'}, ${JSON.stringify(req.body?.notificationChannels || ['gmail','google_calendar','whatsapp','alexa'])}::jsonb, ${JSON.stringify(req.body?.metadata || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(201).json({ event: events[0], deliveryStatus: 'pending_provider_configuration' });
+}));
+
+app.post('/imports/:provider', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureAdvancedSiteSchema();
+  const master = await assertMaster(req.body?.masterUserId, res);
+  if (!master) return;
+  const provider = req.params.provider;
+  if (!['google_drive', 'google_classroom', 'gmail', 'google_calendar'].includes(provider)) return res.status(400).json({ errors: ['provider inválido.'] });
+  const jobs = await sql`
+    INSERT INTO integration_import_jobs (id, requested_by_user_id, provider, source, filters)
+    VALUES (${randomUUID()}, ${master.id}, ${provider}, ${req.body?.source || provider}, ${JSON.stringify(req.body?.filters || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(202).json({ job: jobs[0], status: 'pending_oauth_provider_configuration' });
+}));
+
+app.post('/uploads/assets', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureAdvancedSiteSchema();
+  const kind = String(req.body?.kind || 'file');
+  const assets = await sql`
+    INSERT INTO uploaded_assets (id, owner_user_id, related_type, related_id, kind, title, description, url, mime_type, size_bytes, metadata)
+    VALUES (${randomUUID()}, ${req.body?.ownerUserId || null}, ${req.body?.relatedType || null}, ${req.body?.relatedId || null}, ${kind}, ${req.body?.title || null}, ${req.body?.description || null}, ${req.body?.url || null}, ${req.body?.mimeType || null}, ${req.body?.sizeBytes || null}, ${JSON.stringify(req.body?.metadata || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(201).json({ asset: assets[0], storageRecommendation: 'Use Vercel Blob para arquivos, imagens, fotos e gravações.' });
+}));
+
+app.post('/catalog/items/:id/assets', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureAdvancedSiteSchema();
+  const assets = await sql`
+    INSERT INTO uploaded_assets (id, owner_user_id, related_type, related_id, kind, title, description, url, mime_type, metadata)
+    VALUES (${randomUUID()}, ${req.body?.ownerUserId || null}, 'catalog_item', ${req.params.id}, ${req.body?.kind || 'image'}, ${req.body?.title || null}, ${req.body?.description || null}, ${req.body?.url || null}, ${req.body?.mimeType || null}, ${JSON.stringify(req.body?.metadata || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(201).json({ asset: assets[0] });
+}));
+
+app.post('/sellers/:userId/payout-accounts', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureAdvancedSiteSchema();
+  const accounts = await sql`
+    INSERT INTO seller_payout_accounts (id, user_id, provider, account_type, account_label, payout_config, is_verified)
+    VALUES (${randomUUID()}, ${req.params.userId}, ${req.body?.provider || 'bank'}, ${req.body?.accountType || 'bank_account'}, ${req.body?.accountLabel || 'Conta de repasse'}, ${JSON.stringify(req.body?.payoutConfig || {})}::jsonb, false)
+    RETURNING id, user_id, provider, account_type, account_label, is_verified, created_at, updated_at
+  `;
+  res.status(201).json({ payoutAccount: accounts[0], security: 'Dados sensíveis devem ser tokenizados pelo provedor de pagamento.' });
+}));
+
+app.post('/orders/:id/shipping-quotes', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureAdvancedSiteSchema();
+  const amount = toNumber(req.body?.amount);
+  const quotes = await sql`
+    INSERT INTO shipping_quotes (id, order_id, provider, origin_postal_code, destination_postal_code, amount, currency, delivery_estimate, raw_response)
+    VALUES (${randomUUID()}, ${req.params.id}, ${req.body?.provider || 'manual'}, ${req.body?.originPostalCode || null}, ${req.body?.destinationPostalCode || null}, ${amount}, ${req.body?.currency || 'BRL'}, ${req.body?.deliveryEstimate || null}, ${JSON.stringify(req.body?.rawResponse || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(201).json({ shippingQuote: quotes[0] });
+}));
+
+app.post('/lgpd/requests', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureAdvancedSiteSchema();
+  const email = normalizeEmail(req.body?.email);
+  const type = String(req.body?.type || 'access');
+  if (!email || !['access', 'export', 'rectification', 'delete', 'consent_withdrawal'].includes(type)) return res.status(400).json({ errors: ['email/type inválidos.'] });
+  const requests = await sql`
+    INSERT INTO lgpd_requests (id, user_id, email, type, payload)
+    VALUES (${randomUUID()}, ${req.body?.userId || null}, ${email}, ${type}, ${JSON.stringify(req.body?.payload || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(202).json({ request: requests[0], privacy: 'Solicitação registrada para tratamento seguro conforme LGPD.' });
+}));
+
+app.get('/biblioteca', asyncRoute(async (_req, res) => {
+  const links = [
+    ['SciELO', '/biblioteca/fontes/scielo'],
+    ['PubMed', '/biblioteca/fontes/pubmed'],
+    ['Google Scholar', '/biblioteca/fontes/google-scholar']
+  ].map(([label, href]) => `<a class="button" href="${href}">${label}</a>`).join(' ');
+  res.type('html').send(htmlPage('Biblioteca Ordo Caoti', `
+    <div class="card">
+      <h1>Biblioteca</h1>
+      <p class="muted">Livros, artigos e materiais com revisão de direitos/autorização antes de venda ou incorporação por embed/iframe.</p>
+      <div class="grid">
+        <div class="card"><h2>Comprar livros</h2><p>Use produtos do catálogo com tipo livro/material.</p></div>
+        <div class="card"><h2>Embed legal</h2><p>Apenas materiais próprios, licenciados, domínio público ou com autorização.</p></div>
+        <div class="card"><h2>Fontes científicas</h2><p>${links}</p></div>
+      </div>
+    </div>`));
+}));
+
+app.post('/biblioteca/items', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureAdvancedSiteSchema();
+  const title = String(req.body?.title || '').trim();
+  if (!title) return res.status(400).json({ errors: ['title é obrigatório.'] });
+  const items = await sql`
+    INSERT INTO library_items (id, title, author, description, item_type, access_type, source_url, embed_url, cover_url, price, currency, rights_status, metadata)
+    VALUES (${randomUUID()}, ${title}, ${req.body?.author || null}, ${req.body?.description || null}, ${req.body?.itemType || 'book'}, ${req.body?.accessType || 'external'}, ${req.body?.sourceUrl || null}, ${req.body?.embedUrl || null}, ${req.body?.coverUrl || null}, ${req.body?.price ?? null}, ${req.body?.currency || 'BRL'}, ${req.body?.rightsStatus || 'requires_review'}, ${JSON.stringify(req.body?.metadata || {})}::jsonb)
+    RETURNING *
+  `;
+  res.status(201).json({ item: items[0], legalNotice: 'Hospede/iframe apenas conteúdo próprio, licenciado, domínio público ou autorizado.' });
+}));
+
+app.get('/biblioteca/fontes/:source', (req, res) => {
+  const sources = {
+    scielo: 'https://www.scielo.br/',
+    pubmed: 'https://pubmed.ncbi.nlm.nih.gov/',
+    'google-scholar': 'https://scholar.google.com/'
+  };
+  const target = sources[req.params.source];
+  if (!target) return res.status(404).json({ errors: ['Fonte não encontrada.'] });
+  res.redirect(target);
+});
+
+app.get('/portability/manifest', (_req, res) => {
+  res.json({
+    backend: 'Node.js/Express on Vercel Functions',
+    apiStyle: 'REST/JSON',
+    database: 'Postgres via DATABASE_URL',
+    frontendTargets: ['HTML responsivo', 'React', 'Angular', 'Vue', 'Svelte'],
+    backendTargets: ['Node.js', 'Ruby', 'Python', 'PHP', 'Go'],
+    notes: ['Contratos REST documentados pelas rotas.', 'Migração para outros frontends consome os mesmos endpoints JSON.']
+  });
+});
+
+
+app.post('/auth/password/login', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureMainUsers();
+  const login = normalizeEmail(req.body?.email || req.body?.username);
+  const users = await sql`
+    SELECT users.id, users.name, users.username, users.email, users.role, credentials.password_hash, credentials.must_change_password
+    FROM users
+    LEFT JOIN user_credentials credentials ON credentials.user_id = users.id
+    WHERE users.email = ${login} OR users.username = ${String(req.body?.username || '')}
+    LIMIT 1
+  `;
+  const user = users[0];
+  if (!user?.password_hash || user.password_hash !== hashPassword(String(req.body?.password || ''))) {
+    return res.status(401).json({ errors: ['Credenciais inválidas.'] });
+  }
+  const sessionToken = signItSession({ email: user.email, userId: user.id, role: user.role, mustChangePassword: Boolean(user.must_change_password), exp: Date.now() + 8 * 60 * 60 * 1000 });
+  res.json({ user: serializeUser(user), sessionToken, mustChangePassword: Boolean(user.must_change_password) });
+}));
+
+app.post('/auth/password/change', asyncRoute(async (req, res) => {
+  if (!validateDatabase(res)) return;
+  await ensureMainUsers();
+  const session = verifyItSession(String(req.body?.sessionToken || ''));
+  if (!session?.userId) return res.status(401).json({ errors: ['Sessão inválida.'] });
+  const password = String(req.body?.password || '');
+  const confirmPassword = String(req.body?.confirmPassword || '');
+  if (password.length < 8 || password !== confirmPassword) return res.status(400).json({ errors: ['Senha inválida ou confirmação divergente.'] });
+  await updateUserPassword(session.userId, password);
+  res.json({ ok: true });
+}));
+
+app.post('/ti/impersonate', asyncRoute(async (req, res) => {
+  if (!isItAuthenticated(req)) return res.status(401).json({ errors: ['Não autenticado.'] });
+  const targetRole = String(req.body?.role || '');
+  if (!canTiImpersonateRole(targetRole)) return res.status(403).json({ errors: ['T.I. só pode simular Neófito, Mago Iniciado, Elevado ou T.I.'] });
+  const session = verifyItSession(parseCookies(req)[itSessionCookie]);
+  const token = signItSession({ email: session.email, userId: session.userId, role: targetRole, impersonatedBy: 'ti', exp: Date.now() + 60 * 60 * 1000 });
+  res.json({ role: targetRole, sessionToken: token });
+}));
+
 
 app.use((_req, res) => {
   res.status(404).json({ errors: ['Rota não encontrada.'] });
