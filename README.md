@@ -262,3 +262,10 @@ Embeds/iframes devem usar apenas conteúdo próprio, licenciado, de domínio pú
 - `GET /portability/manifest` — manifesto de portabilidade.
 
 As páginas HTML usam layout fluido com CSS responsivo. Os endpoints REST/JSON permitem frontends em React, Angular, Vue, Svelte ou outros, e backends/clients em Node.js, Ruby, Python, PHP, Go etc.
+
+## Página inicial
+
+- `GET /` — landing page HTML responsiva.
+- `GET /api/status` — status JSON técnico do backend.
+
+A página inicial não depende do banco; se `DATABASE_URL` ainda não estiver conectada, ela mostra aviso de banco pendente em vez de exibir JSON cru.

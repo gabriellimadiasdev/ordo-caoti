@@ -445,48 +445,53 @@ function asyncRoute(handler) {
   };
 }
 
+const publicEndpoints = [
+  'GET /health',
+  'GET /api/status',
+  'GET /status',
+  'GET /ti/login',
+  'GET /biblioteca',
+  'GET /portability/manifest',
+  'GET /catalog/items',
+  'GET /meetings'
+];
+
+function landingPage() {
+  const dbStatus = sql ? '<span class="status ok">Banco configurado</span>' : '<span class="status warn">Banco pendente</span>';
+  return htmlPage('Ordo Caoti', `
+    <section class="hero card">
+      <p class="muted">Plataforma Ordo Caoti</p>
+      <h1>Portal operacional, loja, biblioteca e sala digital</h1>
+      <p class="muted">Backend ativo na Vercel com módulos de usuários, T.I., biblioteca, loja, pagamentos, aulas/reuniões e integrações configuráveis.</p>
+      <p>${dbStatus}</p>
+      <div class="actions">
+        <a class="button" href="/ti/login">Entrar na área de T.I.</a>
+        <a class="button secondary" href="/biblioteca">Abrir biblioteca</a>
+        <a class="button secondary" href="/status">Ver status</a>
+      </div>
+    </section>
+    <section class="grid" style="margin-top: 18px;">
+      <div class="card"><h2>Loja</h2><p>Produtos, serviços, pedidos, Mercado Pago, Mercado Livre, frete e repasse a vendedores.</p></div>
+      <div class="card"><h2>Sala digital</h2><p>Aulas, reuniões, chat, lousa, reações, provas, gravações e salas paralelas.</p></div>
+      <div class="card"><h2>Biblioteca</h2><p>Livros, materiais, embeds autorizados e fontes científicas como SciELO e PubMed.</p></div>
+      <div class="card"><h2>Governança</h2><p>Hierarquia Mestre, T.I., Soberano, Elevado, Mago Iniciado e Neófito com aprovação de Mestres.</p></div>
+    </section>
+    <section class="card" style="margin-top: 18px;">
+      <h2>Configuração pendente</h2>
+      <p class="muted">Se o painel indicar banco pendente, aceite os termos da Neon e conecte a variável <code>DATABASE_URL</code> em produção. A página inicial continuará funcionando enquanto isso.</p>
+    </section>`);
+}
+
 app.get('/', (_req, res) => {
+  res.type('html').send(landingPage());
+});
+
+app.get('/api/status', (_req, res) => {
   res.json({
     name: 'ordo-caoti-backend',
     status: 'ok',
     database: sql ? 'configured' : 'missing_DATABASE_URL',
-    endpoints: [
-      'GET /health',
-      'GET /usuarios',
-      'POST /usuarios',
-      'GET /usuarios/:id',
-      'PATCH /usuarios/:id',
-      'DELETE /usuarios/:id',
-      'GET /funcoes',
-      'GET /hierarquia',
-      'GET /roles',
-      'GET /usuarios-principais',
-      'GET /auth/providers',
-      'GET /auth/:provider/login',
-      'GET /auth/:provider/callback',
-      'GET/POST /usuarios/:id/emails',
-      'GET /usuarios/:id/identidades',
-      'GET/POST /usuarios/:id/mfa/*',
-      'GET/POST /catalog/items',
-      'POST /orders',
-      'POST /orders/:id/payments/:provider',
-      'GET/POST /meetings',
-      'POST /meetings/:id/breakout-rooms',
-      'GET/POST /meetings/:id/messages',
-      'POST /meetings/:id/whiteboard/events',
-      'POST /meetings/:id/activities',
-      'GET /ti/login',
-      'GET /ti',
-      'GET /ti/health.json',
-      'GET/POST /agenda/events',
-      'POST /imports/:provider',
-      'POST /uploads/assets',
-      'POST /lgpd/requests',
-      'GET/POST /biblioteca',
-      'GET /portability/manifest',
-      'POST /usuarios/:id/mfa/:method/challenge',
-      'POST /usuarios/:id/mfa/:method/verify'
-    ]
+    endpoints: publicEndpoints
   });
 });
 
@@ -1653,7 +1658,7 @@ function htmlPage(title, body) {
     h1, h2 { margin: 0 0 16px; }
     label { display: block; margin: 12px 0 6px; color: #9fb0c7; }
     input { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 1px solid #334155; background: #0b1220; color: #f8fafc; }
-    button, .button { display: inline-block; margin-top: 16px; padding: 12px 16px; border-radius: 12px; border: 0; background: #38bdf8; color: #00111f; font-weight: 700; cursor: pointer; text-decoration: none; }
+    button, .button { display: inline-block; margin-top: 16px; padding: 12px 16px; border-radius: 12px; border: 0; background: #38bdf8; color: #00111f; font-weight: 700; cursor: pointer; text-decoration: none; } .button.secondary { background: #1e293b; color: #e5edf7; border: 1px solid #334155; } .hero h1 { font-size: clamp(32px, 8vw, 72px); line-height: .95; max-width: 900px; } .actions { display: flex; flex-wrap: wrap; gap: 10px; } code { color: #7dd3fc; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
     .status { border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
     .ok { background: #064e3b; color: #a7f3d0; }
