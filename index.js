@@ -404,6 +404,9 @@ app.get('/', (_req, res) => {
       'GET/POST /meetings/:id/messages',
       'POST /meetings/:id/whiteboard/events',
       'POST /meetings/:id/activities',
+      'GET /ti/login',
+      'GET /ti',
+      'GET /ti/health.json',
       'POST /usuarios/:id/mfa/:method/challenge',
       'POST /usuarios/:id/mfa/:method/verify'
     ]
@@ -1553,6 +1556,213 @@ app.post('/activities/:id/responses', asyncRoute(async (req, res) => {
     RETURNING *
   `;
   res.status(201).json({ response: saved[0] });
+}));
+
+const itAdminEmail = process.env.IT_ADMIN_EMAIL || 'g.lima.rocha90@gmail.com';
+const itSessionCookie = 'ordo_ti_session';
+
+function htmlPage(title, body) {
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title}</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { margin: 0; background: #070b13; color: #e5edf7; }
+    main { width: min(1120px, calc(100vw - 32px)); margin: 0 auto; padding: 32px 0; }
+    .card { background: #101827; border: 1px solid #233047; border-radius: 18px; padding: 24px; box-shadow: 0 18px 60px rgba(0,0,0,.3); }
+    h1, h2 { margin: 0 0 16px; }
+    label { display: block; margin: 12px 0 6px; color: #9fb0c7; }
+    input { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 1px solid #334155; background: #0b1220; color: #f8fafc; }
+    button, .button { display: inline-block; margin-top: 16px; padding: 12px 16px; border-radius: 12px; border: 0; background: #38bdf8; color: #00111f; font-weight: 700; cursor: pointer; text-decoration: none; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .status { border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
+    .ok { background: #064e3b; color: #a7f3d0; }
+    .warn { background: #713f12; color: #fde68a; }
+    .fail { background: #7f1d1d; color: #fecaca; }
+    pre { white-space: pre-wrap; background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: 10px; border-bottom: 1px solid #233047; }
+    .muted { color: #94a3b8; }
+  </style>
+</head>
+<body><main>${body}</main></body>
+</html>`;
+}
+
+function parseCookies(req) {
+  return Object.fromEntries(String(req.headers.cookie || '').split(';').filter(Boolean).map(cookie => {
+    const [name, ...value] = cookie.trim().split('=');
+    return [name, decodeURIComponent(value.join('='))];
+  }));
+}
+
+function getItSessionSecret() {
+  return process.env.IT_SESSION_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'development-only-change-me';
+}
+
+function signItSession(payload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto.createHmac('sha256', getItSessionSecret()).update(body).digest('base64url');
+  return `${body}.${signature}`;
+}
+
+function verifyItSession(token) {
+  if (!token || !token.includes('.')) return null;
+  const [body, signature] = token.split('.');
+  const expected = crypto.createHmac('sha256', getItSessionSecret()).update(body).digest('base64url');
+  const provided = Buffer.from(signature || '');
+  const valid = Buffer.from(expected);
+  if (provided.length !== valid.length || !crypto.timingSafeEqual(provided, valid)) return null;
+
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload.exp || payload.exp < Date.now()) return null;
+    if (payload.email !== itAdminEmail) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function isItAuthenticated(req) {
+  return Boolean(verifyItSession(parseCookies(req)[itSessionCookie]));
+}
+
+function requireItAuth(req, res) {
+  if (isItAuthenticated(req)) return true;
+  res.redirect('/ti/login');
+  return false;
+}
+
+function hashPassword(value) {
+  return crypto.createHash('sha256').update(String(value || '')).digest('hex');
+}
+
+function verifyItPassword(password) {
+  const configuredHash = process.env.IT_ADMIN_PASSWORD_HASH;
+  const configuredPassword = process.env.IT_ADMIN_PASSWORD;
+  if (configuredHash) return hashPassword(password) === configuredHash;
+  if (configuredPassword) {
+    const provided = Buffer.from(String(password));
+    const expected = Buffer.from(configuredPassword);
+    return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+  }
+  return false;
+}
+
+async function getHealthReport(req) {
+  const checks = [];
+  const started = Date.now();
+
+  checks.push({ name: 'backend', status: 'ok', message: 'Servidor Express respondeu.' });
+  checks.push({ name: 'database_url', status: sql ? 'ok' : 'fail', message: sql ? 'DATABASE_URL configurada.' : 'DATABASE_URL ausente.' });
+
+  if (sql) {
+    try {
+      await ensureCommerceAndClassroomSchema();
+      const result = await sql`SELECT NOW() AS now`;
+      checks.push({ name: 'database_connection', status: 'ok', message: `Banco respondeu em ${result[0].now}.` });
+    } catch (error) {
+      checks.push({ name: 'database_connection', status: 'fail', message: error.message });
+    }
+  }
+
+  const envChecks = [
+    ['Neon/Postgres', 'DATABASE_URL'],
+    ['Google OAuth', 'GOOGLE_CLIENT_ID'],
+    ['Apple OAuth', 'APPLE_CLIENT_ID'],
+    ['Microsoft OAuth', 'MICROSOFT_CLIENT_ID'],
+    ['Mercado Pago', 'MERCADO_PAGO_ACCESS_TOKEN'],
+    ['Mercado Livre', 'MERCADO_LIVRE_ACCESS_TOKEN'],
+    ['Daily vídeo', 'DAILY_API_KEY'],
+    ['Segredo sessão T.I.', 'IT_SESSION_SECRET'],
+    ['Senha T.I.', 'IT_ADMIN_PASSWORD_HASH']
+  ];
+
+  for (const [name, key] of envChecks) {
+    checks.push({ name, status: process.env[key] ? 'ok' : 'warn', message: process.env[key] ? `${key} configurada.` : `${key} não configurada.` });
+  }
+
+  const publicUrl = process.env.SITE_HEALTH_URL || process.env.AUTH_BASE_URL || `${req.protocol}://${req.get('host')}/health`;
+  try {
+    const response = await fetch(publicUrl, { method: 'GET' });
+    checks.push({ name: 'site_public_url', status: response.ok ? 'ok' : 'warn', message: `${publicUrl} retornou HTTP ${response.status}.` });
+  } catch (error) {
+    checks.push({ name: 'site_public_url', status: 'warn', message: `${publicUrl}: ${error.message}` });
+  }
+
+  return {
+    ok: checks.every(check => check.status !== 'fail'),
+    generatedAt: new Date().toISOString(),
+    durationMs: Date.now() - started,
+    checks
+  };
+}
+
+app.get('/ti/login', (req, res) => {
+  if (isItAuthenticated(req)) return res.redirect('/ti');
+  res.type('html').send(htmlPage('Login T.I. Ordo Caoti', `
+    <div class="card" style="max-width: 460px; margin: 10vh auto 0;">
+      <h1>Área de T.I.</h1>
+      <p class="muted">Acesso restrito para monitorar saúde do projeto e do site.</p>
+      <form method="post" action="/ti/login">
+        <label>E-mail</label>
+        <input name="email" type="email" value="${itAdminEmail}" autocomplete="username" required />
+        <label>Senha</label>
+        <input name="password" type="password" autocomplete="current-password" required />
+        <button type="submit">Entrar</button>
+      </form>
+      <p class="muted">Configure a senha com <code>IT_ADMIN_PASSWORD_HASH</code> ou <code>IT_ADMIN_PASSWORD</code>.</p>
+    </div>`));
+});
+
+app.post('/ti/login', (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || '');
+  if (email !== itAdminEmail || !verifyItPassword(password)) {
+    return res.status(401).type('html').send(htmlPage('Login T.I. Ordo Caoti', `
+      <div class="card" style="max-width: 460px; margin: 10vh auto 0;">
+        <h1>Acesso negado</h1>
+        <p class="muted">E-mail ou senha inválidos, ou senha ainda não configurada nas variáveis de ambiente.</p>
+        <a class="button" href="/ti/login">Tentar novamente</a>
+      </div>`));
+  }
+
+  const token = signItSession({ email, exp: Date.now() + 8 * 60 * 60 * 1000 });
+  res.setHeader('Set-Cookie', `${itSessionCookie}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800; Secure`);
+  return res.redirect('/ti');
+});
+
+app.post('/ti/logout', (_req, res) => {
+  res.setHeader('Set-Cookie', `${itSessionCookie}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0; Secure`);
+  res.redirect('/ti/login');
+});
+
+app.get('/ti/health.json', asyncRoute(async (req, res) => {
+  if (!isItAuthenticated(req)) return res.status(401).json({ errors: ['Não autenticado.'] });
+  res.json(await getHealthReport(req));
+}));
+
+app.get('/ti', asyncRoute(async (req, res) => {
+  if (!requireItAuth(req, res)) return;
+  const report = await getHealthReport(req);
+  const rows = report.checks.map(check => `<tr><td>${check.name}</td><td><span class="status ${check.status}">${check.status}</span></td><td>${check.message}</td></tr>`).join('');
+  res.type('html').send(htmlPage('Painel T.I. Ordo Caoti', `
+    <div class="card">
+      <h1>Painel de saúde T.I.</h1>
+      <p class="muted">Gerado em ${report.generatedAt} em ${report.durationMs}ms.</p>
+      <div class="grid">
+        <div class="card"><h2>Status geral</h2><p><span class="status ${report.ok ? 'ok' : 'fail'}">${report.ok ? 'ok' : 'atenção'}</span></p></div>
+        <div class="card"><h2>Banco</h2><p>${sql ? 'Configurado' : 'Ausente'}</p></div>
+        <div class="card"><h2>Usuário T.I.</h2><p>${itAdminEmail}</p></div>
+      </div>
+      <h2 style="margin-top: 24px;">Checks</h2>
+      <table><thead><tr><th>Item</th><th>Status</th><th>Mensagem</th></tr></thead><tbody>${rows}</tbody></table>
+      <p><a class="button" href="/ti/health.json">Ver JSON</a></p>
+      <form method="post" action="/ti/logout"><button type="submit">Sair</button></form>
+    </div>`));
 }));
 
 app.use((_req, res) => {

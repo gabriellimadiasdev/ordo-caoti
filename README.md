@@ -164,3 +164,26 @@ Variáveis recomendadas para sala digital:
 - `VIDEO_PROVIDER_API_KEY`
 
 As tabelas de catálogo, pedidos, pagamentos, reuniões, salas, chat, lousa, gravações, reações, provas e respostas são criadas automaticamente quando `DATABASE_URL` estiver configurada.
+
+## Área de T.I. e saúde do projeto
+
+Páginas HTML:
+
+- `GET /ti/login` — login da área de T.I.
+- `GET /ti` — painel protegido para verificar saúde do backend, site, banco e integrações.
+- `GET /ti/health.json` — relatório JSON protegido.
+- `POST /ti/logout` — encerra sessão.
+
+Usuário padrão de T.I.:
+
+- `g.lima.rocha90@gmail.com`
+
+Variáveis obrigatórias/recomendadas para a área de T.I.:
+
+- `IT_ADMIN_EMAIL` — e-mail autorizado. Se ausente, usa o e-mail padrão acima.
+- `IT_ADMIN_PASSWORD_HASH` — hash SHA-256 da senha de T.I. Recomendado para produção.
+- `IT_ADMIN_PASSWORD` — alternativa simples para desenvolvimento; prefira o hash em produção.
+- `IT_SESSION_SECRET` — segredo para assinar o cookie de sessão.
+- `SITE_HEALTH_URL` — URL pública que o painel deve testar; se ausente usa `AUTH_BASE_URL` ou `/health`.
+
+A senha não deve ser salva no repositório. Configure-a como variável de ambiente segura na Vercel.
