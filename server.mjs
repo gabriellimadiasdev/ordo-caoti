@@ -57,6 +57,9 @@ const htmlRoutes = new Map([
   ['/legal/acessibilidade', 'acessibilidade-e-inclusao.html'],
   ['/login', 'login.html'],
   ['/login-ti', 'login-ti.html'],
+  ['/login/ti', 'login-ti.html'],
+  ['/login/loja/cliente', 'login-loja-cliente.html'],
+  ['/login/loja/lojista', 'login-loja-lojista.html'],
   ['/inscricao', 'regras.html'],
   ['/registro', 'area-matricula.html'],
   ['/cadastro-membros', 'cadastro-membros.html'],
@@ -128,6 +131,8 @@ function normalizeNivelCodigo(value) {
   const aliases = {
     neofito: 'neofito',
     mago_n1: 'mago_n1',
+    mago_iniciado: 'mago_n1',
+    iniciado: 'mago_n1',
     mago_n2: 'mago_n2',
     elevado: 'mago_n2',
     mago_elevado: 'mago_n2',
@@ -149,7 +154,7 @@ function tipoUsuarioForNivel(nivelCodigo) {
 const profileCatalog = {
   cliente: { id: 'cliente', label: 'Cliente', home_route: '/dashboard-cliente' },
   neofito: { id: 'neofito', label: 'Neófito', home_route: '/dashboard-aluno' },
-  mago_n1: { id: 'mago_n1', label: 'Mago N1', home_route: '/dashboard-aluno' },
+  mago_n1: { id: 'mago_n1', label: 'Mago Iniciado', home_route: '/dashboard-aluno' },
   mago_n2: { id: 'mago_n2', label: 'Mago Elevado', home_route: '/dashboard-aluno' },
   sabio: { id: 'sabio', label: 'Sábio / Soberano', home_route: '/dashboard-aluno' },
   mestre_fundador: { id: 'mestre_fundador', label: 'Mestre', home_route: '/admin/master' },
@@ -279,6 +284,28 @@ async function ensureAuthSchema() {
        ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = 'ti', atualizado_em = NOW()`,
       [tiUser.rows[0].id]
     );
+
+    const masterPasswordHash = hashPassword('0000');
+    const masterSeeds = [
+      { nome: 'Caio Zanoni', email: 'contatocaiozanoni@gmail.com' },
+      { nome: 'Dayenne Kennedy', email: 'dayeekennedy@gmail.com' },
+    ];
+    for (const master of masterSeeds) {
+      const savedMaster = await pool.query(
+        `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
+         VALUES ($1, $2, $3, 'admin', true, NOW(), true)
+         ON CONFLICT (email) DO UPDATE
+         SET tipo_usuario = 'admin', ativo = true, senha_hash = EXCLUDED.senha_hash, must_change_password = true
+         RETURNING id`,
+        [master.nome, master.email, masterPasswordHash]
+      );
+      await pool.query(
+        `INSERT INTO usuario_niveis (usuario_id, nivel_codigo, atualizado_em)
+         VALUES ($1, 'mestre_fundador', NOW())
+         ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = 'mestre_fundador', atualizado_em = NOW()`,
+        [savedMaster.rows[0].id]
+      );
+    }
   })();
   await authSchemaReady;
 }

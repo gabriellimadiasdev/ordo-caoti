@@ -4,7 +4,7 @@
   const profileLabels = {
     cliente: 'Cliente',
     neofito: 'Neófito',
-    mago_n1: 'Mago N1',
+    mago_n1: 'Mago Iniciado',
     mago_n2: 'Mago Elevado',
     sabio: 'Sábio / Soberano',
     mestre_fundador: 'Mestre',

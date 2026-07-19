@@ -14,7 +14,7 @@ async function request(path, options = {}) {
   return { response, body };
 }
 
-const publicPaths = ['/', '/login', '/login-ti', '/solicitar-acesso', '/regras', '/api/status', '/produtos', '/js/runtime-api.js'];
+const publicPaths = ['/', '/login', '/login-ti', '/login/ti', '/solicitar-acesso', '/regras', '/api/status', '/produtos', '/js/runtime-api.js'];
 for (const path of publicPaths) {
   const { response } = await request(path);
   assert.ok(response.status < 500, `${path} returned ${response.status}`);
