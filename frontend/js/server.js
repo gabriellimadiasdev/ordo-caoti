@@ -12546,8 +12546,8 @@ app.post('/api/redefinir-senha', passwordResetRateLimiter, async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(PROJECT_ROOT, 'index.html'));
 });
 
 app.get('/manifest.webmanifest', (_req, res) => {
