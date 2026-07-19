@@ -1675,6 +1675,7 @@ function htmlPage(title, body) {
     table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: 10px; border-bottom: 1px solid #233047; }
     .muted { color: #94a3b8; }
   </style>
+  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </head>
 <body><main>${body}</main></body>
 </html>`;
