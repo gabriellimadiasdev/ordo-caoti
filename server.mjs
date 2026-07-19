@@ -200,6 +200,22 @@ async function ensureAuthSchema() {
         motivo_revogacao TEXT
       )
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ti_manutencoes (
+        id SERIAL PRIMARY KEY,
+        titulo TEXT NOT NULL,
+        descricao TEXT,
+        motivo TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'ativa',
+        global BOOLEAN NOT NULL DEFAULT false,
+        alvos JSONB NOT NULL DEFAULT '[]'::jsonb,
+        criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        inicio_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        previsao_retorno_em TIMESTAMPTZ,
+        encerrado_em TIMESTAMPTZ,
+        encerrado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL
+      )
+    `);
     await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false`);
     const tiEmail = 'g.lima.rocha90@gmail.com';
     const tiPasswordHash = await bcrypt.hash('0000', 10);
@@ -587,8 +603,145 @@ app.post('/admin/aprovar-membro', authenticateRequest, requireAdminOrTi, async (
   }
 });
 
-app.get('/api/status', (_req, res) => {
-  res.json({ ok: true, name: 'ordo-caoti', mode: 'landing-safe-auth', database: pool ? 'configured' : 'missing' });
+
+async function databaseHealth() {
+  if (!pool) return { status: 'missing', message: 'DATABASE_URL/DATABASE1_URL/POSTGRES_URL ausente.' };
+  const started = Date.now();
+  try {
+    await ensureAuthSchema();
+    const result = await pool.query('SELECT NOW() AS now');
+    return { status: 'ok', latency_ms: Date.now() - started, now: result.rows[0]?.now };
+  } catch (error) {
+    return { status: 'erro', latency_ms: Date.now() - started, message: error.message };
+  }
+}
+
+app.get('/ti/saude', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  const db = await databaseHealth();
+  let manutencaoAtiva = 0;
+  try {
+    if (pool) {
+      const result = await pool.query("SELECT COUNT(*)::int AS total FROM ti_manutencoes WHERE status = 'ativa'");
+      manutencaoAtiva = Number(result.rows[0]?.total || 0);
+    }
+  } catch (_error) {}
+  res.json({
+    ok: db.status === 'ok',
+    generated_at: new Date().toISOString(),
+    resumo: { saude: db.status === 'ok' ? 'saudavel' : 'degradado' },
+    db,
+    backend: { status: 'online', runtime: 'vercel-serverless', mode: 'safe-auth' },
+    manutencao: { ativa_total: manutencaoAtiva },
+  });
+});
+
+app.get('/ti/manutencoes/ativas', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  try {
+    await ensureAuthSchema();
+    const { rows } = await pool.query(
+      `SELECT id, titulo, descricao, motivo, status, global, alvos, inicio_em, previsao_retorno_em
+       FROM ti_manutencoes
+       WHERE status = 'ativa'
+       ORDER BY inicio_em DESC`
+    );
+    res.json(rows.map((row) => ({
+      ...row,
+      alvos: Array.isArray(row.alvos) ? row.alvos : [],
+    })));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao listar manutenções.' });
+  }
+});
+
+app.post('/ti/manutencoes/pause-global', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  try {
+    await ensureAuthSchema();
+    const titulo = String(req.body?.titulo || 'Manutenção global').trim();
+    const descricao = String(req.body?.descricao || '').trim() || null;
+    const motivo = String(req.body?.motivo || 'Operação T.I.').trim();
+    const previsao = req.body?.previsao_retorno_em || null;
+    const { rows } = await pool.query(
+      `INSERT INTO ti_manutencoes (titulo, descricao, motivo, global, alvos, criado_por, previsao_retorno_em)
+       VALUES ($1, $2, $3, true, $4::jsonb, $5, $6)
+       RETURNING *`,
+      [titulo, descricao, motivo, JSON.stringify([{ rota_alvo: '*' }]), req.user.id, previsao]
+    );
+    res.status(201).json({ ok: true, manutencao: rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao criar manutenção global.' });
+  }
+});
+
+app.post('/ti/manutencoes', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  try {
+    await ensureAuthSchema();
+    const titulo = String(req.body?.titulo || 'Manutenção de rota').trim();
+    const descricao = String(req.body?.descricao || '').trim() || null;
+    const motivo = String(req.body?.motivo || 'Operação T.I.').trim();
+    const previsao = req.body?.previsao_retorno_em || null;
+    const alvos = Array.isArray(req.body?.alvos) ? req.body.alvos : [];
+    const normalizedTargets = alvos.map((rota) => ({ rota_alvo: String(rota || '').trim() })).filter((item) => item.rota_alvo);
+    if (!normalizedTargets.length) return res.status(400).json({ erro: 'Informe pelo menos uma rota alvo.' });
+    const { rows } = await pool.query(
+      `INSERT INTO ti_manutencoes (titulo, descricao, motivo, global, alvos, criado_por, previsao_retorno_em)
+       VALUES ($1, $2, $3, false, $4::jsonb, $5, $6)
+       RETURNING *`,
+      [titulo, descricao, motivo, JSON.stringify(normalizedTargets), req.user.id, previsao]
+    );
+    res.status(201).json({ ok: true, manutencao: rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao criar manutenção.' });
+  }
+});
+
+app.post('/ti/manutencoes/:id/encerrar', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: 'Manutenção inválida.' });
+  try {
+    await ensureAuthSchema();
+    const { rows } = await pool.query(
+      `UPDATE ti_manutencoes
+       SET status = 'encerrada', encerrado_em = NOW(), encerrado_por = $2
+       WHERE id = $1 AND status = 'ativa'
+       RETURNING *`,
+      [id, req.user.id]
+    );
+    if (!rows.length) return res.status(404).json({ erro: 'Manutenção ativa não encontrada.' });
+    res.json({ ok: true, manutencao: rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao encerrar manutenção.' });
+  }
+});
+
+app.get('/manutencao/status', async (req, res) => {
+  const rota = String(req.query?.rota || '/').trim() || '/';
+  try {
+    await ensureAuthSchema();
+    if (!pool) return res.json({ ok: true, rota, manutencao: false, db: 'missing' });
+    const { rows } = await pool.query(
+      `SELECT id, titulo, motivo, global, alvos, inicio_em, previsao_retorno_em
+       FROM ti_manutencoes
+       WHERE status = 'ativa'
+       ORDER BY inicio_em DESC`
+    );
+    const match = rows.find((row) => {
+      if (row.global) return true;
+      const targets = Array.isArray(row.alvos) ? row.alvos : [];
+      return targets.some((target) => String(target.rota_alvo || '') === rota);
+    });
+    res.json({ ok: true, rota, manutencao: Boolean(match), detalhe: match || null });
+  } catch (error) {
+    res.status(200).json({ ok: true, rota, manutencao: false, aviso: error.message });
+  }
+});
+
+app.get('/api/status', async (_req, res) => {
+  const db = await databaseHealth();
+  res.json({ ok: true, name: 'ordo-caoti', mode: 'landing-safe-auth', backend: 'online', database: db.status, db });
 });
 
 app.use((_req, res) => {

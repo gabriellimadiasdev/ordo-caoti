@@ -7,7 +7,10 @@
     "start": "node server.mjs",
     "check": "node --check server.mjs && node --check frontend/js/server.js",
     "test": "node frontend/js/tests/mercadoPagoOrders.test.js && node frontend/js/tests/mercadoPagoReports.test.js",
-    "test:bootstrap": "node frontend/js/tests/bootstrapFundadores.test.js"
+    "test:bootstrap": "node frontend/js/tests/bootstrapFundadores.test.js",
+    "local": "node server.mjs",
+    "dev": "node server.mjs",
+    "env:pull": "vercel env pull .env.local --scope ordo-caoti"
   },
   "engines": {
     "node": "24.x"
