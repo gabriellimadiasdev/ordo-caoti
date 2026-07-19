@@ -1,1 +1,17 @@
-
+{
+  "name": "ordo-caoti-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "check": "node --check index.js"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "express": "5.1.0"
+  }
+}
