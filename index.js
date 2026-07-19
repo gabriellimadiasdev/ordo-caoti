@@ -110,7 +110,9 @@ const oauthProviders = {
 const mfaMethods = new Set(['totp', 'sms', 'whatsapp']);
 const base32Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
-const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
+const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE1_URL || process.env.POSTGRES_URL || '';
+const databaseEnvName = process.env.DATABASE_URL ? 'DATABASE_URL' : process.env.DATABASE1_URL ? 'DATABASE1_URL' : process.env.POSTGRES_URL ? 'POSTGRES_URL' : null;
+const sql = databaseUrl ? neon(databaseUrl) : null;
 let schemaReady;
 let seedReady;
 
@@ -233,7 +235,7 @@ function validateDatabase(res) {
   if (sql) return true;
 
   res.status(503).json({
-    errors: ['DATABASE_URL não está configurada. Conecte o banco Neon ao projeto na Vercel.']
+    errors: ['DATABASE_URL não está configurada. Conecte o banco Neon ao projeto na Vercel ou configure DATABASE1_URL/POSTGRES_URL.']
   });
   return false;
 }
@@ -465,7 +467,7 @@ function missingIndexPage() {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>index.html ausente</title>
+  <title>Ordo Caoti Backend operacional</title>
   <style>
     body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #111827; }
     main { max-width: 760px; margin: 12vh auto; padding: 24px; }
@@ -477,10 +479,9 @@ function missingIndexPage() {
 <body>
   <main>
     <div class="box">
-      <h1>Seu index.html original não está no deploy</h1>
-      <p>Eu removi a landing page alternativa para não descaracterizar o visual que você criou.</p>
-      <p>Coloque o seu <code>index.html</code> e o CSS/assets originais na raiz do repositório. A rota <code>/</code> já está configurada para servir exatamente esse arquivo quando ele existir.</p>
-      <p>APIs continuam disponíveis em <a href="/api/status">/api/status</a>.</p>
+      <h1>Ordo Caoti Backend operacional</h1>
+      <p>A API está online. Quando o <code>index.html</code> original for adicionado à raiz do repositório, esta rota servirá esse arquivo automaticamente.</p>
+      <p>Verificações rápidas: <a href="/health">/health</a>, <a href="/api/status">/api/status</a>, <a href="/health/db">/health/db</a> e <a href="/ti/login">/ti/login</a>.</p>
     </div>
   </main>
 </body>
@@ -493,7 +494,7 @@ app.get('/', asyncRoute(async (_req, res) => {
     return res.type('html').send(html);
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error;
-    return res.status(404).type('html').send(missingIndexPage());
+    return res.status(200).type('html').send(missingIndexPage());
   }
 }));
 
@@ -502,6 +503,7 @@ app.get('/api/status', (_req, res) => {
     name: 'ordo-caoti-backend',
     status: 'ok',
     database: sql ? 'configured' : 'missing_DATABASE_URL',
+    databaseEnv: databaseEnvName,
     endpoints: publicEndpoints
   });
 });
@@ -515,7 +517,7 @@ app.get('/db/version', asyncRoute(async (_req, res) => {
     return res.status(503).json({
       ok: false,
       database: 'missing_DATABASE_URL',
-      message: 'Configure DATABASE_URL em Production para testar o Neon.'
+      message: 'Configure DATABASE_URL em Production para testar o Neon ou use DATABASE1_URL/POSTGRES_URL.'
     });
   }
 
@@ -526,7 +528,7 @@ app.get('/db/version', asyncRoute(async (_req, res) => {
 
 app.get('/health/db', asyncRoute(async (_req, res) => {
   if (!sql) {
-    return res.status(503).json({ ok: false, database: 'missing_DATABASE_URL' });
+    return res.status(503).json({ ok: false, database: 'missing_DATABASE_URL', acceptedEnv: ['DATABASE_URL', 'DATABASE1_URL', 'POSTGRES_URL'] });
   }
 
   const result = await sql`SELECT version()`;
@@ -1800,7 +1802,7 @@ async function getHealthReport(req) {
   const started = Date.now();
 
   checks.push({ name: 'backend', status: 'ok', message: 'Servidor Express respondeu.' });
-  checks.push({ name: 'database_url', status: sql ? 'ok' : 'fail', message: sql ? 'DATABASE_URL configurada.' : 'DATABASE_URL ausente.' });
+  checks.push({ name: 'database_url', status: sql ? 'ok' : 'fail', message: sql ? `${databaseEnvName} configurada.` : 'DATABASE_URL/DATABASE1_URL/POSTGRES_URL ausente.' });
 
   if (sql) {
     try {
@@ -1813,7 +1815,7 @@ async function getHealthReport(req) {
   }
 
   const envChecks = [
-    ['Neon/Postgres', 'DATABASE_URL'],
+    ['Neon/Postgres', databaseEnvName || 'DATABASE_URL'],
     ['Google OAuth', 'GOOGLE_CLIENT_ID'],
     ['Apple OAuth', 'APPLE_CLIENT_ID'],
     ['Microsoft OAuth', 'MICROSOFT_CLIENT_ID'],
