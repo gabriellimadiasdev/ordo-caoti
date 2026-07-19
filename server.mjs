@@ -68,20 +68,14 @@ const htmlRoutes = new Map([
   ['/cadastro-sabios', 'cadastro-sabios.html'],
   ['/cadastro-ti', 'cadastro-ti.html'],
   ['/solicitar-acesso', 'solicitar-acesso.html'],
-  ['/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
-  ['/admin/aprovacao-de-registro', 'aprovacao-de-registro.html'],
-  ['/ti/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
   ['/recuperar-senha', 'recuperar-senha.html'],
   ['/recuperar-usuario', 'esqueci-minha-senha.html'],
   ['/redefinir-senha', 'redefinir-senha.html'],
   ['/dashboard', 'dashboard.html'],
-  ['/dashboard-TI', 'dashboard-TI.html'],
-  ['/dashboard-ti', 'dashboard-TI.html'],
   ['/dashboard-aluno', 'dashboard-aluno.html'],
   ['/dashboard-professor', 'dashboard-professor.html'],
   ['/dashboard-cliente', 'dashboard-cliente.html'],
   ['/dashboard-lojista', 'dashboard-lojista.html'],
-  ['/manutencao-ti', 'manutencao-ti.html'],
   ['/regras', 'regras.html'],
   ['/loja', 'loja.html'],
   ['/biblioteca', 'biblioteca-livros.html'],
@@ -91,6 +85,15 @@ const htmlRoutes = new Map([
 
 app.get([...htmlRoutes.keys()], (req, res) => sendHtml(res, htmlRoutes.get(req.path)));
 
+
+const protectedTiHtmlRoutes = new Map([
+  ['/dashboard-TI', 'dashboard-TI.html'],
+  ['/dashboard-ti', 'dashboard-TI.html'],
+  ['/manutencao-ti', 'manutencao-ti.html'],
+  ['/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
+  ['/admin/aprovacao-de-registro', 'aprovacao-de-registro.html'],
+  ['/ti/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
+]);
 
 const databaseUrl = String(process.env.DATABASE_URL || process.env.DATABASE1_URL || process.env.POSTGRES_URL || '').trim();
 const jwtSecret = String(process.env.JWT_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || process.env.IT_SESSION_SECRET || 'ordo-caoti-development-secret').trim();
@@ -117,6 +120,8 @@ function normalizeNivelCodigo(value) {
     neofito: 'neofito',
     mago_n1: 'mago_n1',
     mago_n2: 'mago_n2',
+    elevado: 'mago_n2',
+    mago_elevado: 'mago_n2',
     mago_n3: 'mago_n3',
     sabio: 'sabio',
     soberano: 'sabio',
@@ -195,6 +200,23 @@ async function ensureAuthSchema() {
         motivo_revogacao TEXT
       )
     `);
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false`);
+    const tiEmail = 'g.lima.rocha90@gmail.com';
+    const tiPasswordHash = await bcrypt.hash('0000', 10);
+    const tiUser = await pool.query(
+      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
+       VALUES ('Gabriel Lima Dias Rocha', $1, $2, 'ti', true, NOW(), true)
+       ON CONFLICT (email) DO UPDATE
+       SET tipo_usuario = 'ti', ativo = true, senha_hash = EXCLUDED.senha_hash, must_change_password = true
+       RETURNING id`,
+      [tiEmail, tiPasswordHash]
+    );
+    await pool.query(
+      `INSERT INTO usuario_niveis (usuario_id, nivel_codigo, atualizado_em)
+       VALUES ($1, 'ti', NOW())
+       ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = 'ti', atualizado_em = NOW()`,
+      [tiUser.rows[0].id]
+    );
   })();
   await authSchemaReady;
 }
@@ -217,6 +239,7 @@ function publicUser(user, nivelCodigo, profile = '') {
     roles: [user.tipo_usuario, nivelCodigo || 'neofito'].filter(Boolean),
     perfil_login: profile || user.tipo_usuario,
     home_route: homeRouteForUser(user, nivelCodigo, profile),
+    must_change_password: Boolean(user.must_change_password),
   };
 }
 
@@ -302,6 +325,7 @@ app.post('/login', async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, NOW(), $6)`,
       [user.id, jwtId, sessionType, req.ip || null, req.headers['user-agent'] || null, expiresAt]
     ).catch(() => {});
+    res.cookie('oc_session', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: maxAgeMs, path: '/' });
     res.json({ ok: true, token, expiresAt, user: publicUser(user, nivelCodigo, requestedProfile) });
   } catch (error) {
     console.error(error);
@@ -310,21 +334,57 @@ app.post('/login', async (req, res) => {
 });
 
 
-async function authenticateRequest(req, res, next) {
-  if (!requireDatabase(res)) return;
-  const header = String(req.headers.authorization || '');
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  if (!token) return res.status(401).json({ erro: 'Token ausente.' });
 
+function parseCookies(req) {
+  return Object.fromEntries(String(req.headers.cookie || '').split(';').filter(Boolean).map((cookie) => {
+    const [name, ...value] = cookie.trim().split('=');
+    return [name, decodeURIComponent(value.join('='))];
+  }));
+}
+
+function getBearerOrCookieToken(req) {
+  const header = String(req.headers.authorization || '');
+  if (header.startsWith('Bearer ')) return header.slice(7);
+  return parseCookies(req).oc_session || '';
+}
+
+async function verifyActiveUserFromRequest(req) {
+  if (!pool) return null;
+  const token = getBearerOrCookieToken(req);
+  if (!token) return null;
+  const payload = jwt.verify(token, jwtSecret);
+  const { rows } = await pool.query('SELECT id, nome, email, tipo_usuario, ativo, must_change_password FROM usuarios WHERE id = $1 LIMIT 1', [payload.id]);
+  const user = rows[0];
+  if (!user || user.ativo === false) return null;
+  const nivelResult = await pool.query('SELECT nivel_codigo FROM usuario_niveis WHERE usuario_id = $1', [user.id]).catch(() => ({ rows: [] }));
+  user.nivel_codigo = nivelResult.rows[0]?.nivel_codigo || (user.tipo_usuario === 'ti' ? 'ti' : 'neofito');
+  return user;
+}
+
+async function requireTiPage(req, res, next) {
   try {
     await ensureAuthSchema();
-    const payload = jwt.verify(token, jwtSecret);
-    const { rows } = await pool.query('SELECT id, nome, email, tipo_usuario, ativo FROM usuarios WHERE id = $1 LIMIT 1', [payload.id]);
-    const user = rows[0];
-    if (!user || user.ativo === false) return res.status(401).json({ erro: 'Sessão inválida.' });
-    const nivelResult = await pool.query('SELECT nivel_codigo FROM usuario_niveis WHERE usuario_id = $1', [user.id]).catch(() => ({ rows: [] }));
+    const user = await verifyActiveUserFromRequest(req);
+    if (!user || !['ti', 'admin'].includes(String(user.tipo_usuario || '').toLowerCase())) {
+      return res.redirect('/login-ti');
+    }
     req.user = user;
-    req.userNivel = nivelResult.rows[0]?.nivel_codigo || (user.tipo_usuario === 'ti' ? 'ti' : 'neofito');
+    next();
+  } catch (_error) {
+    return res.redirect('/login-ti');
+  }
+}
+
+app.get([...protectedTiHtmlRoutes.keys()], requireTiPage, (req, res) => sendHtml(res, protectedTiHtmlRoutes.get(req.path)));
+
+async function authenticateRequest(req, res, next) {
+  if (!requireDatabase(res)) return;
+  try {
+    await ensureAuthSchema();
+    const user = await verifyActiveUserFromRequest(req);
+    if (!user) return res.status(401).json({ erro: 'Sessão inválida.' });
+    req.user = user;
+    req.userNivel = user.nivel_codigo;
     next();
   } catch (_error) {
     return res.status(401).json({ erro: 'Token inválido ou expirado.' });
