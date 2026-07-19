@@ -1,0 +1,87 @@
+services:
+  - type: web
+    name: ordo-caoti-api
+    runtime: node
+    rootDir: backend/json
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: npm run start
+    healthCheckPath: /api/public/app-config
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: ordo-archive
+      - key: SUPABASE_ENCRYPTION_KEY
+        sync: false
+      - key: AWS_REGION
+        value: sa-east-1
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: AWS_S3_PREFIX
+        value: uploads
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: DAILY_API_KEY
+        sync: false
+      - key: DAILY_DOMAIN
+        sync: false
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_SECRET
+        sync: false
+      - key: FRONTEND_PUBLIC_BASE_URL
+        sync: false
+      - key: ORDO_API_BASE_URL
+        sync: false
+      - key: API_PUBLIC_BASE_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CANONICAL_HOST
+        sync: false
+      - key: ADDITIONAL_PUBLIC_DOMAINS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: GOOGLE_CALENDAR_ACCESS_TOKEN
+        sync: false
+      - key: GOOGLE_CALENDAR_ID
+        value: primary
+      - key: GOOGLE_DRIVE_SHARED_FOLDER_ID
+        sync: false
+      - key: GOOGLE_BOOKS_API_KEY
+        sync: false
+      - key: BOOTSTRAP_ADMIN_CAIO_PASSWORD
+        sync: false
+      - key: BOOTSTRAP_ADMIN_CAIO_EMAIL
+        sync: false
+      - key: BOOTSTRAP_ADMIN_DAYENNE_PASSWORD
+        sync: false
+      - key: BOOTSTRAP_ADMIN_DAYENNE_EMAIL
+        sync: false
+      - key: BOOTSTRAP_TI_PASSWORD
+        sync: false
+      - key: BOOTSTRAP_TI_EMAIL
+        sync: false
+      - key: BOOTSTRAP_FOUNDERS_ENABLED
+        value: "false"
+      - key: ADMIN_AREA_SHARED_PASSCODE
+        sync: false
