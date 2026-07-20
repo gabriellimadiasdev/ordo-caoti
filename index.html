@@ -24,6 +24,30 @@
             padding: 0;
             line-height: 1.6;
             overflow-x: hidden; /* Evita rolagem lateral indesejada */
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url('./frontend/img/ordo-caoti-icon.jpeg');
+            background-size: min(92vw, 980px) auto;
+            background-position: center 12vh;
+            background-repeat: no-repeat;
+            opacity: 0.12;
+            filter: saturate(0.9) contrast(1.05);
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(5,5,5,.28) 0%, rgba(5,5,5,.76) 42%, rgba(5,5,5,.92) 100%);
+            pointer-events: none;
+            z-index: -1;
         }
 
         /* === HEADER === */
@@ -122,10 +146,7 @@
         .hero {
             padding: 8rem 0;
             text-align: center;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('./frontend/img/ordo-caoti-icon.jpeg'); /* ATENÇÃO: Verifique o caminho da imagem */
-            background-size: contain;
-            background-position: center top;
-            background-repeat: no-repeat;
+            background: radial-gradient(circle at center top, rgba(255, 196, 0, 0.10), transparent 38%), linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.58));
             min-height: 78vh;
             display: flex;
             align-items: center;
@@ -557,10 +578,10 @@
                 <h2>Ja é membro?</h2>
                 <p>Crie suas credenciais para acessar sua conta.</p>
                 <a href="./frontend/html/cadastro-neofitos.html" class="btn btn-primary">Já sou neófito</a>
-                <a href="./frontend/html/cadastro-magos-n1.html" class="btn btn-primary">Já sou Mago N1</a>
-                <a href="./frontend/html/cadastro-magos-n2.html" class="btn btn-primary">Já sou Mago N2</a>
-                <a href="./frontend/html/cadastro-sabios.html" class="btn btn-primary">Já sou Sabio</a>
-                <a href="./frontend/html/cadastro-mestres.html" class="btn btn-primary">Já sou Mestre</a>
+                <a href="./frontend/html/cadastro-magos-n1.html" class="btn btn-primary">Já sou Mago Iniciado</a>
+                <a href="./frontend/html/cadastro-magos-n2.html" class="btn btn-primary">Já sou Mago Elevado</a>
+                <a href="/cadastro-magos-n3" class="btn btn-primary">Já sou Mago Soberano</a>
+                <a href="/cadastro-fundadores" class="btn btn-primary">Já sou Mestre</a>
 
             </div>
         </section>

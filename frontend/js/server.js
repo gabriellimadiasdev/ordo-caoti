@@ -106,7 +106,7 @@ app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; upgrade-insecure-requests; script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.ordocaoti.com.br https://api.mercadopago.com https://*.mercadopago.com https://www.googleapis.com https://accounts.google.com https://*.supabase.co wss://*.supabase.co https://*.daily.co; frame-src 'self' https://meet.google.com https://www.youtube.com https://www.youtube-nocookie.com https://*.daily.co; media-src 'self' blob: https:; form-action 'self' https://api.mercadopago.com https://*.mercadopago.com"
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; upgrade-insecure-requests; script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://apis.google.com https://www.gstatic.com https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://*.tiktok.com https://*.tiktokcdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.ordocaoti.com.br https://api.mercadopago.com https://*.mercadopago.com https://www.googleapis.com https://accounts.google.com https://*.supabase.co wss://*.supabase.co https://*.daily.co https://www.instagram.com https://*.tiktok.com https://*.tiktokcdn.com; frame-src 'self' https://meet.google.com https://www.youtube.com https://www.youtube-nocookie.com https://*.daily.co https://www.instagram.com https://*.tiktok.com; media-src 'self' blob: https:; form-action 'self' https://api.mercadopago.com https://*.mercadopago.com"
   );
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
@@ -135,11 +135,11 @@ app.use('/i18n', express.static(path.join(FRONTEND_DIR, 'i18n'), STATIC_CACHE_OP
 app.use('/uploads', express.static(FRONTEND_UPLOADS_DIR, { ...STATIC_CACHE_OPTIONS, immutable: false, maxAge: '1h' }));
 app.use('/frontend', express.static(FRONTEND_DIR, STATIC_CACHE_OPTIONS));
 
-const DATABASE_URL = String(process.env.DATABASE_URL || '').trim();
+const DATABASE_URL = String(process.env.DATABASE_URL || process.env.DATABASE1_URL || process.env.POSTGRES_URL || '').trim();
 const IS_DATABASE_URL_SUSPECT = /postgresql:\/\/[^:]+:eyJ[a-zA-Z0-9._-]+@/i.test(DATABASE_URL);
 
 if (!DATABASE_URL) {
-  throw new Error('Configuracao insegura: DATABASE_URL obrigatorio para iniciar o servidor.');
+  throw new Error('Configuracao insegura: DATABASE_URL, DATABASE1_URL ou POSTGRES_URL obrigatorio para iniciar o servidor.');
 }
 
 if (IS_DATABASE_URL_SUSPECT) {
@@ -180,7 +180,7 @@ const FRONTEND_PUBLIC_BASE_URL =
   process.env.FRONTEND_PUBLIC_BASE_URL || 'http://localhost:3000/frontend/html';
 const APP_PREFERENCES_VERSION = process.env.APP_PREFERENCES_VERSION || '2026.04';
 const TERMO_PRIVACIDADE_VERSAO = process.env.TERMO_PRIVACIDADE_VERSAO || '2026.04';
-const JWT_SECRET = String(process.env.JWT_SECRET || '').trim();
+const JWT_SECRET = String(process.env.JWT_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || process.env.IT_SESSION_SECRET || '').trim();
 const ADMIN_AREA_SHARED_PASSCODE = String(process.env.ADMIN_AREA_SHARED_PASSCODE || '').trim();
 const BOOTSTRAP_ADMIN_CAIO_EMAIL = String(process.env.BOOTSTRAP_ADMIN_CAIO_EMAIL || 'contatocaiozanoni@gmail.com').trim().toLowerCase();
 const BOOTSTRAP_ADMIN_DAYENNE_EMAIL = String(process.env.BOOTSTRAP_ADMIN_DAYENNE_EMAIL || 'dayeekennedy@gmail.com').trim().toLowerCase();
@@ -219,24 +219,13 @@ const ADDITIONAL_PUBLIC_DOMAINS = (process.env.ADDITIONAL_PUBLIC_DOMAINS || 'ord
   .filter(Boolean);
 
 const NIVEL_HIERARCHY = [
-  'neofito', 'mago_n1', 'mago_n2', 'mago_n3', 'mentor', 'sabio', 'mestre', 'mestre_fundador', 'ti'
+  'neofito', 'mago_n1', 'mago_n2', 'mago_n3', 'mentor', 'mago_n3', 'mestre', 'mestre_fundador', 'ti'
 ];
 
 const NIVEL_RANKING = Object.freeze(
   Object.fromEntries(NIVEL_HIERARCHY.map((nivel, index) => [nivel, index + 1]))
 );
 
-const NIVEL_RANKING = Object.freeze({
-  neofito: 1,
-  mago_n1: 2,
-  mago_n2: 3,
-  mago_n3: 4,
-  mentor: 5,
-  sabio: 6,
-  mestre: 7,
-  mestre_fundador: 8,
-  ti: 9
-});
 
 const FOUNDERS_EMAILS = new Set([
   BOOTSTRAP_ADMIN_CAIO_EMAIL,
@@ -1762,9 +1751,9 @@ const requireProfessor = async (req, res, next) => {
   const nivelCodigo = normalizeNivelCodigo(req.user?.nivel?.nivel_codigo);
   if (requiresProfessorAuthorizationByNivel(nivelCodigo)) {
     const status = await getProfessorAuthorizationStatus(req.user.id);
-    if (!(status.has_admin && status.has_sabio && status.has_fundador)) {
+    if (!(status.has_admin && status.has_mago_n3 && status.has_fundador)) {
       return res.status(403).json({
-        erro: 'Perfil professor pendente de autorizacao completa (admin + sabio + fundador).',
+        erro: 'Perfil professor pendente de autorizacao completa (admin + mago_n3 + fundador).',
         autorizacao_professor: status
       });
     }
@@ -1789,9 +1778,9 @@ const requireProfessorOrAdmin = async (req, res, next) => {
     const nivelCodigo = normalizeNivelCodigo(req.user?.nivel?.nivel_codigo);
     if (requiresProfessorAuthorizationByNivel(nivelCodigo)) {
       const status = await getProfessorAuthorizationStatus(req.user.id);
-      if (!(status.has_admin && status.has_sabio && status.has_fundador)) {
+      if (!(status.has_admin && status.has_mago_n3 && status.has_fundador)) {
         return res.status(403).json({
-          erro: 'Perfil professor pendente de autorizacao completa (admin + sabio + fundador).',
+          erro: 'Perfil professor pendente de autorizacao completa (admin + mago_n3 + fundador).',
           autorizacao_professor: status
         });
       }
@@ -1813,8 +1802,8 @@ function hasAuditViewPermission(user) {
   if (['admin', 'ti'].includes(user.tipo_usuario)) return true;
   if (isFounderEmail(user.email)) return true;
   if (isSageEmail(user.email)) return true;
-  if (isNivelAtLeast(user?.nivel?.nivel_codigo, 'sabio')) return true;
-  if (Array.isArray(user.roles) && user.roles.some((role) => ['sabio', 'mestre'].includes(role))) return true;
+  if (isNivelAtLeast(user?.nivel?.nivel_codigo, 'mago_n3')) return true;
+  if (Array.isArray(user.roles) && user.roles.some((role) => ['mago_n3', 'mestre'].includes(role))) return true;
   return false;
 }
 
@@ -1831,12 +1820,12 @@ const PERFIS_HIERARQUIA = [
   'mago_n2',
   'mago_n3',
   'mentor',
-  'sabio',
+  'mago_n3',
   'mestre',
   'ti'
 ];
 
-const PAPEIS_SISTEMA = ['aluno', 'professor', 'admin', 'lojista', 'ti', 'mentor', 'sabio', 'mestre'];
+const PAPEIS_SISTEMA = ['aluno', 'professor', 'admin', 'lojista', 'ti', 'mentor', 'mago_n3', 'mestre'];
 
 const DEFAULT_ROLE_PERMISSIONS = {
   aluno: [
@@ -1875,10 +1864,10 @@ const DEFAULT_ROLE_PERMISSIONS = {
     'mentor.conteudo.ver',
     'mentor.aulas.ver'
   ],
-  sabio: [
-    'sabio.dashboard.ver',
-    'sabio.inscricoes.reprovar',
-    'sabio.materiais.reprovar'
+  mago_n3: [
+    'mago_n3.dashboard.ver',
+    'mago_n3.inscricoes.reprovar',
+    'mago_n3.materiais.reprovar'
   ],
   mestre: [
     'mestre.dashboard.ver',
@@ -2117,7 +2106,7 @@ async function ensurePlatformSchema() {
       aula_id INTEGER NOT NULL REFERENCES aulas_ao_vivo(id) ON DELETE CASCADE,
       usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
       papel_na_aula VARCHAR(20) NOT NULL DEFAULT 'aluno'
-        CHECK (papel_na_aula IN ('professor', 'aluno', 'admin', 'ti', 'sabio', 'mentor')),
+        CHECK (papel_na_aula IN ('professor', 'aluno', 'admin', 'ti', 'mago_n3', 'mentor')),
       entrou_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       saiu_em TIMESTAMP,
       microfone_liberado BOOLEAN NOT NULL DEFAULT true,
@@ -2441,8 +2430,8 @@ async function ensurePlatformSchema() {
       usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
       aprovado_admin_id INTEGER REFERENCES usuarios(id),
       aprovado_admin_em TIMESTAMP,
-      aprovado_sabio_id INTEGER REFERENCES usuarios(id),
-      aprovado_sabio_em TIMESTAMP,
+      aprovado_mago_n3_id INTEGER REFERENCES usuarios(id),
+      aprovado_mago_n3_em TIMESTAMP,
       aprovado_fundador_id INTEGER REFERENCES usuarios(id),
       aprovado_fundador_em TIMESTAMP,
       observacao TEXT,
@@ -3112,7 +3101,7 @@ async function initializeBibliotecaLivros() {
       ano_publicacao: 1888,
       idioma: 'en',
       descricao: 'Obra fundamental da Teosofia e conhecimento esotérico ocidental.',
-      nivel_minimo_acesso: 'sabio',
+      nivel_minimo_acesso: 'mago_n3',
       temas: ['Teologia', 'Filosofia', 'Ocultismo'],
     },
     {
@@ -3273,7 +3262,7 @@ const LOGIN_PROFILE_ORDER = [
   'ti',
   'admin',
   'mestre',
-  'sabio',
+  'mago_n3',
   'professor',
   'lojista',
   'mago_n2',
@@ -3293,7 +3282,7 @@ function normalizeLoginProfile(value) {
   if (!normalized) return '';
   if (normalized === 'mago_nivel_1' || normalized === 'mago1') return 'mago_n1';
   if (normalized === 'mago_nivel_2' || normalized === 'mago2') return 'mago_n2';
-  if (normalized === 'sabio') return 'sabio';
+  if (normalized === 'mago_n3') return 'mago_n3';
   if (normalized === 'mestre_fundador') return 'mestre';
   return normalized;
 }
@@ -3308,10 +3297,10 @@ function computeLoginProfiles({ tipoUsuario, nivelCodigo, roles }) {
   const nivel = normalizeNivelCodigo(nivelCodigo || 'neofito');
   const normalizedRoles = new Set((Array.isArray(roles) ? roles : []).map((role) => String(role || '').trim().toLowerCase()));
   const shouldIncludeAcademicProfiles = ['aluno', 'admin', 'professor', 'ti'].includes(tipo)
-    || normalizedRoles.has('sabio')
+    || normalizedRoles.has('mago_n3')
     || normalizedRoles.has('mestre')
     || normalizedRoles.has('professor')
-    || ['mago_n1', 'mago_n2', 'sabio', 'mestre', 'mestre_fundador'].includes(nivel);
+    || ['mago_n1', 'mago_n2', 'mago_n3', 'mestre', 'mestre_fundador'].includes(nivel);
 
   if (tipo) {
     profiles.add(tipo);
@@ -3321,13 +3310,13 @@ function computeLoginProfiles({ tipoUsuario, nivelCodigo, roles }) {
     profiles.add('ti');
     profiles.add('admin');
     profiles.add('mestre');
-    profiles.add('sabio');
+    profiles.add('mago_n3');
   }
 
   if (tipo === 'admin') {
     profiles.add('admin');
     profiles.add('mestre');
-    profiles.add('sabio');
+    profiles.add('mago_n3');
     profiles.add('cliente');
   }
 
@@ -3349,11 +3338,11 @@ function computeLoginProfiles({ tipoUsuario, nivelCodigo, roles }) {
 
   if (normalizedRoles.has('mestre') || ['mestre', 'mestre_fundador'].includes(nivel)) {
     profiles.add('mestre');
-    profiles.add('sabio');
+    profiles.add('mago_n3');
   }
 
-  if (normalizedRoles.has('sabio') || nivel === 'sabio') {
-    profiles.add('sabio');
+  if (normalizedRoles.has('mago_n3') || nivel === 'mago_n3') {
+    profiles.add('mago_n3');
   }
 
   if (normalizedRoles.has('lojista') && canUseLojistaProfileByNivel(nivel)) {
@@ -3390,7 +3379,7 @@ function resolveHomeRouteByProfile(profile, { tipoUsuario, nivelCodigo, roles })
   if (normalizedProfile === 'ti') return '/dashboard-TI';
   if (normalizedProfile === 'admin') return '/admin/master';
   if (normalizedProfile === 'mestre') return hasAdminPrivileges ? '/admin/master' : '/dashboard-professor';
-  if (normalizedProfile === 'sabio') {
+  if (normalizedProfile === 'mago_n3') {
     if (hasAdminPrivileges) return '/admin/master';
     if (tipo === 'professor') return '/dashboard-professor';
     return '/dashboard-aluno';
@@ -3436,8 +3425,8 @@ async function getProfessorAuthorizationStatus(userId) {
       usuario_id,
       aprovado_admin_id,
       aprovado_admin_em,
-      aprovado_sabio_id,
-      aprovado_sabio_em,
+      aprovado_mago_n3_id,
+      aprovado_mago_n3_em,
       aprovado_fundador_id,
       aprovado_fundador_em
     FROM professor_autorizacoes
@@ -3450,7 +3439,7 @@ async function getProfessorAuthorizationStatus(userId) {
   const row = rows[0];
   return {
     has_admin: Boolean(row?.aprovado_admin_id),
-    has_sabio: Boolean(row?.aprovado_sabio_id),
+    has_mago_n3: Boolean(row?.aprovado_mago_n3_id),
     has_fundador: Boolean(row?.aprovado_fundador_id),
     row: row || null
   };
@@ -3475,7 +3464,7 @@ async function getPermissionsByRoles(roles) {
 
 function canUserManageLojista(tipoUsuario, nivelCodigo) {
   if (['admin', 'mestre', 'ti'].includes(tipoUsuario)) return true;
-  return ['mago_n1', 'mago_n2', 'mago_n3', 'mentor', 'sabio', 'mestre'].includes(nivelCodigo);
+  return ['mago_n1', 'mago_n2', 'mago_n3', 'mentor', 'mago_n3', 'mestre'].includes(nivelCodigo);
 }
 
 function safeEqualsSecret(a, b) {
@@ -3683,7 +3672,7 @@ const auth = async (req, res, next) => {
     req.user.nivel = await getUserNivel(user.id);
     req.user.permissoes = await getPermissionsByRoles(req.user.roles);
     req.user.is_founder = isFounderEmail(req.user.email);
-    req.user.is_sage = isSageEmail(req.user.email) || req.user.roles.includes('sabio');
+    req.user.is_mago_soberano = isSageEmail(req.user.email) || req.user.roles.includes('mago_n3');
     const resolvedLoginProfile = resolveLoginProfile({
       requestedProfile: req.user?.perfil_login,
       tipoUsuario: req.user.tipo_usuario,
@@ -5361,9 +5350,9 @@ app.post('/admin/usuarios/:id/permissoes', auth, requireAdminOrTi, async (req, r
 
   if (normalized.includes('professor') && requiresProfessorAuthorizationByNivel(nivelCodigo)) {
     const autorizacao = await getProfessorAuthorizationStatus(usuarioId);
-    if (!(autorizacao.has_admin && autorizacao.has_sabio && autorizacao.has_fundador)) {
+    if (!(autorizacao.has_admin && autorizacao.has_mago_n3 && autorizacao.has_fundador)) {
       return res.status(400).json({
-        erro: 'Professor mago_n1/mago_n2 exige autorizacao completa (admin + sabio + fundador).',
+        erro: 'Professor mago_n1/mago_n2 exige autorizacao completa (admin + mago_n3 + fundador).',
         autorizacao
       });
     }
@@ -5417,9 +5406,9 @@ app.post('/admin/usuarios/:id/professor-autorizacao', auth, requireAuditoria, as
 
   const isAdminApprover = ['admin', 'ti'].includes(req.user.tipo_usuario);
   const isFounderApprover = req.user.is_founder === true;
-  const isSabioApprover = req.user.is_sage === true || isNivelAtLeast(req.user?.nivel?.nivel_codigo, 'sabio');
+  const isMagoSoberanoApprover = req.user.is_mago_soberano === true || isNivelAtLeast(req.user?.nivel?.nivel_codigo, 'mago_n3');
 
-  if (!isAdminApprover && !isFounderApprover && !isSabioApprover) {
+  if (!isAdminApprover && !isFounderApprover && !isMagoSoberanoApprover) {
     return res.status(403).json({ erro: 'Perfil sem permissao para aprovar professor.' });
   }
 
@@ -5430,8 +5419,8 @@ app.post('/admin/usuarios/:id/professor-autorizacao', auth, requireAuditoria, as
         usuario_id,
         aprovado_admin_id,
         aprovado_admin_em,
-        aprovado_sabio_id,
-        aprovado_sabio_em,
+        aprovado_mago_n3_id,
+        aprovado_mago_n3_em,
         aprovado_fundador_id,
         aprovado_fundador_em,
         observacao,
@@ -5453,8 +5442,8 @@ app.post('/admin/usuarios/:id/professor-autorizacao', auth, requireAuditoria, as
     DO UPDATE SET
       aprovado_admin_id = COALESCE(EXCLUDED.aprovado_admin_id, professor_autorizacoes.aprovado_admin_id),
       aprovado_admin_em = COALESCE(EXCLUDED.aprovado_admin_em, professor_autorizacoes.aprovado_admin_em),
-      aprovado_sabio_id = COALESCE(EXCLUDED.aprovado_sabio_id, professor_autorizacoes.aprovado_sabio_id),
-      aprovado_sabio_em = COALESCE(EXCLUDED.aprovado_sabio_em, professor_autorizacoes.aprovado_sabio_em),
+      aprovado_mago_n3_id = COALESCE(EXCLUDED.aprovado_mago_n3_id, professor_autorizacoes.aprovado_mago_n3_id),
+      aprovado_mago_n3_em = COALESCE(EXCLUDED.aprovado_mago_n3_em, professor_autorizacoes.aprovado_mago_n3_em),
       aprovado_fundador_id = COALESCE(EXCLUDED.aprovado_fundador_id, professor_autorizacoes.aprovado_fundador_id),
       aprovado_fundador_em = COALESCE(EXCLUDED.aprovado_fundador_em, professor_autorizacoes.aprovado_fundador_em),
       observacao = COALESCE(EXCLUDED.observacao, professor_autorizacoes.observacao),
@@ -5464,7 +5453,7 @@ app.post('/admin/usuarios/:id/professor-autorizacao', auth, requireAuditoria, as
     [
       usuarioId,
       isAdminApprover ? req.userId : null,
-      isSabioApprover ? req.userId : null,
+      isMagoSoberanoApprover ? req.userId : null,
       isFounderApprover ? req.userId : null,
       observacao
     ]
@@ -5473,7 +5462,7 @@ app.post('/admin/usuarios/:id/professor-autorizacao', auth, requireAuditoria, as
   const status = await getProfessorAuthorizationStatus(usuarioId);
   await logAudit(req, 'aprovar_professor', 'rbac', 'professor_autorizacoes', usuarioId, {
     admin: status.has_admin,
-    sabio: status.has_sabio,
+    mago_n3: status.has_mago_n3,
     fundador: status.has_fundador
   });
 
@@ -7375,7 +7364,7 @@ app.post('/api/inscricao-membro', async (req, res) => {
     return res.status(400).json({ erro: 'Todos os campos são obrigatórios.' });
   }
 
-  const validLevels = ['neofito', 'mago_n1', 'mago_n2', 'mago_n3', 'mentor', 'sabio', 'mestre', 'ti'];
+  const validLevels = ['neofito', 'mago_n1', 'mago_n2', 'mago_n3', 'mentor', 'mago_n3', 'mestre', 'ti'];
   if (!validLevels.includes(nivel_codigo)) {
     return res.status(400).json({ erro: 'Categoria inválida.' });
   }
@@ -12557,8 +12546,8 @@ app.post('/api/redefinir-senha', passwordResetRateLimiter, async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(PROJECT_ROOT, 'index.html'));
 });
 
 app.get('/manifest.webmanifest', (_req, res) => {
@@ -12585,7 +12574,7 @@ app.get('/cadastro-fundadores', (req, res) => sendHtml(res, 'cadastro-fundadores
 app.get('/cadastro-neofitos', (req, res) => sendHtml(res, 'cadastro-neofitos.html'));
 app.get('/cadastro-magos-n1', (req, res) => sendHtml(res, 'cadastro-magos-n1.html'));
 app.get('/cadastro-magos-n2', (req, res) => sendHtml(res, 'cadastro-magos-n2.html'));
-app.get('/cadastro-sabios', (req, res) => sendHtml(res, 'cadastro-sabios.html'));
+app.get('/cadastro-magos-n3', (req, res) => sendHtml(res, 'cadastro-sabios.html'));
 app.get('/cadastro-ti', (req, res) => sendHtml(res, 'cadastro-ti.html'));
 app.get('/recuperar-senha', (req, res) => sendHtml(res, 'recuperar-senha.html'));
 app.get('/recuperar-senha', (req, res) => sendHtml(res, 'recuperar-senha.html'));
@@ -12674,4 +12663,9 @@ async function startServer() {
   }
 }
 
-startServer();
+module.exports = app;
+module.exports.default = app;
+
+if (require.main === module) {
+  startServer();
+}
