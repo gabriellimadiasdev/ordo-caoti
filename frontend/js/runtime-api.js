@@ -134,6 +134,7 @@
       '<a href="/agenda">Agenda</a>',
       '<a href="/cadernos">Cadernos</a>',
       '<a href="/assistente-aulas">Criar aula</a>',
+      '<a href="/gestao-academica">Gestão acadêmica</a>',
       '<a href="/aulas">Aulas</a>',
       '<a href="/chat-alunos">Chat alunos</a>',
       '<a href="/chat-loja">Chat loja</a>',

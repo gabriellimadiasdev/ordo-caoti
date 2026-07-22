@@ -524,3 +524,41 @@ CREATE TABLE IF NOT EXISTS supervisao_alertas (
   visto_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
   visto_em TIMESTAMPTZ
 );
+
+-- Regras acadêmicas por nível, mentores e cargos especiais
+ALTER TABLE materias ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito';
+ALTER TABLE live_salas ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito';
+ALTER TABLE biblioteca_livros ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito';
+ALTER TABLE biblioteca_recursos ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito';
+
+CREATE TABLE IF NOT EXISTS mentor_atribuicoes (
+  id SERIAL PRIMARY KEY,
+  mentor_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL,
+  turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL,
+  nivel_codigo TEXT DEFAULT 'neofito',
+  criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cargos_especiais (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  cargo TEXT NOT NULL,
+  descricao TEXT,
+  status TEXT DEFAULT 'ativo',
+  atribuido_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  encerrado_em TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS conteudo_acessos (
+  id SERIAL PRIMARY KEY,
+  recurso_tipo TEXT NOT NULL,
+  recurso_id INTEGER NOT NULL,
+  nivel_minimo TEXT DEFAULT 'neofito',
+  cargos_permitidos JSONB DEFAULT '[]'::jsonb,
+  criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(recurso_tipo, recurso_id)
+);

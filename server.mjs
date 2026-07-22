@@ -130,6 +130,7 @@ const protectedUserHtmlRoutes = new Map([
   ['/aulas', 'live-center.html'],
   ['/importar-aulas', 'importar-aulas.html'],
   ['/assistente-aulas', 'assistente-aulas.html'],
+  ['/gestao-academica', 'gestao-academica.html'],
   ['/live-center', 'live-center.html'],
   ['/financeiro-escolar', 'financeiro-escolar.html'],
   ['/area-financeira-aluno', 'area-financeira-aluno.html'],
@@ -873,6 +874,13 @@ async function ensureCoreTables() {
   await pool.query(`CREATE TABLE IF NOT EXISTS importacoes_academicas (id SERIAL PRIMARY KEY, origem TEXT NOT NULL, titulo TEXT, conteudo_texto TEXT, itens JSONB DEFAULT '[]'::jsonb, status TEXT DEFAULT 'pendente_aprovacao', importado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS assistente_aulas (id SERIAL PRIMARY KEY, tema TEXT NOT NULL, materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL, turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL, nivel_codigo TEXT, objetivo TEXT, plano_aula JSONB DEFAULT '{}'::jsonb, status TEXT DEFAULT 'pendente_aprovacao', criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS conteudos_aprovacao (id SERIAL PRIMARY KEY, tipo TEXT NOT NULL, referencia_id INTEGER, titulo TEXT, conteudo JSONB DEFAULT '{}'::jsonb, status TEXT DEFAULT 'pendente', criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, comentario TEXT, criado_em TIMESTAMPTZ DEFAULT NOW(), decidido_em TIMESTAMPTZ)`);
+  await pool.query(`ALTER TABLE materias ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito'`);
+  await pool.query(`ALTER TABLE live_salas ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito'`);
+  await pool.query(`ALTER TABLE biblioteca_livros ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito'`);
+  await pool.query(`ALTER TABLE biblioteca_recursos ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito'`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS mentor_atribuicoes (id SERIAL PRIMARY KEY, mentor_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL, turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL, nivel_codigo TEXT DEFAULT 'neofito', criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS cargos_especiais (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, cargo TEXT NOT NULL, descricao TEXT, status TEXT DEFAULT 'ativo', atribuido_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_em TIMESTAMPTZ DEFAULT NOW(), encerrado_em TIMESTAMPTZ)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS conteudo_acessos (id SERIAL PRIMARY KEY, recurso_tipo TEXT NOT NULL, recurso_id INTEGER NOT NULL, nivel_minimo TEXT DEFAULT 'neofito', cargos_permitidos JSONB DEFAULT '[]'::jsonb, criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_em TIMESTAMPTZ DEFAULT NOW(), UNIQUE(recurso_tipo,recurso_id))`);
   await pool.query(`ALTER TABLE turmas ADD COLUMN IF NOT EXISTS codigo TEXT UNIQUE`);
   await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_id TEXT UNIQUE`);
   await pool.query(`CREATE TABLE IF NOT EXISTS auditoria_eventos (id SERIAL PRIMARY KEY, usuario_id INTEGER, acao TEXT NOT NULL, alvo_tipo TEXT, alvo_id TEXT, ip_origem TEXT, user_agent TEXT, metadata JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
@@ -1252,6 +1260,124 @@ app.post('/api/inscricao-checkout', async (req, res) => {
   const pedido = await pool.query('INSERT INTO pedidos (usuario_id, descricao, total, status, metadata) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *', [null, 'Inscrição Ordo Caoti', 80, 'aguardando_pagamento', JSON.stringify(metadata)]);
   const checkoutUrl = process.env.MERCADO_PAGO_CHECKOUT_URL || `/loja-checkout?public=1&pedido_id=${encodeURIComponent(pedido.rows[0].id)}&valor=80&descricao=${encodeURIComponent('Inscrição Ordo Caoti')}`;
   res.status(201).json({ ok: true, pedido: pedido.rows[0], checkout_url: checkoutUrl, mercado_pago_configured: Boolean(process.env.MERCADO_PAGO_CHECKOUT_URL || process.env.MERCADO_PAGO_ACCESS_TOKEN) });
+});
+
+
+
+const levelRank = { neofito: 0, mago_n1: 1, mago_n2: 2, mago_n3: 3, mestre_fundador: 4, ti: 5 };
+const specialCargoCatalog = ['secretaria','tesouraria','comercial','marketing','vendas','compras','midias_digitais','atencao_ao_cliente','juridico','biblioteca','eventos','conteudo','operacoes'];
+function rankForLevel(value = 'neofito') { return levelRank[normalizeNivelCodigo(value)] ?? 0; }
+function canAccessLevel(userLevel = 'neofito', required = 'neofito') { return rankForLevel(userLevel) >= rankForLevel(required); }
+function isMasterOrOps(req) {
+  const tipo = String(req.user?.tipo_usuario || '').toLowerCase();
+  const nivel = normalizeNivelCodigo(req.userNivel || req.user?.nivel_codigo);
+  return ['admin','ti'].includes(tipo) || nivel === 'mestre_fundador';
+}
+function isTeacherMentorMaster(req) {
+  const tipo = String(req.user?.tipo_usuario || '').toLowerCase();
+  const profiles = availableProfilesForUser(req.user || {}, req.userNivel || req.user?.nivel_codigo).map((profile) => profile.id);
+  return ['admin','ti','professor','mentor'].includes(tipo) || profiles.some((profile) => ['mestre_fundador','mentor','professor'].includes(profile));
+}
+async function userSpecialCargos(usuarioId) {
+  if (!pool || !usuarioId) return [];
+  const { rows } = await pool.query("SELECT cargo FROM cargos_especiais WHERE usuario_id=$1 AND status='ativo'", [usuarioId]).catch(() => ({ rows: [] }));
+  return rows.map((row) => row.cargo);
+}
+async function canAccessContent(req, requiredLevel = 'neofito', allowedCargos = []) {
+  if (isMasterOrOps(req)) return true;
+  if (canAccessLevel(req.userNivel || req.user?.nivel_codigo, requiredLevel)) return true;
+  const cargos = await userSpecialCargos(req.user?.id);
+  return cargos.some((cargo) => allowedCargos.includes(cargo));
+}
+function requireTeacherMentorMaster(req, res, next) {
+  if (isTeacherMentorMaster(req)) return next();
+  return res.status(403).json({ erro: 'Acesso restrito a professores, mentores, mestres ou T.I.' });
+}
+function requireMasterOrOps(req, res, next) {
+  if (isMasterOrOps(req)) return next();
+  return res.status(403).json({ erro: 'Acesso restrito a mestres, admin ou T.I.' });
+}
+
+app.post('/academico/mentores', authenticateRequest, requireMasterOrOps, async (req, res) => {
+  await ensureCoreTables();
+  const mentorId = Number(req.body?.mentor_id || req.body?.usuario_id);
+  if (!mentorId) return res.status(400).json({ erro: 'mentor_id obrigatório.' });
+  await pool.query("INSERT INTO usuario_perfis (usuario_id, perfil_codigo) VALUES ($1,'mentor') ON CONFLICT DO NOTHING", [mentorId]);
+  await pool.query("UPDATE usuarios SET tipo_usuario = CASE WHEN tipo_usuario='aluno' THEN 'mentor' ELSE tipo_usuario END WHERE id=$1", [mentorId]);
+  const { rows } = await pool.query('INSERT INTO mentor_atribuicoes (mentor_id,materia_id,turma_id,nivel_codigo,criado_por) VALUES ($1,$2,$3,$4,$5) RETURNING *', [mentorId, req.body?.materia_id || null, req.body?.turma_id || null, req.body?.nivel_codigo || 'neofito', req.user.id]);
+  await auditEvent(req, 'mentor_assigned', 'usuario', mentorId, { atribuicao_id: rows[0].id });
+  res.status(201).json({ ok: true, atribuicao: rows[0] });
+});
+
+app.get('/academico/mentores', authenticateRequest, requireTeacherMentorMaster, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT ma.*, u.nome AS mentor_nome, u.email AS mentor_email, m.nome AS materia_nome, t.nome AS turma_nome FROM mentor_atribuicoes ma LEFT JOIN usuarios u ON u.id=ma.mentor_id LEFT JOIN materias m ON m.id=ma.materia_id LEFT JOIN turmas t ON t.id=ma.turma_id ORDER BY ma.criado_em DESC LIMIT 200`);
+  res.json(rows);
+});
+
+app.post('/academico/cargos-especiais', authenticateRequest, requireMasterOrOps, async (req, res) => {
+  await ensureCoreTables();
+  const usuarioId = Number(req.body?.usuario_id);
+  const cargo = String(req.body?.cargo || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'_');
+  if (!usuarioId || !specialCargoCatalog.includes(cargo)) return res.status(400).json({ erro: 'usuario_id e cargo válido são obrigatórios.', cargos: specialCargoCatalog });
+  const nivel = await pool.query('SELECT nivel_codigo FROM usuario_niveis WHERE usuario_id=$1', [usuarioId]);
+  const rank = rankForLevel(nivel.rows[0]?.nivel_codigo || 'neofito');
+  if (rank < 1) return res.status(403).json({ erro: 'Cargos especiais exigem mago iniciado ou superior.' });
+  const { rows } = await pool.query('INSERT INTO cargos_especiais (usuario_id,cargo,descricao,atribuido_por) VALUES ($1,$2,$3,$4) RETURNING *', [usuarioId, cargo, req.body?.descricao || null, req.user.id]);
+  await auditEvent(req, 'special_role_assigned', 'usuario', usuarioId, { cargo });
+  res.status(201).json({ ok: true, cargo: rows[0] });
+});
+
+app.get('/academico/cargos-especiais', authenticateRequest, requireTeacherMentorMaster, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT ce.*, u.nome, u.email FROM cargos_especiais ce JOIN usuarios u ON u.id=ce.usuario_id WHERE ce.status='ativo' ORDER BY ce.criado_em DESC`);
+  res.json({ cargos_disponiveis: specialCargoCatalog, atribuicoes: rows });
+});
+
+app.post('/academico/conteudos/acesso', authenticateRequest, requireTeacherMentorMaster, async (req, res) => {
+  await ensureCoreTables();
+  const recursoTipo = String(req.body?.recurso_tipo || '').trim();
+  const recursoId = Number(req.body?.recurso_id);
+  if (!recursoTipo || !recursoId) return res.status(400).json({ erro: 'recurso_tipo e recurso_id são obrigatórios.' });
+  const nivel = normalizeNivelCodigo(req.body?.nivel_minimo || 'neofito');
+  const cargos = Array.isArray(req.body?.cargos_permitidos) ? req.body.cargos_permitidos : [];
+  const { rows } = await pool.query(`INSERT INTO conteudo_acessos (recurso_tipo,recurso_id,nivel_minimo,cargos_permitidos,criado_por) VALUES ($1,$2,$3,$4::jsonb,$5) ON CONFLICT (recurso_tipo,recurso_id) DO UPDATE SET nivel_minimo=EXCLUDED.nivel_minimo,cargos_permitidos=EXCLUDED.cargos_permitidos RETURNING *`, [recursoTipo, recursoId, nivel, JSON.stringify(cargos), req.user.id]);
+  if (recursoTipo === 'materia') await pool.query('UPDATE materias SET nivel_minimo=$2 WHERE id=$1', [recursoId, nivel]).catch(() => {});
+  if (recursoTipo === 'aula') await pool.query('UPDATE live_salas SET nivel_minimo=$2 WHERE id=$1', [recursoId, nivel]).catch(() => {});
+  if (recursoTipo === 'livro') await pool.query('UPDATE biblioteca_livros SET nivel_minimo=$2 WHERE id=$1', [recursoId, nivel]).catch(() => {});
+  res.status(201).json({ ok: true, acesso: rows[0] });
+});
+
+app.get('/academico/conteudos/liberados', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const [materias, aulas, livros, recursos] = await Promise.all([
+    pool.query('SELECT * FROM materias WHERE ativo=true ORDER BY id DESC LIMIT 200'),
+    pool.query('SELECT * FROM live_salas ORDER BY criado_em DESC LIMIT 200'),
+    pool.query('SELECT * FROM biblioteca_livros WHERE ativo=true ORDER BY criado_em DESC LIMIT 200'),
+    pool.query("SELECT * FROM biblioteca_recursos WHERE status='ativo' ORDER BY criado_em DESC LIMIT 200")
+  ]);
+  const filterRows = async (rows, fallbackLevel='neofito') => {
+    const out = [];
+    for (const row of rows) if (await canAccessContent(req, row.nivel_minimo || fallbackLevel, [])) out.push(row);
+    return out;
+  };
+  res.json({ materias: await filterRows(materias.rows), aulas: await filterRows(aulas.rows), livros: await filterRows(livros.rows), recursos: recursos.rows });
+});
+
+app.post('/professor/alunos/:usuarioId/nota', authenticateRequest, requireTeacherMentorMaster, async (req, res) => {
+  await ensureCoreTables();
+  const usuarioId = Number(req.params.usuarioId);
+  const { rows } = await pool.query('INSERT INTO avaliacoes_alunos (usuario_id,materia_id,nota,tipo,observacao,criado_por) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [usuarioId, req.body?.materia_id || null, req.body?.nota ?? null, req.body?.tipo || 'avaliacao', req.body?.observacao || null, req.user.id]);
+  await auditEvent(req, 'teacher_grade_saved', 'usuario', usuarioId);
+  res.status(201).json({ ok: true, nota: rows[0] });
+});
+
+app.post('/professor/alunos/:usuarioId/falta', authenticateRequest, requireTeacherMentorMaster, async (req, res) => {
+  await ensureCoreTables();
+  const usuarioId = Number(req.params.usuarioId);
+  const { rows } = await pool.query('INSERT INTO presencas_alunos (usuario_id,materia_id,aula_id,presente,justificativa,criado_por) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [usuarioId, req.body?.materia_id || null, req.body?.aula_id || null, req.body?.presente === true, req.body?.justificativa || null, req.user.id]);
+  await auditEvent(req, 'teacher_attendance_saved', 'usuario', usuarioId);
+  res.status(201).json({ ok: true, falta: rows[0] });
 });
 
 

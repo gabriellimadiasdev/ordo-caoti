@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-22T03:05:26.021Z",
-  "html_count": 80,
+  "generated_at": "2026-07-22T03:13:06.424Z",
+  "html_count": 81,
   "js_count": 15,
-  "routes_count": 161,
+  "routes_count": 169,
   "html_files": [
     "frontend/html/acessibilidade-e-inclusao.html",
     "frontend/html/acompanhamento.html",
@@ -53,6 +53,7 @@
     "frontend/html/esqueci-minha-senha.html",
     "frontend/html/financeiro-escolar.html",
     "frontend/html/gerar-descontos.html",
+    "frontend/html/gestao-academica.html",
     "frontend/html/grimorio-publico.html",
     "frontend/html/grimorio.html",
     "frontend/html/importar-aulas.html",
@@ -282,6 +283,38 @@
     {
       "method": "POST",
       "route": "/api/inscricao-checkout"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/mentores"
+    },
+    {
+      "method": "GET",
+      "route": "/academico/mentores"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/cargos-especiais"
+    },
+    {
+      "method": "GET",
+      "route": "/academico/cargos-especiais"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/conteudos/acesso"
+    },
+    {
+      "method": "GET",
+      "route": "/academico/conteudos/liberados"
+    },
+    {
+      "method": "POST",
+      "route": "/professor/alunos/:usuarioId/nota"
+    },
+    {
+      "method": "POST",
+      "route": "/professor/alunos/:usuarioId/falta"
     },
     {
       "method": "POST",
@@ -1343,8 +1376,7 @@
         "./central-operacoes.html",
         "/dashboard",
         "/dashboard-aluno",
-        "/importar-aulas",
-        "/assistente-aulas",
+        "/gestao-academica",
         "../js/runtime-api.js",
         "${s.link_sala || ",
         "${f.atestado_url}",
@@ -1402,6 +1434,14 @@
       ]
     },
     {
+      "file": "frontend/html/gestao-academica.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login?next=/gestao-academica"
+      ]
+    },
+    {
       "file": "frontend/html/grimorio-publico.html",
       "links": [
         "../css/app-shell.css",
@@ -1436,25 +1476,25 @@
         "/css/estilos.css",
         "/css/app-shell.css",
         "/manifest.webmanifest",
-        "tela/img/ordo-caoti-icon.jpeg",
-        "./tela/html/nosssos-mestres.html",
-        "./tela/html/loja.html",
-        "./tela/html/regras.html",
-        "./tela/html/login.html",
+        "frontend/img/ordo-caoti-icon.jpeg",
+        "./frontend/html/nosssos-mestres.html",
+        "./frontend/html/loja.html",
+        "./frontend/html/regras.html",
+        "./frontend/html/login.html",
         "https://youtube.com/ordocaoti",
         "https://www.instagram.com/ordocaoti/",
-        "./tela/img/instagram-icon.png",
+        "./frontend/img/instagram-icon.png",
         "https://www.tiktok.com/@ordo.caoti",
         "https://img.icons8.com/sf-regular-filled/48/FAB005/tiktok.png",
         "https://www.youtube.com/embed/hFQMyevCWyM",
         "//www.instagram.com/embed.js",
         "https://www.tiktok.com/@ordo.caoti?refer=embed",
         "https://www.tiktok.com/embed.js",
-        "./tela/html/cadastro-neofitos.html",
-        "./tela/html/cadastro-magos-n1.html",
-        "./tela/html/cadastro-magos-n2.html",
+        "./frontend/html/cadastro-neofitos.html",
+        "./frontend/html/cadastro-magos-n1.html",
+        "./frontend/html/cadastro-magos-n2.html",
         "/cadastro-magos-n3",
-        "./tela/html/cadastro-mestres.html",
+        "./frontend/html/cadastro-mestres.html",
         "/legal/politica-privacidade",
         "/legal/termos-de-uso",
         "/legal/acessibilidade",
