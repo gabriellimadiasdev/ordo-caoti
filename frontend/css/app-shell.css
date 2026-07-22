@@ -393,3 +393,11 @@ body.a11y-color-tritanopia {
 .oc-quick-links{position:fixed;left:.75rem;right:auto;bottom:.75rem;z-index:9999;display:flex;gap:6px;flex-wrap:wrap;max-width:min(70vw,620px)}.oc-quick-links a{border:1px solid #3c5778;border-radius:999px;background:#101b2b;color:#f3be49;text-decoration:none;padding:7px 10px;font:700 12px/1.1 "Segoe UI",sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.28)}
 .oc-dashboard-agenda{margin:10px auto;max-width:min(94vw,980px);background:#132232;border:1px solid #35506f;border-radius:14px;padding:12px;color:#eef4ff;font-family:"Segoe UI",sans-serif}.oc-dashboard-agenda h2{margin:.1rem 0 .6rem;color:#f3be49}.oc-dashboard-agenda article{border-top:1px solid #2d4562;padding:.45rem 0}.oc-dashboard-agenda a{color:#f3be49}
 @media(max-width:640px){.oc-session-bar{top:.35rem;right:.35rem;gap:.3rem}.oc-session-bar__name{display:none}.oc-session-bar select{max-width:165px}.a11y-toolbar{right:.4rem;bottom:.4rem;width:min(290px,calc(100vw - .8rem))}.oc-quick-links{left:.4rem;bottom:.4rem;max-width:calc(100vw - 310px)}.oc-quick-links a{font-size:11px;padding:6px 8px}}
+.a11y-toolbar__top{display:flex;align-items:stretch;border-bottom:1px solid var(--oc-border-strong)}
+.a11y-toolbar__drag{cursor:grab;touch-action:none;min-width:54px;border:0;border-right:1px solid var(--oc-border-strong);background:#211a30;color:var(--oc-white);font-weight:700}
+.a11y-toolbar.is-dragging{opacity:.92;user-select:none;box-shadow:0 18px 38px rgba(0,0,0,.55)}
+.a11y-toolbar.is-dragging .a11y-toolbar__drag{cursor:grabbing}
+.a11y-toolbar__top .a11y-toolbar__tab{flex:1}
+.a11y-toolbar__close{width:40px;border:0;border-left:1px solid var(--oc-border-strong);background:#351d27;color:#ffe1e7;font-size:1.25rem;cursor:pointer}
+.a11y-restore{position:fixed;right:.75rem;bottom:.75rem;z-index:12001;border:1px solid var(--oc-border-strong);border-radius:999px;background:#171323;color:var(--oc-yellow);padding:.6rem .8rem;font:800 .82rem/1.1 "Segoe UI",Tahoma,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer}
+.a11y-restore[hidden]{display:none}
