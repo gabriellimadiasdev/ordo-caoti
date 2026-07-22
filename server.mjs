@@ -917,6 +917,8 @@ async function ensureCoreTables() {
   await pool.query(`ALTER TABLE biblioteca_livros ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito'`);
   await pool.query(`ALTER TABLE biblioteca_recursos ADD COLUMN IF NOT EXISTS nivel_minimo TEXT DEFAULT 'neofito'`);
   await pool.query(`CREATE TABLE IF NOT EXISTS mentor_atribuicoes (id SERIAL PRIMARY KEY, mentor_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL, turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL, nivel_codigo TEXT DEFAULT 'neofito', criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS mentor_acesso_ti (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, status TEXT DEFAULT 'pendente', motivo TEXT, solicitado_em TIMESTAMPTZ DEFAULT NOW(), decidido_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, decidido_em TIMESTAMPTZ, UNIQUE(usuario_id))`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS mentor_notificacoes (id SERIAL PRIMARY KEY, solicitacao_id INTEGER REFERENCES mentor_acesso_ti(id) ON DELETE CASCADE, destinatario_email TEXT NOT NULL, canal TEXT DEFAULT 'whatsapp', mensagem TEXT NOT NULL, provider_configurado BOOLEAN DEFAULT false, status TEXT DEFAULT 'pendente', criado_em TIMESTAMPTZ DEFAULT NOW(), enviada_em TIMESTAMPTZ)`);
   await pool.query(`CREATE TABLE IF NOT EXISTS cargos_especiais (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, cargo TEXT NOT NULL, descricao TEXT, status TEXT DEFAULT 'ativo', atribuido_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_em TIMESTAMPTZ DEFAULT NOW(), encerrado_em TIMESTAMPTZ)`);
   await pool.query(`CREATE TABLE IF NOT EXISTS conteudo_acessos (id SERIAL PRIMARY KEY, recurso_tipo TEXT NOT NULL, recurso_id INTEGER NOT NULL, nivel_minimo TEXT DEFAULT 'neofito', cargos_permitidos JSONB DEFAULT '[]'::jsonb, criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_em TIMESTAMPTZ DEFAULT NOW(), UNIQUE(recurso_tipo,recurso_id))`);
   await pool.query(`ALTER TABLE turmas ADD COLUMN IF NOT EXISTS codigo TEXT UNIQUE`);
@@ -1329,7 +1331,16 @@ async function canAccessContent(req, requiredLevel = 'neofito', allowedCargos = 
   const cargos = await userSpecialCargos(req.user?.id);
   return cargos.some((cargo) => allowedCargos.includes(cargo));
 }
-function requireTeacherMentorMaster(req, res, next) {
+async function tiHasMentorApproval(usuarioId) {
+  if (!pool || !usuarioId) return false;
+  const { rows } = await pool.query("SELECT id FROM mentor_acesso_ti WHERE usuario_id=$1 AND status='aprovado' LIMIT 1", [usuarioId]).catch(() => ({ rows: [] }));
+  return rows.length > 0;
+}
+async function requireTeacherMentorMaster(req, res, next) {
+  const tipo = String(req.user?.tipo_usuario || '').toLowerCase();
+  if (tipo === 'ti' && !(await tiHasMentorApproval(req.user.id))) {
+    return res.status(403).json({ erro: 'Acesso de T.I. à área de mentores aguarda autorização de Caio ou Dayenne.', proximo_passo: '/mentor/acesso-ti/solicitar' });
+  }
   if (isTeacherMentorMaster(req)) return next();
   return res.status(403).json({ erro: 'Acesso restrito a professores, mentores, mestres ou T.I.' });
 }
@@ -1337,6 +1348,34 @@ function requireMasterOrOps(req, res, next) {
   if (isMasterOrOps(req)) return next();
   return res.status(403).json({ erro: 'Acesso restrito a mestres, admin ou T.I.' });
 }
+
+app.get('/mentor/acesso-ti/status', authenticateRequest, async (req,res) => {
+  if (String(req.user?.tipo_usuario||'').toLowerCase() !== 'ti') return res.json({ ok:true, required:false, status:'nao_aplicavel' });
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM mentor_acesso_ti WHERE usuario_id=$1 LIMIT 1',[req.user.id]);
+  res.json({ ok:true, required:true, solicitacao:rows[0]||null, aprovado:Boolean(rows[0]?.status==='aprovado') });
+});
+app.post('/mentor/acesso-ti/solicitar', authenticateRequest, async (req,res) => {
+  if (String(req.user?.tipo_usuario||'').toLowerCase() !== 'ti') return res.status(403).json({ erro:'Pedido exclusivo da T.I.' });
+  await ensureCoreTables();
+  const { rows } = await pool.query("INSERT INTO mentor_acesso_ti (usuario_id,status,motivo,solicitado_em) VALUES ($1,'pendente',$2,NOW()) ON CONFLICT (usuario_id) DO UPDATE SET status='pendente',motivo=EXCLUDED.motivo,solicitado_em=NOW(),decidido_por=NULL,decidido_em=NULL RETURNING *",[req.user.id,req.body?.motivo||'Acesso técnico ao painel de mentores']);
+  const msg=`Solicitação de acesso T.I. ao painel de mentores: ${req.user.nome||req.user.email}.`;
+  for (const email of ['contatocaiozanoni@gmail.com','dayeekennedy@gmail.com']) await pool.query("INSERT INTO mentor_notificacoes (solicitacao_id,destinatario_email,canal,mensagem,provider_configurado) VALUES ($1,$2,'whatsapp',$3,$4)",[rows[0].id,email,msg,Boolean(process.env.WHATSAPP_API_TOKEN||process.env.TWILIO_ACCOUNT_SID)]);
+  await auditEvent(req,'mentor_ti_access_requested','mentor_acesso_ti',rows[0].id);
+  res.status(201).json({ ok:true,solicitacao:rows[0],mensagem:'Pedido registrado. Caio e Dayenne foram notificados pela fila de WhatsApp.' });
+});
+app.get('/mentor/acesso-ti/pendentes', authenticateRequest, async (req,res) => {
+  if (!isMasterOrOps(req)) return res.status(403).json({ erro:'Apenas mestres podem analisar pedidos.' });
+  await ensureCoreTables();
+  const { rows }=await pool.query("SELECT a.*,u.nome,u.email FROM mentor_acesso_ti a JOIN usuarios u ON u.id=a.usuario_id WHERE a.status='pendente' ORDER BY a.solicitado_em ASC");res.json(rows);
+});
+app.post('/mentor/acesso-ti/:id/decidir', authenticateRequest, async (req,res) => {
+  const founder=['contatocaiozanoni@gmail.com','dayeekennedy@gmail.com'].includes(String(req.user?.email||'').toLowerCase());
+  if (!founder) return res.status(403).json({ erro:'Aprovação de acesso T.I. exige Caio ou Dayenne.' });
+  const status=req.body?.status==='rejeitado'?'rejeitado':'aprovado';
+  const { rows }=await pool.query('UPDATE mentor_acesso_ti SET status=$2,decidido_por=$3,decidido_em=NOW() WHERE id=$1 RETURNING *',[Number(req.params.id),status,req.user.id]);if(!rows.length)return res.status(404).json({erro:'Pedido não encontrado.'});
+  await auditEvent(req,'mentor_ti_access_decided','mentor_acesso_ti',rows[0].id,{status});res.json({ok:true,solicitacao:rows[0]});
+});
 
 app.post('/academico/mentores', authenticateRequest, requireMasterOrOps, async (req, res) => {
   await ensureCoreTables();
