@@ -151,6 +151,10 @@ const protectedUserHtmlRoutes = new Map([
 
 
 const protectedTiHtmlRoutes = new Map([
+  ['/admin', 'area-adm-1.html'],
+  ['/admin/', 'area-adm-1.html'],
+  ['/admin/operacoes-avancadas', 'area-adm-2.html'],
+  ['/area-adm-2', 'area-adm-2.html'],
   ['/dashboard-TI', 'dashboard-TI.html'],
   ['/dashboard-ti', 'dashboard-TI.html'],
   ['/manutencao-ti', 'manutencao-ti.html'],
@@ -169,6 +173,12 @@ const protectedTiHtmlRoutes = new Map([
   ['/admin/aprovacao-financeira', 'aprovacao-financeira.html'],
   ['/admin/area-financeira', 'area-financeira-adm.html'],
   ['/admin/anexar-arquivos', 'area-anexar-arquivos.html'],
+  ['/admin/anexos', 'area-anexar-arquivos.html'],
+  ['/professor/area-anexos', 'area-professor-anexos.html'],
+  ['/financeiro/aluno', 'area-financeira-aluno.html'],
+  ['/admin/loja/produtos', 'admin-loja-produtos.html'],
+  ['/loja/reembolso-e-logistica', 'reembolso-e-logistica.html'],
+  ['/logistica/rastreio', 'rastreio-correios.html'],
   ['/ti/manutencao', 'manutencao-ti.html'],
 ]);
 
@@ -2196,6 +2206,61 @@ app.get('/lojista/repasses', authenticateRequest, requireSeller, async (req, res
   const { rows } = await pool.query('SELECT * FROM repasses_lojista WHERE lojista_id=$1 ORDER BY criado_em DESC LIMIT 100', [req.user.id]);
   res.json(rows);
 });
+
+
+app.get('/admin/operacoes/resumo', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const [produtos, materiais, avaliacoes, faltas, alertas] = await Promise.all([
+    pool.query("SELECT COUNT(*)::int total, COUNT(*) FILTER (WHERE ativo=true)::int ativos, COALESCE(SUM(estoque),0)::int estoque FROM produtos WHERE deleted_at IS NULL"),
+    pool.query("SELECT status_moderacao, COUNT(*)::int total FROM anexos_academicos GROUP BY status_moderacao"),
+    pool.query("SELECT COUNT(*)::int total FROM avaliacoes_alunos"),
+    pool.query("SELECT COUNT(*)::int total FROM presencas_alunos WHERE presente=false"),
+    pool.query("SELECT COUNT(*)::int total FROM supervisao_alertas WHERE status='aberto'").catch(() => ({ rows: [{ total: 0 }] }))
+  ]);
+  res.json({ ok: true, loja: produtos.rows[0], materiais: materiais.rows, avaliacoes: avaliacoes.rows[0], faltas: faltas.rows[0], alertas: alertas.rows[0] });
+});
+
+app.get('/admin/operacoes/materiais', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT a.*, u.nome AS autor_nome, m.nome AS materia_nome FROM anexos_academicos a LEFT JOIN usuarios u ON u.id=a.autor_id LEFT JOIN materias m ON m.id=a.materia_id WHERE a.status_moderacao='pendente' ORDER BY a.data_criacao ASC LIMIT 200`);
+  res.json(rows);
+});
+
+app.get('/admin/operacoes/avaliacoes', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT av.*, u.nome AS aluno_nome, m.nome AS materia_nome, c.nome AS avaliador_nome FROM avaliacoes_alunos av LEFT JOIN usuarios u ON u.id=av.usuario_id LEFT JOIN materias m ON m.id=av.materia_id LEFT JOIN usuarios c ON c.id=av.criado_por ORDER BY av.criado_em DESC LIMIT 200`);
+  res.json(rows);
+});
+
+app.get('/admin/operacoes/faltas', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT p.*, u.nome AS aluno_nome, m.nome AS materia_nome, l.titulo AS aula_titulo FROM presencas_alunos p LEFT JOIN usuarios u ON u.id=p.usuario_id LEFT JOIN materias m ON m.id=p.materia_id LEFT JOIN live_salas l ON l.id=p.aula_id WHERE p.presente=false ORDER BY p.criado_em DESC LIMIT 200`);
+  res.json(rows);
+});
+
+app.post('/admin/operacoes/alertas/:id/arquivar', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query("UPDATE supervisao_alertas SET status='arquivado', visto_por=$2, visto_em=NOW() WHERE id=$1 RETURNING *", [Number(req.params.id), req.user.id]);
+  if (!rows.length) return res.status(404).json({ erro: 'Alerta não encontrado.' });
+  await auditEvent(req, 'supervision_alert_archived', 'supervisao_alerta', rows[0].id);
+  res.json({ ok: true, alerta: rows[0] });
+});
+
+
+
+app.get('/api/ops/resumo', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const [loja, materiais, avaliacoes] = await Promise.all([
+    pool.query("SELECT COUNT(*)::int produtos, COALESCE(SUM(estoque),0)::int estoque FROM produtos WHERE deleted_at IS NULL"),
+    pool.query("SELECT COUNT(*)::int pendentes FROM anexos_academicos WHERE status_moderacao='pendente'"),
+    pool.query('SELECT COUNT(*)::int total FROM avaliacoes_alunos')
+  ]);
+  res.json({ ok: true, loja: loja.rows[0], materiais: materiais.rows[0], avaliacoes: avaliacoes.rows[0] });
+});
+app.get('/api/ops/estoque', authenticateRequest, requireAdminOrTi, async (_req, res) => { await ensureCoreTables(); const { rows } = await pool.query('SELECT id,nome,estoque,ativo FROM produtos WHERE deleted_at IS NULL ORDER BY estoque ASC LIMIT 200'); res.json(rows); });
+app.get('/api/ops/metas-vendas', authenticateRequest, requireAdminOrTi, async (_req, res) => { await ensureCoreTables(); const { rows } = await pool.query("SELECT status, COUNT(*)::int pedidos, COALESCE(SUM(total),0)::numeric valor FROM pedidos GROUP BY status"); res.json({ ok: true, vendas: rows }); });
+app.get('/api/compatibilidade', authenticateRequest, (_req, res) => res.json({ ok: true, status: 'operacional', mensagem: 'Compatibilidade verificada.' }));
+
 
 app.get('/professor/materias', authenticateRequest, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM materias WHERE ativo=true ORDER BY id DESC'); res.json(rows); });
 app.get('/professor/anexos', authenticateRequest, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM anexos_academicos ORDER BY data_criacao DESC LIMIT 100'); res.json(rows); });

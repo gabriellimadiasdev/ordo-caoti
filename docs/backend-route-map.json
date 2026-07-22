@@ -1,8 +1,7 @@
 {
-  "generated_at": "2026-07-22T03:28:42.690Z",
-  "html_count": 81,
-  "js_count": 15,
-  "routes_count": 169,
+  "generated_at": "2026-07-22T03:48:17.081Z",
+  "html_count": 82,
+  "routes_count": 178,
   "html_files": [
     "frontend/html/acessibilidade-e-inclusao.html",
     "frontend/html/acompanhamento.html",
@@ -16,6 +15,7 @@
     "frontend/html/aprovacao-de-registro.html",
     "frontend/html/aprovacao-financeira.html",
     "frontend/html/area-adm-1.html",
+    "frontend/html/area-adm-2.html",
     "frontend/html/area-anexar-arquivos.html",
     "frontend/html/area-financeira-adm.html",
     "frontend/html/area-financeira-aluno.html",
@@ -85,23 +85,6 @@
     "frontend/html/solicitar-acesso.html",
     "frontend/html/termos-de-uso.html",
     "frontend/html/ti-criar-login.html"
-  ],
-  "js_files": [
-    "frontend/js/app-shell.js",
-    "frontend/js/compat-legacy.js",
-    "frontend/js/runtime-api.js",
-    "frontend/js/scripts/backup-postgres.js",
-    "frontend/js/scripts/create-mercado-test-user.js",
-    "frontend/js/scripts/generate-releases-report.js",
-    "frontend/js/server.js",
-    "frontend/js/services/awsS3Storage.js",
-    "frontend/js/services/correiosTracking.js",
-    "frontend/js/services/dailyCo.js",
-    "frontend/js/services/mercadoPagoOrders.js",
-    "frontend/js/services/mercadoPagoReports.js",
-    "frontend/js/tests/bootstrapFundadores.test.js",
-    "frontend/js/tests/mercadoPagoOrders.test.js",
-    "frontend/js/tests/mercadoPagoReports.test.js"
   ],
   "backend_routes": [
     {
@@ -654,6 +637,42 @@
     },
     {
       "method": "GET",
+      "route": "/admin/operacoes/resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operacoes/materiais"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operacoes/avaliacoes"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operacoes/faltas"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/operacoes/alertas/:id/arquivar"
+    },
+    {
+      "method": "GET",
+      "route": "/api/ops/resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/api/ops/estoque"
+    },
+    {
+      "method": "GET",
+      "route": "/api/ops/metas-vendas"
+    },
+    {
+      "method": "GET",
+      "route": "/api/compatibilidade"
+    },
+    {
+      "method": "GET",
       "route": "/professor/materias"
     },
     {
@@ -781,38 +800,6 @@
       "route": "/api/status"
     }
   ],
-  "env_vars": [
-    "AUTH_SECRET",
-    "AWS_S3_BUCKET",
-    "DAILY_API_KEY",
-    "DATABASE1_URL",
-    "DATABASE_URL",
-    "GOOGLE_CLIENT_ID",
-    "GOOGLE_SERVICE_ACCOUNT_JSON",
-    "INSTAGRAM_ACCESS_TOKEN",
-    "IT_SESSION_SECRET",
-    "JWT_SECRET",
-    "MERCADO_PAGO_ACCESS_TOKEN",
-    "MERCADO_PAGO_CHECKOUT_URL",
-    "MICROSOFT_CLIENT_ID",
-    "NEXTAUTH_SECRET",
-    "NODE_ENV",
-    "NOTION_API_KEY",
-    "POSTGRES_URL",
-    "RESEND_API_KEY",
-    "SENDGRID_API_KEY",
-    "SMS_API_TOKEN",
-    "SMTP_URL",
-    "SUPABASE_ENCRYPTION_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "SUPABASE_URL",
-    "TIKTOK_ACCESS_TOKEN",
-    "TWILIO_ACCOUNT_SID",
-    "VERCEL_DEPLOYMENT_ID",
-    "VERCEL_GIT_COMMIT_SHA",
-    "WHATSAPP_API_TOKEN",
-    "ZOOM_CLIENT_ID"
-  ],
   "html_links": [
     {
       "file": "frontend/html/acessibilidade-e-inclusao.html",
@@ -834,8 +821,7 @@
         "../css/app-shell.css",
         "../manifest.webmanifest",
         "../../index.html",
-        "../js/app-shell.js",
-        "/api/acompanhamento"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -843,9 +829,7 @@
       "links": [
         "./style-login-loja.css",
         "/biblioteca",
-        "/biblioteca/livros?per_page=1000",
-        "/biblioteca/temas",
-        "/biblioteca/livros"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -854,11 +838,7 @@
         "../css/responsivo.css",
         "../css/app-shell.css",
         "../manifest.webmanifest",
-        "../js/app-shell.js",
-        "/admin/financeiro/usuarios",
-        "/admin/financeiro/alternar-acesso",
-        "/admin/financeiro/historico/${userId}",
-        "/admin/financeiro/gerar-cupom"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -878,10 +858,7 @@
         "../css/responsivo.css",
         "../css/app-shell.css",
         "./area-adm-1.html",
-        "../js/app-shell.js",
-        "/admin/loja/produtos-pendentes",
-        "/admin/loja/produtos/${id}/aprovar",
-        "/admin/loja/produtos/${id}/reprovar"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -889,7 +866,8 @@
       "links": [
         "../css/app-shell.css",
         "../js/runtime-api.js",
-        "/login-ti?next=/admin/pos-venda"
+        "/login-ti?next=/admin/pos-venda",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -899,7 +877,8 @@
         "../js/runtime-api.js",
         "/login",
         "${esc(e.foto_url)}",
-        "${esc(l)}"
+        "${esc(l)}",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -908,7 +887,7 @@
         "../css/responsivo.css",
         "../css/app-shell.css",
         "../js/runtime-api.js",
-        "/me/alterar-senha"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -951,24 +930,28 @@
         "/aprovacao-financeira",
         "/area-financeira-adm",
         "/gerar-descontos",
-        "./area-adm-2.html",
+        "/admin/operacoes-avancadas",
         "/dashboard-ti",
         "/area-anexar-arquivos",
         "/reembolso-e-logistica",
-        "./vendas.html",
+        "/admin/operacoes-avancadas#loja",
         "/admin-loja-produtos",
         "/admin-biblioteca",
         "/admin/financeiro",
         "/admin/anexos",
-        "../js/app-shell.js",
-        "/auth/admin-gate",
-        "/admin/disciplinar/aplicar",
-        "/admin/membros-pendentes",
-        "/admin/aprovar-membro",
-        "/admin/suprema/painel",
-        "/admin/disciplinar/alunos",
-        "/admin/disciplinar/casos",
-        "/admin/disciplinar/revogar/${id}"
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-adm-2.html",
+      "links": [
+        "../css/app-shell.css",
+        "/admin-loja-produtos",
+        "/admin/pos-venda",
+        "/lojista/financeiro",
+        "../js/runtime-api.js",
+        "/login?next=/admin/operacoes-avancadas",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -980,14 +963,7 @@
         "/admin/master",
         "/professor/area-anexos",
         "${item.arquivo_url}",
-        "../js/app-shell.js",
-        "/admin/professores",
-        "/admin/turmas",
-        "/admin/materias",
-        "/admin/anexos/pendentes",
-        "/admin/anexos/${id}/aprovar",
-        "/admin/anexos/${id}/reprovar",
-        "/admin/materias/${materiaId}/professor"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1009,8 +985,7 @@
         "../css/app-shell.css",
         "../manifest.webmanifest",
         "/dashboard",
-        "../js/app-shell.js",
-        "/api/financeiro"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1031,10 +1006,7 @@
         "../css/app-shell.css",
         "../manifest.webmanifest",
         "/dashboard",
-        "../js/app-shell.js",
-        "/professor/materias",
-        "/professor/anexos",
-        "/professor/avaliacoes-v2"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1044,8 +1016,7 @@
         "../js/runtime-api.js",
         "/login",
         "/api/arquivos/${f.id}/download",
-        "/api/arquivos",
-        "/api/arquivos/upload"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1054,7 +1025,7 @@
         "../css/app-shell.css",
         "../js/runtime-api.js",
         "/login",
-        "/academico/assistente-aulas"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1067,10 +1038,7 @@
         "${livro.url_amazon}",
         "${livro.url_mercado_livre}",
         "${livro.url_fnac}",
-        "/biblioteca/temas",
-        "/biblioteca/livros?${params}",
-        "/biblioteca/livros/${livroId}",
-        "/biblioteca/livros/${livroId}/leitura"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1108,8 +1076,7 @@
         "#",
         "./login-loja-cliente.html",
         "../js/runtime-api.js",
-        "../js/app-shell.js",
-        "https://viacep.com.br/ws/${cep}/json/"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1190,7 +1157,8 @@
       "links": [
         "../css/app-shell.css",
         "../js/runtime-api.js",
-        "/login"
+        "/login",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1222,7 +1190,7 @@
         "../css/app-shell.css",
         "../js/runtime-api.js",
         "/login",
-        "/chat/alunos/${canal}/mensagens"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1241,7 +1209,8 @@
       "links": [
         "../css/app-shell.css",
         "../js/runtime-api.js",
-        "/login"
+        "/login",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1251,9 +1220,7 @@
         "../css/app-shell.css",
         "../manifest.webmanifest",
         "./dashboard-cliente.html",
-        "../js/app-shell.js",
-        "/loja/pedidos/${pedidoId}",
-        "/loja/pedidos/${pedidoId}/sincronizar-ordem"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1273,7 +1240,7 @@
         "../css/app-shell.css",
         "../js/runtime-api.js",
         "/login",
-        "/me/dados-completos"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1300,21 +1267,7 @@
         "/diario",
         "/financeiro/aluno",
         "${item.arquivo_url}",
-        "../js/app-shell.js",
-        "/minhas-turmas",
-        "/api/financeiro",
-        "/api/boletim",
-        "/api/materias-disponiveis",
-        "/aluno/materias",
-        "/aluno/materias/${m.id}/materiais",
-        "/aluno/avaliacoes-v2",
-        "/aluno/gamificacao/progresso",
-        "/aluno/gamificacao/top10",
-        "/live/salas",
-        "/aluno/faltas/minhas",
-        "/aluno/faltas/${presencaId}/justificar",
-        "/live/salas/${aulaId}/entrar",
-        "/aluno/aulas/${aulaId}/replay"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1325,7 +1278,8 @@
         "/dashboard-cliente",
         "/reembolso-e-logistica",
         "../js/runtime-api.js",
-        "/login/loja/cliente?next=/dashboard-cliente/reembolso"
+        "/login/loja/cliente?next=/dashboard-cliente/reembolso",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1343,8 +1297,7 @@
         "/login/loja/lojista",
         "../js/runtime-api.js",
         "/login/loja/cliente?next=/dashboard-cliente",
-        "../js/app-shell.js",
-        "/logout"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1380,15 +1333,7 @@
         "../js/runtime-api.js",
         "${s.link_sala || ",
         "${f.atestado_url}",
-        "../js/app-shell.js",
-        "/professor/materias",
-        "/live/salas",
-        "/professor/faltas/pendentes",
-        "/live/salas/${salaId}/presencas",
-        "/professor/aulas/${salaId}/legendas/aprovar",
-        "/live/salas/${salaId}/entrar",
-        "/live/salas/${salaId}/encerrar",
-        "/professor/faltas/${justificativaId}/aprovar"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1397,8 +1342,7 @@
         "../css/app-shell.css",
         "/dashboard-aluno",
         "/js/runtime-api.js",
-        "../js/app-shell.js",
-        "/diario/pessoal"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1418,7 +1362,8 @@
       "links": [
         "../css/app-shell.css",
         "../js/runtime-api.js",
-        "/login"
+        "/login",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1438,7 +1383,8 @@
       "links": [
         "../css/app-shell.css",
         "../js/runtime-api.js",
-        "/login?next=/gestao-academica"
+        "/login?next=/gestao-academica",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1447,7 +1393,7 @@
         "../css/app-shell.css",
         "../js/runtime-api.js",
         "/login",
-        "/grimorio/publico"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1456,8 +1402,7 @@
         "../css/app-shell.css",
         "/dashboard-aluno",
         "/js/runtime-api.js",
-        "../js/app-shell.js",
-        "/grimorio/pessoal"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1465,7 +1410,8 @@
       "links": [
         "../css/app-shell.css",
         "../js/runtime-api.js",
-        "/login"
+        "/login",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1606,8 +1552,7 @@
         "../css/app-shell.css",
         "../js/runtime-api.js",
         "/login",
-        "/api/checkout-publico",
-        "/loja/checkout"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1665,8 +1610,7 @@
         "https://www.instagram.com/cai.omago?utm_source=qr&igsh=Nmt5MXY0ejNjMXEz",
         "https://via.placeholder.com/150",
         "#",
-        "../js/app-shell.js",
-        "/produtos"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1697,7 +1641,8 @@
         "/api/ops/resumo",
         "/api/ops/estoque",
         "/api/ops/metas-vendas",
-        "/api/compatibilidade"
+        "/api/compatibilidade",
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1715,7 +1660,7 @@
     {
       "file": "frontend/html/rastreio-correios.html",
       "links": [
-        "/api/correios/rastreio/${encodeURIComponent(codigo)}"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1747,8 +1692,7 @@
         "../css/app-shell.css",
         "../manifest.webmanifest",
         "./login.html",
-        "../js/app-shell.js",
-        "/api/recuperar-senha"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1758,8 +1702,7 @@
         "../css/app-shell.css",
         "../manifest.webmanifest",
         "./login.html",
-        "../js/app-shell.js",
-        "/api/redefinir-senha"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1770,8 +1713,7 @@
         "../manifest.webmanifest",
         "./dashboard-cliente.html",
         "./logistica.html",
-        "../js/app-shell.js",
-        "/loja/pedidos/${orderId}/reembolso"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1782,8 +1724,7 @@
         "../manifest.webmanifest",
         "/legal/politica-privacidade",
         "/legal/termos-de-uso",
-        "../js/app-shell.js",
-        "/api/inscricao-checkout"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1792,7 +1733,7 @@
         "../css/app-shell.css",
         "../js/runtime-api.js",
         "/login/loja/cliente?next=/cliente/resolucao",
-        "/vendas/politicas-cdc"
+        "../js/app-shell.js"
       ]
     },
     {
@@ -1831,7 +1772,8 @@
         "../css/responsivo.css",
         "../css/app-shell.css",
         "/dashboard-ti",
-        "../js/runtime-api.js"
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
       ]
     }
   ]
