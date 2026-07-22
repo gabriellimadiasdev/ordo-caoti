@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alterar senha - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <style>
+    body{margin:0;min-height:100vh;background:#07101a;color:#eef4ff;font-family:"Segoe UI",Tahoma,sans-serif;display:grid;place-items:center;padding:1rem}
+    .card{width:min(460px,100%);background:#132232;border:1px solid #35506f;border-radius:14px;padding:1.2rem;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    h1{margin-top:0;color:#f3be49}label{display:block;margin:.7rem 0 .25rem;color:#adc4dd}input,button{width:100%;box-sizing:border-box;border:1px solid #3c5778;border-radius:8px;background:#0f1a2a;color:#eef4ff;padding:.7rem}button{margin-top:1rem;background:#f3be49;color:#251a06;font-weight:700;cursor:pointer}.msg{min-height:1.3rem;color:#dbeafe}.error{color:#fecaca}.muted{color:#b8c7d9;font-size:.95rem}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Alterar senha</h1>
+    <p class="muted">Por segurança, altere a senha temporária antes de continuar.</p>
+    <form id="formSenha">
+      <label for="senhaAtual">Senha atual</label>
+      <input id="senhaAtual" type="password" autocomplete="current-password" required />
+      <label for="novaSenha">Nova senha</label>
+      <input id="novaSenha" type="password" autocomplete="new-password" minlength="6" required />
+      <label for="confirmaSenha">Confirmar nova senha</label>
+      <input id="confirmaSenha" type="password" autocomplete="new-password" minlength="6" required />
+      <button type="submit">Salvar nova senha</button>
+    </form>
+    <p id="msg" class="msg"></p>
+  </main>
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime;
+    const msg = document.getElementById('msg');
+    const user = runtime.getUser();
+    if (!runtime.getToken()) window.location.href = '/login';
+    function setMsg(text, error=false){ msg.textContent = text || ''; msg.className = `msg${error ? ' error' : ''}`; }
+    document.getElementById('formSenha').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setMsg('');
+      const senhaAtual = document.getElementById('senhaAtual').value;
+      const novaSenha = document.getElementById('novaSenha').value;
+      const confirmaSenha = document.getElementById('confirmaSenha').value;
+      if (novaSenha !== confirmaSenha) return setMsg('A confirmação não confere.', true);
+      try {
+        const response = await runtime.apiFetch('/me/alterar-senha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ senha_atual: senhaAtual, nova_senha: novaSenha })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao alterar senha.');
+        runtime.setUser(data.user);
+        setMsg('Senha alterada. Redirecionando...');
+        window.location.href = data?.user?.must_complete_profile ? '/dados-primeiro-acesso' : (data?.user?.home_route || user?.home_route || '/dashboard-aluno');
+      } catch (error) {
+        setMsg(error.message, true);
+      }
+    });
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

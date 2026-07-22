@@ -118,11 +118,6 @@
       "kind": "html"
     },
     {
-      "route": "/cadastro-sabios",
-      "file": "frontend/html/cadastro-sabios.html",
-      "kind": "html"
-    },
-    {
       "route": "/cadastro-ti",
       "file": "frontend/html/cadastro-ti.html",
       "kind": "html"
@@ -414,17 +409,12 @@
     },
     {
       "route": "/cadastro-magos-n3",
-      "file": "frontend/html/cadastro-sabios.html",
+      "file": "frontend/html/cadastro-magos-n3.html",
       "kind": "html-alias"
     },
     {
       "route": "/cadastro-mago-soberano",
-      "file": "frontend/html/cadastro-sabios.html",
-      "kind": "html-alias"
-    },
-    {
-      "route": "/cadastro-sabios",
-      "file": "frontend/html/cadastro-sabios.html",
+      "file": "frontend/html/cadastro-magos-n3.html",
       "kind": "html-alias"
     },
     {

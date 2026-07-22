@@ -471,7 +471,8 @@
         <a href="/aprovacao-financeira">Aprovacao Financeira</a>
         <a href="/area-financeira-adm">Area Financeira ADM</a>
         <a href="/gerar-descontos">Gerar Descontos</a>
-        <a href="./area-adm-2.html">Operacoes Avancadas</a>
+        <a href="/admin/operacoes-avancadas">Operacoes Avancadas</a>
+        <a href="/area-mentores">Area de Mentores</a>
         <a href="/dashboard-ti">Voltar ao Dashboard</a>
         <button class="warn" id="logoutBtn" type="button">Encerrar Sessao</button>
       </nav>
@@ -708,7 +709,7 @@
             <strong>Reembolsos</strong>
             <span>Canal de governanca para pedidos de reembolso.</span>
           </a>
-          <a class="action-card" href="./vendas.html">
+          <a class="action-card" href="/admin/operacoes-avancadas#loja">
             <strong>Vendas e Loja</strong>
             <span>Area preparatoria para analise comercial da ordem.</span>
           </a>
@@ -835,19 +836,19 @@
     const FOUNDERS_EMAILS = ['contatocaiozanoni@gmail.com', 'dayeekennedy@gmail.com'];
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
-    const isTiLocal = user.tipo === 'ti';
+    const isTiLocal = token === 'ti-local-mode';
     const normalizedUserEmail = String(user.email || '').trim().toLowerCase();
     const isFounderAccount = FOUNDERS_EMAILS.includes(normalizedUserEmail);
-    const gateSessionKey = 'adminGateValidatedAt';
+    const isFounderAccount = FOUNDERS_EMAILS.includes(normalizedUserEmail);
 
     if (!token && !window.location.hostname.includes('localhost')) {
-      window.location.href = '/login';
+      window.location.href = '/login?next=/admin/';
     }
 
     if (!isTiLocal && (user.tipo !== 'admin' || !isFounderAccount)) {
-      alert('Acesso permitido apenas aos dois Mestres Fundadores da Ordem.');
-      window.location.href = '/dashboard-ti';
+      window.location.href = '/login?next=/admin/';
     }
+
 
     document.getElementById('whoami').textContent = isTiLocal
       ? `Sessao ativa: ${user.nome || 'Equipe T.I.'} (ti local - painel mestre)`
@@ -870,37 +871,7 @@
       'Content-Type': 'application/json'
     };
 
-    async function enforceAdminGate() {
-      if (isTiLocal) return true;
 
-      const alreadyValidated = Number(sessionStorage.getItem(gateSessionKey) || 0);
-      if (alreadyValidated && Date.now() - alreadyValidated < 6 * 60 * 60 * 1000) {
-        return true;
-      }
-
-      const senhaAcesso = prompt('Senha adicional da Area Administrativa:');
-      if (!senhaAcesso) {
-        alert('Senha administrativa obrigatoria para abrir o painel.');
-        window.location.href = '/login';
-        return false;
-      }
-
-      const response = await fetch('/auth/admin-gate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senha_acesso: senhaAcesso })
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        alert(data.erro || 'Senha administrativa invalida.');
-        window.location.href = '/login';
-        return false;
-      }
-
-      sessionStorage.setItem(gateSessionKey, String(Date.now()));
-      return true;
-    }
 
     const mockAdmin = {
       pendencias: {
@@ -1686,7 +1657,7 @@
         document.getElementById('updatedAt').textContent = `Atualizado em ${new Date().toLocaleString('pt-BR')}`;
       } catch (error) {
         console.error(error);
-        alert('Falha ao carregar dados do painel mestre.');
+        document.getElementById('updatedAt').textContent = `Falha ao atualizar: ${error.message || 'verifique a conexão'}`;
       }
     }
 

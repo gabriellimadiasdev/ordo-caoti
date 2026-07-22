@@ -1,0 +1,1925 @@
+{
+  "generated_at": "2026-07-22T04:49:24.688Z",
+  "html_count": 84,
+  "routes_count": 208,
+  "html_files": [
+    "frontend/html/acessibilidade-e-inclusao.html",
+    "frontend/html/acompanhamento.html",
+    "frontend/html/admin-biblioteca.html",
+    "frontend/html/admin-financeiro.html",
+    "frontend/html/admin-inscricoes-ordem.html",
+    "frontend/html/admin-loja-produtos.html",
+    "frontend/html/admin-pos-venda.html",
+    "frontend/html/agenda.html",
+    "frontend/html/alterar-senha.html",
+    "frontend/html/aprovacao-de-registro.html",
+    "frontend/html/aprovacao-financeira.html",
+    "frontend/html/area-adm-1.html",
+    "frontend/html/area-adm-2.html",
+    "frontend/html/area-anexar-arquivos.html",
+    "frontend/html/area-financeira-adm.html",
+    "frontend/html/area-financeira-aluno.html",
+    "frontend/html/area-matricula.html",
+    "frontend/html/area-mentores.html",
+    "frontend/html/area-professor-anexos.html",
+    "frontend/html/arquivos.html",
+    "frontend/html/assistente-aulas.html",
+    "frontend/html/biblioteca-livros.html",
+    "frontend/html/biblioteca.html",
+    "frontend/html/cadastro-fundadores-bootstrap.html",
+    "frontend/html/cadastro-loja-cliente.html",
+    "frontend/html/cadastro-magos-n1.html",
+    "frontend/html/cadastro-magos-n2.html",
+    "frontend/html/cadastro-magos-n3.html",
+    "frontend/html/cadastro-membros.html",
+    "frontend/html/cadastro-neofitos.html",
+    "frontend/html/cadastro-produtos.html",
+    "frontend/html/cadastro-ti.html",
+    "frontend/html/cadernos.html",
+    "frontend/html/carrinho-de-compra.html",
+    "frontend/html/central-operacoes.html",
+    "frontend/html/chat-alunos.html",
+    "frontend/html/chat-cliente.html",
+    "frontend/html/chat-loja.html",
+    "frontend/html/compra-aprovada.html",
+    "frontend/html/compra-recusada.html",
+    "frontend/html/dados-primeiro-acesso.html",
+    "frontend/html/dashboard-TI.html",
+    "frontend/html/dashboard-aluno.html",
+    "frontend/html/dashboard-cliente-reembolso.html",
+    "frontend/html/dashboard-cliente.html",
+    "frontend/html/dashboard-lojista.html",
+    "frontend/html/dashboard-professor.html",
+    "frontend/html/diario.html",
+    "frontend/html/esqueci-minha-senha.html",
+    "frontend/html/financeiro-escolar.html",
+    "frontend/html/gerar-descontos.html",
+    "frontend/html/gestao-academica.html",
+    "frontend/html/grimorio-publico.html",
+    "frontend/html/grimorio.html",
+    "frontend/html/importar-aulas.html",
+    "frontend/html/index.html",
+    "frontend/html/inscrição-finalizar.html",
+    "frontend/html/live-center.html",
+    "frontend/html/login-loja-cliente.html",
+    "frontend/html/login-loja-lojista.html",
+    "frontend/html/login-mentor.html",
+    "frontend/html/login-ti.html",
+    "frontend/html/login.html",
+    "frontend/html/logistica.html",
+    "frontend/html/loja-checkout.html",
+    "frontend/html/loja.html",
+    "frontend/html/lojista-financeiro.html",
+    "frontend/html/manutencao-ti.html",
+    "frontend/html/nosssos-mestres.html",
+    "frontend/html/offline.html",
+    "frontend/html/painel-operacional.html",
+    "frontend/html/politica-de-privacidade.html",
+    "frontend/html/rastreio-correios.html",
+    "frontend/html/recolhimento-de-dados-de-pagamento.html",
+    "frontend/html/recolhimento-de-dados.html",
+    "frontend/html/recuperar-senha.html",
+    "frontend/html/redefinir-senha.html",
+    "frontend/html/reembolso-e-logistica.html",
+    "frontend/html/regras.html",
+    "frontend/html/resolucao-vendas.html",
+    "frontend/html/reunioes-daily.html",
+    "frontend/html/solicitar-acesso.html",
+    "frontend/html/termos-de-uso.html",
+    "frontend/html/ti-criar-login.html"
+  ],
+  "backend_routes": [
+    {
+      "method": "GET",
+      "route": "/"
+    },
+    {
+      "method": "GET",
+      "route": "/manifest.webmanifest"
+    },
+    {
+      "method": "GET",
+      "route": "/sw.js"
+    },
+    {
+      "method": "GET",
+      "route": "/robots.txt"
+    },
+    {
+      "method": "GET",
+      "route": "/favicon.ico"
+    },
+    {
+      "method": "GET",
+      "route": "/favicon.png"
+    },
+    {
+      "method": "GET",
+      "route": "/ads.txt"
+    },
+    {
+      "method": "GET",
+      "route": "/app-ads.txt"
+    },
+    {
+      "method": "GET",
+      "route": "/sellers.json"
+    },
+    {
+      "method": "POST",
+      "route": "/api/inscricao-membro"
+    },
+    {
+      "method": "POST",
+      "route": "/login"
+    },
+    {
+      "method": "POST",
+      "route": "/api/solicitacoes-acesso"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/solicitacoes-acesso"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/solicitacoes-acesso/:id/aprovar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/solicitacoes-acesso/:id/rejeitar"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/membros-pendentes"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/aprovar-membro"
+    },
+    {
+      "method": "GET",
+      "route": "/me/perfis"
+    },
+    {
+      "method": "POST",
+      "route": "/perfil/trocar"
+    },
+    {
+      "method": "POST",
+      "route": "/me/alterar-senha"
+    },
+    {
+      "method": "POST",
+      "route": "/api/auditoria/movimento"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/auditoria"
+    },
+    {
+      "method": "GET",
+      "route": "/me/dados-completos"
+    },
+    {
+      "method": "PUT",
+      "route": "/me/dados-completos"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/dados-pessoais/:usuarioId"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/perfil-academico"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/alunos/:usuarioId/matricula"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/alunos/:usuarioId/nota"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/alunos/:usuarioId/presenca"
+    },
+    {
+      "method": "GET",
+      "route": "/grimorio/publico"
+    },
+    {
+      "method": "POST",
+      "route": "/grimorio/publico"
+    },
+    {
+      "method": "GET",
+      "route": "/chat/alunos/canais"
+    },
+    {
+      "method": "GET",
+      "route": "/chat/alunos/:canalCodigo/mensagens"
+    },
+    {
+      "method": "POST",
+      "route": "/chat/alunos/:canalCodigo/mensagens"
+    },
+    {
+      "method": "GET",
+      "route": "/api/arquivos"
+    },
+    {
+      "method": "POST",
+      "route": "/api/arquivos/upload"
+    },
+    {
+      "method": "GET",
+      "route": "/api/arquivos/:id/download"
+    },
+    {
+      "method": "GET",
+      "route": "/api/integracoes/status"
+    },
+    {
+      "method": "POST",
+      "route": "/api/google/importar-classroom"
+    },
+    {
+      "method": "POST",
+      "route": "/api/google/importar-drive"
+    },
+    {
+      "method": "GET",
+      "route": "/agenda/eventos"
+    },
+    {
+      "method": "POST",
+      "route": "/agenda/eventos"
+    },
+    {
+      "method": "PUT",
+      "route": "/agenda/eventos/:id"
+    },
+    {
+      "method": "POST",
+      "route": "/agenda/notificacoes/processar"
+    },
+    {
+      "method": "POST",
+      "route": "/api/inscricao-checkout"
+    },
+    {
+      "method": "GET",
+      "route": "/mentor/acesso-ti/status"
+    },
+    {
+      "method": "POST",
+      "route": "/mentor/acesso-ti/solicitar"
+    },
+    {
+      "method": "GET",
+      "route": "/mentor/acesso-ti/pendentes"
+    },
+    {
+      "method": "POST",
+      "route": "/mentor/acesso-ti/:id/decidir"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/mentores"
+    },
+    {
+      "method": "GET",
+      "route": "/academico/mentores"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/cargos-especiais"
+    },
+    {
+      "method": "GET",
+      "route": "/academico/cargos-especiais"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/conteudos/acesso"
+    },
+    {
+      "method": "GET",
+      "route": "/academico/conteudos/liberados"
+    },
+    {
+      "method": "POST",
+      "route": "/professor/alunos/:usuarioId/nota"
+    },
+    {
+      "method": "POST",
+      "route": "/professor/alunos/:usuarioId/falta"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/importar/classroom"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/importar/notion"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/assistente-aulas"
+    },
+    {
+      "method": "GET",
+      "route": "/academico/aprovacoes"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/aprovacoes/:id/decidir"
+    },
+    {
+      "method": "GET",
+      "route": "/site-memory.json"
+    },
+    {
+      "method": "GET",
+      "route": "/api/site-memory"
+    },
+    {
+      "method": "GET",
+      "route": "/api/site-version"
+    },
+    {
+      "method": "GET",
+      "route": "/api/route-exists"
+    },
+    {
+      "method": "POST",
+      "route": "/logout"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/contratos"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/bolsas-descontos"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/cobrancas"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/gerar-mensalidades"
+    },
+    {
+      "method": "GET",
+      "route": "/financeiro/cobrancas"
+    },
+    {
+      "method": "POST",
+      "route": "/financeiro/cobrancas/:id/pagar-interno"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/notificacoes/processar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/cobrancas/:id/preparar-negativacao"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/financeiro/resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/vendas/politicas-cdc"
+    },
+    {
+      "method": "GET",
+      "route": "/vendas/resolucoes"
+    },
+    {
+      "method": "POST",
+      "route": "/vendas/resolucoes"
+    },
+    {
+      "method": "GET",
+      "route": "/vendas/resolucoes/:id"
+    },
+    {
+      "method": "POST",
+      "route": "/vendas/resolucoes/:id/movimentos"
+    },
+    {
+      "method": "GET",
+      "route": "/produtos"
+    },
+    {
+      "method": "POST",
+      "route": "/loja/carrinho"
+    },
+    {
+      "method": "POST",
+      "route": "/api/checkout-publico"
+    },
+    {
+      "method": "POST",
+      "route": "/loja/checkout"
+    },
+    {
+      "method": "GET",
+      "route": "/loja/pedidos/:id"
+    },
+    {
+      "method": "POST",
+      "route": "/loja/pedidos/:id/sincronizar-ordem"
+    },
+    {
+      "method": "GET",
+      "route": "/financeiro/historico"
+    },
+    {
+      "method": "GET",
+      "route": "/api/financeiro"
+    },
+    {
+      "method": "GET",
+      "route": "/minhas-turmas"
+    },
+    {
+      "method": "GET",
+      "route": "/api/materias-disponiveis"
+    },
+    {
+      "method": "GET",
+      "route": "/api/boletim"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/materias"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/avaliacoes-v2"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/faltas/minhas"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/gamificacao/progresso"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/gamificacao/top10"
+    },
+    {
+      "method": "GET",
+      "route": "/supervisao/registros"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/cadernos"
+    },
+    {
+      "method": "POST",
+      "route": "/aluno/cadernos"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/cadernos/:id/registros"
+    },
+    {
+      "method": "POST",
+      "route": "/aluno/cadernos/:id/registros"
+    },
+    {
+      "method": "GET",
+      "route": "/diario/pessoal"
+    },
+    {
+      "method": "POST",
+      "route": "/diario/pessoal"
+    },
+    {
+      "method": "GET",
+      "route": "/grimorio/pessoal"
+    },
+    {
+      "method": "POST",
+      "route": "/grimorio/pessoal"
+    },
+    {
+      "method": "GET",
+      "route": "/biblioteca/temas"
+    },
+    {
+      "method": "POST",
+      "route": "/biblioteca/temas"
+    },
+    {
+      "method": "GET",
+      "route": "/biblioteca/recursos"
+    },
+    {
+      "method": "POST",
+      "route": "/biblioteca/recursos"
+    },
+    {
+      "method": "GET",
+      "route": "/biblioteca/livros"
+    },
+    {
+      "method": "GET",
+      "route": "/biblioteca/livros/:id"
+    },
+    {
+      "method": "POST",
+      "route": "/biblioteca/livros/:id/leitura"
+    },
+    {
+      "method": "GET",
+      "route": "/live/salas"
+    },
+    {
+      "method": "POST",
+      "route": "/live/salas"
+    },
+    {
+      "method": "POST",
+      "route": "/live/salas/:id/entrar"
+    },
+    {
+      "method": "POST",
+      "route": "/live/salas/:id/gerar-link"
+    },
+    {
+      "method": "POST",
+      "route": "/live/salas/:id/encerrar"
+    },
+    {
+      "method": "POST",
+      "route": "/live/salas/:id/grupos"
+    },
+    {
+      "method": "GET",
+      "route": "/live/salas/:id/grupos"
+    },
+    {
+      "method": "POST",
+      "route": "/live/grupos/:id/participantes"
+    },
+    {
+      "method": "GET",
+      "route": "/api/daily/config"
+    },
+    {
+      "method": "GET",
+      "route": "/api/meetings/providers"
+    },
+    {
+      "method": "POST",
+      "route": "/lojista/autorizacoes"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/lojista/autorizacoes"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/lojista/autorizacoes/:id/decidir"
+    },
+    {
+      "method": "POST",
+      "route": "/lojista/produtos/:id/estoque"
+    },
+    {
+      "method": "GET",
+      "route": "/lojista/produtos/:id/estoque"
+    },
+    {
+      "method": "GET",
+      "route": "/loja/chats"
+    },
+    {
+      "method": "POST",
+      "route": "/loja/chats"
+    },
+    {
+      "method": "GET",
+      "route": "/loja/chats/:id/mensagens"
+    },
+    {
+      "method": "POST",
+      "route": "/loja/chats/:id/mensagens"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/vendas/fundadores-resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/lojista/vendas-resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/lojista/meus-produtos"
+    },
+    {
+      "method": "POST",
+      "route": "/lojista/produtos"
+    },
+    {
+      "method": "PUT",
+      "route": "/lojista/produtos/:id"
+    },
+    {
+      "method": "DELETE",
+      "route": "/lojista/produtos/:id"
+    },
+    {
+      "method": "POST",
+      "route": "/lojista/produtos/assistente"
+    },
+    {
+      "method": "GET",
+      "route": "/lojista/marketplaces"
+    },
+    {
+      "method": "POST",
+      "route": "/lojista/produtos/:id/publicar-marketplaces"
+    },
+    {
+      "method": "GET",
+      "route": "/lojista/saldo"
+    },
+    {
+      "method": "POST",
+      "route": "/lojista/repasses"
+    },
+    {
+      "method": "GET",
+      "route": "/lojista/repasses"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operacoes/resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operacoes/materiais"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operacoes/avaliacoes"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operacoes/faltas"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/operacoes/alertas/:id/arquivar"
+    },
+    {
+      "method": "GET",
+      "route": "/api/ops/resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/api/ops/estoque"
+    },
+    {
+      "method": "GET",
+      "route": "/api/ops/metas-vendas"
+    },
+    {
+      "method": "GET",
+      "route": "/api/compatibilidade"
+    },
+    {
+      "method": "GET",
+      "route": "/api/acompanhamento"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/financeiro/historico/:usuarioId?"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/alternar-acesso"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/gerar-cupom"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/loja/produtos-pendentes"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/loja/produtos/:id/aprovar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/loja/produtos/:id/reprovar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/disciplinar/aplicar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/disciplinar/revogar/:id"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/anexos/:id"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/materias/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/avaliacoes-v2"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/aulas/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/faltas/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/aulas/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/faltas/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/materias/:id?"
+    },
+    {
+      "method": "POST",
+      "route": "/api/recuperar-senha"
+    },
+    {
+      "method": "POST",
+      "route": "/api/redefinir-senha"
+    },
+    {
+      "method": "GET",
+      "route": "/api/correios/rastreio/:codigo"
+    },
+    {
+      "method": "GET",
+      "route": "/api/daily/rooms"
+    },
+    {
+      "method": "POST",
+      "route": "/api/daily/rooms"
+    },
+    {
+      "method": "POST",
+      "route": "/api/daily/rooms/:name/tokens"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/materias"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/anexos"
+    },
+    {
+      "method": "POST",
+      "route": "/professor/anexos"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/faltas/pendentes"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/professores"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/turmas"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/turmas"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/materias"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/materias"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/anexos/pendentes"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/anexos/:id/aprovar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/anexos/:id/reprovar"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/financeiro/usuarios"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/inscricoes-lista"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/decisao-inscricao"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/disciplinar/alunos"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/disciplinar/casos"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/suprema/painel"
+    },
+    {
+      "method": "POST",
+      "route": "/api/loja/clientes/cadastro-rapido"
+    },
+    {
+      "method": "POST",
+      "route": "/api/bootstrap/fundadores"
+    },
+    {
+      "method": "POST",
+      "route": "/concluir-cadastro"
+    },
+    {
+      "method": "POST",
+      "route": "/inscricao"
+    },
+    {
+      "method": "GET",
+      "route": "/ti/webhooks/mercadopago/resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/ti/saude"
+    },
+    {
+      "method": "GET",
+      "route": "/ti/manutencoes/ativas"
+    },
+    {
+      "method": "POST",
+      "route": "/ti/manutencoes/pause-global"
+    },
+    {
+      "method": "POST",
+      "route": "/ti/manutencoes"
+    },
+    {
+      "method": "POST",
+      "route": "/ti/manutencoes/:id/encerrar"
+    },
+    {
+      "method": "GET",
+      "route": "/manutencao/status"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/criar-login"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/usuarios-resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/api/status"
+    }
+  ],
+  "html_links": [
+    {
+      "file": "frontend/html/acessibilidade-e-inclusao.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard.html",
+        "./biblioteca.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/acompanhamento.html",
+      "links": [
+        "/css/estilos.css",
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "../../index.html",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/admin-biblioteca.html",
+      "links": [
+        "./style-login-loja.css",
+        "/biblioteca",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/admin-financeiro.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/admin-inscricoes-ordem.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./area-adm-1.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/admin-loja-produtos.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "./area-adm-1.html",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/admin-pos-venda.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login-ti?next=/admin/pos-venda",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/agenda.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "${esc(e.foto_url)}",
+        "${esc(l)}",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/alterar-senha.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/aprovacao-de-registro.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "/dashboard-ti",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/aprovacao-financeira.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/admin/master",
+        "/dashboard",
+        "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-adm-1.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "#resumo",
+        "#pendencias",
+        "#suprema",
+        "#rastreio",
+        "#disciplinar",
+        "/admin-inscricoes-ordem",
+        "/area-professor-anexos",
+        "/admin/aprovacao-registro",
+        "/admin-financeiro",
+        "/aprovacao-financeira",
+        "/area-financeira-adm",
+        "/gerar-descontos",
+        "/admin/operacoes-avancadas",
+        "/area-mentores",
+        "/dashboard-ti",
+        "/area-anexar-arquivos",
+        "/reembolso-e-logistica",
+        "/admin/operacoes-avancadas#loja",
+        "/admin-loja-produtos",
+        "/admin-biblioteca",
+        "/admin/financeiro",
+        "/admin/anexos",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-adm-2.html",
+      "links": [
+        "../css/app-shell.css",
+        "/admin-loja-produtos",
+        "/admin/pos-venda",
+        "/lojista/financeiro",
+        "../js/runtime-api.js",
+        "/login?next=/admin/operacoes-avancadas",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-anexar-arquivos.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/admin/master",
+        "/professor/area-anexos",
+        "${item.arquivo_url}",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-financeira-adm.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/admin/master",
+        "/dashboard",
+        "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-financeira-aluno.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/dashboard",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-matricula.html",
+      "links": [
+        "../js/runtime-api.js",
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-mentores.html",
+      "links": [
+        "../css/app-shell.css",
+        "/gestao-academica",
+        "../js/runtime-api.js",
+        "/login?next=/area-mentores",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-professor-anexos.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/dashboard",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/arquivos.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "/api/arquivos/${f.id}/download",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/assistente-aulas.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/biblioteca-livros.html",
+      "links": [
+        "./style-login-loja.css",
+        "${livro.url_acesso}",
+        "${livro.url_openlibrary}",
+        "${livro.url_google_books}",
+        "${livro.url_amazon}",
+        "${livro.url_mercado_livre}",
+        "${livro.url_fnac}",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/biblioteca.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard-aluno.html",
+        "./loja.html",
+        "../js/runtime-api.js",
+        "${item.url_recurso}",
+        "${item.url || ",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-fundadores-bootstrap.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "./login.html",
+        "./area-adm-1.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-loja-cliente.html",
+      "links": [
+        "../css/style-login-loja.css",
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "#",
+        "./login-loja-cliente.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-magos-n1.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-magos-n2.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-magos-n3.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-membros.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "./cadastro-neofitos.html",
+        "./cadastro-magos-n1.html",
+        "./cadastro-magos-n2.html",
+        "/cadastro-magos-n3",
+        "./cadastro-ti.html",
+        "./login.html",
+        "/",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-neofitos.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-produtos.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard-lojista.html",
+        "./loja.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadastro-ti.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadernos.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/carrinho-de-compra.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./loja.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/central-operacoes.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard-lojista.html",
+        "./live-center.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/chat-alunos.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/chat-cliente.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/",
+        "/images/lojista-avatar.png",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/chat-loja.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/compra-aprovada.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard-cliente.html",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/compra-recusada.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./recolhimento-de-dados-de-pagamento.html",
+        "./loja.html",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/dados-primeiro-acesso.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/dashboard-TI.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./manutencao-ti.html",
+        "./aprovacao-de-registro.html",
+        "./ti-criar-login.html",
+        "./login.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/dashboard-aluno.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/grimorio",
+        "/diario",
+        "/financeiro/aluno",
+        "${item.arquivo_url}",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/dashboard-cliente-reembolso.html",
+      "links": [
+        "../css/app-shell.css",
+        "/cliente/resolucao",
+        "/dashboard-cliente",
+        "/reembolso-e-logistica",
+        "../js/runtime-api.js",
+        "/login/loja/cliente?next=/dashboard-cliente/reembolso",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/dashboard-cliente.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "/loja",
+        "/loja-checkout",
+        "/dashboard-cliente/reembolso",
+        "/cliente/resolucao",
+        "/chat-alunos",
+        "/chat-loja",
+        "/login/loja/cliente",
+        "/login/loja/lojista",
+        "../js/runtime-api.js",
+        "/login/loja/cliente?next=/dashboard-cliente",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/dashboard-lojista.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard.html",
+        "./cadastro-produtos.html",
+        "./lojista-financeiro.html",
+        "./loja.html",
+        "/chat-loja",
+        "./live-center.html",
+        "./dashboard-professor.html",
+        "./central-operacoes.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/dashboard-professor.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/professor/area-anexos",
+        "./live-center.html",
+        "./central-operacoes.html",
+        "/dashboard",
+        "/dashboard-aluno",
+        "/gestao-academica",
+        "../js/runtime-api.js",
+        "/dashboard-ti",
+        "${s.link_sala || ",
+        "${f.atestado_url}",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/diario.html",
+      "links": [
+        "../css/app-shell.css",
+        "/dashboard-aluno",
+        "/js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/esqueci-minha-senha.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/admin/master",
+        "/dashboard",
+        "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/financeiro-escolar.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/gerar-descontos.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/admin/master",
+        "/dashboard",
+        "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/gestao-academica.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login?next=/gestao-academica",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/grimorio-publico.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/grimorio.html",
+      "links": [
+        "../css/app-shell.css",
+        "/dashboard-aluno",
+        "/js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/importar-aulas.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/index.html",
+      "links": [
+        "/js/compat-legacy.js",
+        "/css/responsivo.css",
+        "/css/estilos.css",
+        "/css/app-shell.css",
+        "/manifest.webmanifest",
+        "frontend/img/ordo-caoti-icon.jpeg",
+        "./frontend/html/nosssos-mestres.html",
+        "./frontend/html/loja.html",
+        "./frontend/html/regras.html",
+        "./frontend/html/login.html",
+        "https://youtube.com/ordocaoti",
+        "https://www.instagram.com/ordocaoti/",
+        "./frontend/img/instagram-icon.png",
+        "https://www.tiktok.com/@ordo.caoti",
+        "https://img.icons8.com/sf-regular-filled/48/FAB005/tiktok.png",
+        "https://www.youtube.com/embed/hFQMyevCWyM",
+        "//www.instagram.com/embed.js",
+        "https://www.tiktok.com/@ordo.caoti?refer=embed",
+        "https://www.tiktok.com/embed.js",
+        "./frontend/html/cadastro-neofitos.html",
+        "./frontend/html/cadastro-magos-n1.html",
+        "./frontend/html/cadastro-magos-n2.html",
+        "/cadastro-magos-n3",
+        "./frontend/html/cadastro-mestres.html",
+        "/legal/politica-privacidade",
+        "/legal/termos-de-uso",
+        "/legal/acessibilidade",
+        "/js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/inscrição-finalizar.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/",
+        "/acompanhamento",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/live-center.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard-professor.html",
+        "./central-operacoes.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/login-loja-cliente.html",
+      "links": [
+        "../css/style-login-loja.css",
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "#",
+        "./cadastro-loja-cliente.html",
+        "./login-loja-lojista.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/login-loja-lojista.html",
+      "links": [
+        "../css/style-login-loja.css",
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "#",
+        "../html/cadastro-loja-cliente.html",
+        "./login-loja-cliente.html",
+        "../js/runtime-api.js",
+        "../js/compat-legacy.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/login-mentor.html",
+      "links": [
+        "../css/app-shell.css",
+        "/login",
+        "../js/runtime-api.js",
+        "/alterar-senha",
+        "/dados-primeiro-acesso",
+        "/dashboard-mentor"
+      ]
+    },
+    {
+      "file": "frontend/html/login-ti.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/cadastro-ti",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/login.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./login-loja-cliente.html",
+        "./login-loja-lojista.html",
+        "./login-ti.html",
+        "./manutencao-ti.html",
+        "./cadastro-fundadores-bootstrap.html",
+        "./cadastro-neofitos.html",
+        "./cadastro-magos-n1.html",
+        "./cadastro-magos-n2.html",
+        "/cadastro-magos-n3",
+        "./cadastro-ti.html",
+        "./biblioteca-livros.html",
+        "./regras.html",
+        "./redefinir-senha.html",
+        "./esqueci-minha-senha.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/logistica.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard-cliente.html",
+        "../img/ordo-caoti-icon.jpeg",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/loja-checkout.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/loja.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/style-login-loja.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "../../index.html",
+        "../img/ordo-caoti-icon.jpeg",
+        "./carrinho-de-compra.html",
+        "./login-loja-cliente.html",
+        "./login-loja-lojista.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/lojista-financeiro.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "/dashboard-lojista",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/manutencao-ti.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard-TI.html",
+        "./login.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/nosssos-mestres.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "../../index.html",
+        "../img/ordo-caoti-icon.jpeg",
+        "./nosssos-mestres.html",
+        "./loja.html",
+        "./registro.html",
+        "./login.html",
+        "../img/caiozanoni-profile.jpg",
+        "https://www.tiktok.com/@cai.omago?_r=1&_t=ZS-95N9q5zCByG",
+        "https://www.instagram.com/cai.omago?utm_source=qr&igsh=Nmt5MXY0ejNjMXEz",
+        "https://via.placeholder.com/150",
+        "#",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/offline.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/painel-operacional.html",
+      "links": [
+        "/admin/master",
+        "/dashboard-ti",
+        "/admin/financeiro",
+        "/admin/loja/produtos",
+        "/loja",
+        "/lojista/produtos",
+        "/loja/reembolso-e-logistica",
+        "/logistica/rastreio",
+        "/acompanhamento",
+        "/registro",
+        "/dashboard-aluno",
+        "/dashboard-professor",
+        "/api/ops/resumo",
+        "/api/ops/estoque",
+        "/api/ops/metas-vendas",
+        "/api/compatibilidade",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/politica-de-privacidade.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/legal/termos-de-uso",
+        "/legal/acessibilidade",
+        "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/rastreio-correios.html",
+      "links": [
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/recolhimento-de-dados-de-pagamento.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./carrinho-de-compra.html",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/recolhimento-de-dados.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "https://www.mercadopago.com.br/checkout/v1/payment/redirect/b69eaa74-6372-451e-a45c-ceda3490f269/payment-option-form/?source=link&preference-id=21821894-701bb189-869c-4c5d-ba33-38ea1a9d3f20&router-request-id=53e569b3-c1ff-4f54-84f6-2e5e41eceda5&p=a2df17010e89426cac8e38a0f4f491ba",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/recuperar-senha.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./login.html",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/redefinir-senha.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./login.html",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/reembolso-e-logistica.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "./dashboard-cliente.html",
+        "./logistica.html",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/regras.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/legal/politica-privacidade",
+        "/legal/termos-de-uso",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/resolucao-vendas.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login/loja/cliente?next=/cliente/resolucao",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/reunioes-daily.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../css/site-global.css",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/solicitar-acesso.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/termos-de-uso.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../manifest.webmanifest",
+        "/legal/politica-privacidade",
+        "/legal/acessibilidade",
+        "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/ti-criar-login.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "/dashboard-ti",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    }
+  ]
+}
