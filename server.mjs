@@ -139,6 +139,7 @@ const protectedUserHtmlRoutes = new Map([
   ['/importar-aulas', 'importar-aulas.html'],
   ['/assistente-aulas', 'assistente-aulas.html'],
   ['/gestao-academica', 'gestao-academica.html'],
+  ['/area-mentores', 'area-mentores.html'],
   ['/live-center', 'live-center.html'],
   ['/financeiro-escolar', 'financeiro-escolar.html'],
   ['/area-financeira-aluno', 'area-financeira-aluno.html'],
@@ -2316,6 +2317,12 @@ app.get('/aluno/materias/:id?', authenticateRequest, async(req,res)=>{await ensu
 app.post('/api/recuperar-senha', async(req,res)=>{await ensureAuthSchema();const email=normalizeEmail(req.body?.email);const {rows}=await pool.query('SELECT id FROM usuarios WHERE lower(email)=lower($1) LIMIT 1',[email]);if(rows.length){const token=crypto.randomUUID();await pool.query('INSERT INTO recuperacao_senhas (usuario_id,token_hash,expira_em) VALUES ($1,$2,NOW()+INTERVAL \'1 hour\')',[rows[0].id,hashPassword(token)]);console.info(`Password reset requested for ${email}`);}res.json({ok:true,mensagem:'Se o e-mail estiver cadastrado, as instruções de recuperação foram registradas.'});});
 app.post('/api/redefinir-senha', async(req,res)=>{const token=String(req.body?.token||'');const nova=String(req.body?.novaSenha||req.body?.nova_senha||'');if(nova.length<6)return res.status(400).json({erro:'A nova senha precisa ter pelo menos 6 caracteres.'});const {rows}=await pool.query('SELECT * FROM recuperacao_senhas WHERE token_hash=$1 AND usado_em IS NULL AND expira_em>NOW() ORDER BY id DESC LIMIT 1',[hashPassword(token)]);if(!rows.length)return res.status(400).json({erro:'Código inválido ou expirado.'});await pool.query('UPDATE usuarios SET senha_hash=$2,must_change_password=false WHERE id=$1',[rows[0].usuario_id,hashPassword(nova)]);await pool.query('UPDATE recuperacao_senhas SET usado_em=NOW() WHERE id=$1',[rows[0].id]);res.json({ok:true});});
 app.get('/api/correios/rastreio/:codigo', authenticateRequest, async(req,res)=>res.json({ok:true,codigo:req.params.codigo.toUpperCase(),status:'consulta_indisponivel',mensagem:'Rastreio salvo. A integração com transportadora pode ser concluída quando disponível.'}));
+
+
+
+app.get('/api/daily/rooms', authenticateRequest, async (_req,res)=>{ await ensureCoreTables(); const {rows}=await pool.query("SELECT id,titulo,descricao,status,link_sala,inicio_previsto,fim_previsto FROM live_salas WHERE provider='daily' ORDER BY criado_em DESC LIMIT 100"); res.json({ rooms: rows.map(r=>({ name:`sala-${r.id}`, title:r.titulo, ...r })), fallback_interno: !process.env.DAILY_API_KEY }); });
+app.post('/api/daily/rooms', authenticateRequest, requireTeacherMentorMaster, async (req,res)=>{ await ensureCoreTables(); const {rows}=await pool.query("INSERT INTO live_salas (titulo,descricao,professor_id,provider,status,link_sala,inicio_previsto) VALUES ($1,$2,$3,'daily','agendada',$4,NOW()) RETURNING *",[req.body?.title||req.body?.name||'Sala ao vivo',req.body?.descricao||null,req.user.id,`/live/sala/${crypto.randomUUID()}`]); res.status(201).json({ok:true,room:{name:`sala-${rows[0].id}`,title:rows[0].titulo,link_sala:rows[0].link_sala},fallback_interno:!process.env.DAILY_API_KEY}); });
+app.post('/api/daily/rooms/:name/tokens', authenticateRequest, async (req,res)=>res.json({ok:true,token:null,room:req.params.name,fallback_interno:true,link_sala:`/live/sala/${encodeURIComponent(req.params.name)}`,mensagem:'Use o link interno quando Daily não estiver configurado.'}));
 
 
 app.get('/professor/materias', authenticateRequest, async (_req, res) => { if (!pool) return res.json([]); await ensureCoreTables(); const { rows } = await pool.query('SELECT * FROM materias WHERE ativo=true ORDER BY id DESC'); res.json(rows); });
