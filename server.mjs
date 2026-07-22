@@ -87,17 +87,29 @@ const htmlRoutes = new Map([
   ['/redefinir-senha', 'redefinir-senha.html'],
   ['/alterar-senha', 'alterar-senha.html'],
   ['/primeiro-acesso', 'alterar-senha.html'],
+  ['/regras', 'regras.html'],
+  ['/loja', 'loja.html'],
+]);
+
+app.get([...htmlRoutes.keys()], (req, res) => sendHtml(res, htmlRoutes.get(req.path)));
+
+
+const protectedUserHtmlRoutes = new Map([
   ['/dashboard', 'dashboard-aluno.html'],
   ['/dashboard-aluno', 'dashboard-aluno.html'],
+  ['/dashboard-neofito', 'dashboard-aluno.html'],
+  ['/dashboard-mago-n1', 'dashboard-aluno.html'],
+  ['/dashboard-mago-n2', 'dashboard-aluno.html'],
+  ['/dashboard-mago-n3', 'dashboard-aluno.html'],
   ['/dashboard-professor', 'dashboard-professor.html'],
+  ['/dashboard-mentor', 'dashboard-professor.html'],
   ['/dashboard-cliente', 'dashboard-cliente.html'],
   ['/dashboard-cliente/reembolso', 'dashboard-cliente-reembolso.html'],
   ['/cliente/reembolso', 'dashboard-cliente-reembolso.html'],
   ['/dashboard-lojista', 'dashboard-lojista.html'],
   ['/lojista/financeiro', 'lojista-financeiro.html'],
-  ['/regras', 'regras.html'],
-  ['/loja', 'loja.html'],
   ['/biblioteca', 'biblioteca-livros.html'],
+  ['/biblioteca-livros', 'biblioteca-livros.html'],
   ['/diario', 'diario.html'],
   ['/grimorio', 'grimorio.html'],
   ['/grimorio-publico', 'grimorio-publico.html'],
@@ -105,9 +117,11 @@ const htmlRoutes = new Map([
   ['/arquivos', 'arquivos.html'],
   ['/dados-primeiro-acesso', 'dados-primeiro-acesso.html'],
   ['/aulas', 'live-center.html'],
+  ['/live-center', 'live-center.html'],
+  ['/financeiro-escolar', 'financeiro-escolar.html'],
+  ['/area-financeira-aluno', 'area-financeira-aluno.html'],
+  ['/loja-checkout', 'loja-checkout.html'],
 ]);
-
-app.get([...htmlRoutes.keys()], (req, res) => sendHtml(res, htmlRoutes.get(req.path)));
 
 
 const protectedTiHtmlRoutes = new Map([
@@ -546,6 +560,19 @@ async function verifyActiveUserFromRequest(req) {
   return user;
 }
 
+
+async function requireUserPage(req, res, next) {
+  try {
+    await ensureAuthSchema();
+    const user = await verifyActiveUserFromRequest(req);
+    if (!user) return res.redirect('/login');
+    req.user = user;
+    next();
+  } catch (_error) {
+    return res.redirect('/login');
+  }
+}
+
 async function requireTiPage(req, res, next) {
   try {
     await ensureAuthSchema();
@@ -559,6 +586,8 @@ async function requireTiPage(req, res, next) {
     return res.redirect('/login-ti');
   }
 }
+
+app.get([...protectedUserHtmlRoutes.keys()], requireUserPage, (req, res) => sendHtml(res, protectedUserHtmlRoutes.get(req.path)));
 
 app.get([...protectedTiHtmlRoutes.keys()], requireTiPage, (req, res) => sendHtml(res, protectedTiHtmlRoutes.get(req.path)));
 
@@ -792,6 +821,9 @@ async function ensureCoreTables() {
   if (!pool) return;
   await ensureAuthSchema();
   await pool.query(`CREATE TABLE IF NOT EXISTS produtos (id SERIAL PRIMARY KEY, nome TEXT NOT NULL, descricao TEXT, preco NUMERIC(12,2) NOT NULL DEFAULT 0, tipo TEXT DEFAULT 'digital', estoque INTEGER DEFAULT 0, ativo BOOLEAN DEFAULT true, vendedor_id INTEGER, deleted_at TIMESTAMPTZ, data_criacao TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS categoria TEXT DEFAULT 'loja'`);
+  await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS politica_entrega TEXT`);
+  await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS fiscal_metadata JSONB DEFAULT '{}'::jsonb`);
   await pool.query(`CREATE TABLE IF NOT EXISTS marketplace_publicacoes (id SERIAL PRIMARY KEY, produto_id INTEGER, lojista_id INTEGER, canal TEXT NOT NULL, status TEXT DEFAULT 'rascunho', checkout_url TEXT, payload JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS lojista_saldos (lojista_id INTEGER PRIMARY KEY, saldo_disponivel NUMERIC(12,2) DEFAULT 0, saldo_pendente NUMERIC(12,2) DEFAULT 0, atualizado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS repasses_lojista (id SERIAL PRIMARY KEY, lojista_id INTEGER, valor NUMERIC(12,2) NOT NULL, metodo TEXT NOT NULL, destino TEXT, status TEXT DEFAULT 'pendente', criado_em TIMESTAMPTZ DEFAULT NOW(), processado_em TIMESTAMPTZ)`);
@@ -823,6 +855,13 @@ async function ensureCoreTables() {
   await pool.query(`CREATE TABLE IF NOT EXISTS grimorio_publico (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, titulo TEXT NOT NULL, tipo_registro TEXT DEFAULT 'estudo', conteudo_texto TEXT NOT NULL, tags JSONB DEFAULT '[]'::jsonb, status TEXT DEFAULT 'publicado', criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS arquivos_nuvem (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, nome_original TEXT NOT NULL, mime_type TEXT, tamanho_bytes INTEGER DEFAULT 0, storage_provider TEXT DEFAULT 'postgres_fallback', storage_key TEXT, conteudo_base64 TEXT, publico BOOLEAN DEFAULT false, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`INSERT INTO chat_canais (codigo,nome,escopo) VALUES ('alunos-geral','Chat geral de alunos','alunos') ON CONFLICT (codigo) DO NOTHING`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_contratos (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, tipo TEXT NOT NULL DEFAULT 'mensalidade', status TEXT DEFAULT 'ativo', valor_base NUMERIC(12,2) NOT NULL DEFAULT 0, dia_vencimento INTEGER DEFAULT 10, recorrencia TEXT DEFAULT 'mensal', inicio_em DATE DEFAULT CURRENT_DATE, fim_em DATE, metadata JSONB DEFAULT '{}'::jsonb, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_bolsas_descontos (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, contrato_id INTEGER REFERENCES financeiro_contratos(id) ON DELETE SET NULL, tipo TEXT NOT NULL DEFAULT 'desconto', descricao TEXT, percentual NUMERIC(6,2), valor NUMERIC(12,2), inicio_em DATE DEFAULT CURRENT_DATE, fim_em DATE, status TEXT DEFAULT 'ativo', criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_cobrancas (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, contrato_id INTEGER REFERENCES financeiro_contratos(id) ON DELETE SET NULL, pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL, origem TEXT DEFAULT 'manual', descricao TEXT NOT NULL, valor_original NUMERIC(12,2) NOT NULL DEFAULT 0, valor_desconto NUMERIC(12,2) NOT NULL DEFAULT 0, valor_final NUMERIC(12,2) NOT NULL DEFAULT 0, vencimento DATE NOT NULL, status TEXT DEFAULT 'aberta', serasa_status TEXT DEFAULT 'nao_elegivel', notificacoes_count INTEGER DEFAULT 0, metadata JSONB DEFAULT '{}'::jsonb, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_boletos (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE, linha_digitavel TEXT NOT NULL, codigo_barras TEXT NOT NULL, nosso_numero TEXT NOT NULL, valor NUMERIC(12,2) NOT NULL, vencimento DATE NOT NULL, status TEXT DEFAULT 'emitido', criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_pagamentos (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE SET NULL, pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, metodo TEXT NOT NULL DEFAULT 'interno', valor NUMERIC(12,2) NOT NULL DEFAULT 0, status TEXT DEFAULT 'pendente', referencia TEXT, comprovante_url TEXT, metadata JSONB DEFAULT '{}'::jsonb, pago_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_notificacoes (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, canal TEXT DEFAULT 'interno', tipo TEXT DEFAULT 'vencimento', mensagem TEXT NOT NULL, status TEXT DEFAULT 'pendente', agendada_para TIMESTAMPTZ DEFAULT NOW(), enviada_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_negativacao_eventos (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, status TEXT DEFAULT 'preparado', motivo TEXT, payload JSONB DEFAULT '{}'::jsonb, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`INSERT INTO biblioteca_temas (nome, ordem_exibicao) VALUES ('Fundamentos', 1), ('Magia do Caos', 2), ('Grimório', 3) ON CONFLICT (nome) DO NOTHING`);
 }
 
@@ -1102,6 +1141,158 @@ app.post('/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
+
+function money(value) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) ? Math.max(0, Math.round(n * 100) / 100) : 0;
+}
+function internalBoleto(cobranca) {
+  const id = String(cobranca.id || Date.now()).padStart(8, '0');
+  const value = String(Math.round(money(cobranca.valor_final) * 100)).padStart(10, '0');
+  const due = String(cobranca.vencimento || '').replace(/\D/g, '').slice(0, 8).padEnd(8, '0');
+  const nossoNumero = `OC${id}`;
+  return {
+    nosso_numero: nossoNumero,
+    codigo_barras: `23790${id}${due}${value}`,
+    linha_digitavel: `23790.0000${id.slice(-4)} ${due.slice(0,4)}.${due.slice(4)} ${value.slice(0,5)}.${value.slice(5)} 1 ${value}`
+  };
+}
+async function financialDiscountFor(usuarioId, contratoId, valorBase) {
+  const { rows } = await pool.query(
+    `SELECT * FROM financeiro_bolsas_descontos
+     WHERE usuario_id=$1 AND status='ativo' AND ($2::int IS NULL OR contrato_id IS NULL OR contrato_id=$2)
+       AND (fim_em IS NULL OR fim_em >= CURRENT_DATE)
+     ORDER BY criado_em DESC`,
+    [usuarioId, contratoId || null]
+  );
+  return rows.reduce((total, item) => total + (item.percentual ? money(valorBase) * Number(item.percentual) / 100 : money(item.valor)), 0);
+}
+async function createCharge({ usuarioId, contratoId = null, pedidoId = null, origem = 'manual', descricao, valor, vencimento, metadata = {}, criadoPor = null }) {
+  const desconto = contratoId ? await financialDiscountFor(usuarioId, contratoId, valor) : 0;
+  const finalValue = Math.max(0, money(valor) - money(desconto));
+  const { rows } = await pool.query(
+    `INSERT INTO financeiro_cobrancas (usuario_id, contrato_id, pedido_id, origem, descricao, valor_original, valor_desconto, valor_final, vencimento, metadata, criado_por)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11) RETURNING *`,
+    [usuarioId, contratoId, pedidoId, origem, descricao, money(valor), money(desconto), finalValue, vencimento, JSON.stringify(metadata || {}), criadoPor]
+  );
+  const cobranca = rows[0];
+  const boleto = internalBoleto(cobranca);
+  await pool.query(
+    `INSERT INTO financeiro_boletos (cobranca_id, linha_digitavel, codigo_barras, nosso_numero, valor, vencimento)
+     VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING`,
+    [cobranca.id, boleto.linha_digitavel, boleto.codigo_barras, boleto.nosso_numero, cobranca.valor_final, cobranca.vencimento]
+  ).catch(() => {});
+  await pool.query(
+    `INSERT INTO financeiro_notificacoes (cobranca_id, usuario_id, canal, tipo, mensagem, agendada_para)
+     VALUES ($1,$2,'interno','vencimento',$3,($4::date - INTERVAL '3 days')),($1,$2,'interno','vencimento',$5,$4::date),($1,$2,'interno','atraso',$6,($4::date + INTERVAL '7 days'))`,
+    [cobranca.id, usuarioId, `Lembrete: ${descricao} vence em ${vencimento}.`, `Pagamento vence hoje: ${descricao}.`, `Pagamento em atraso: ${descricao}.`, vencimento]
+  ).catch(() => {});
+  return cobranca;
+}
+
+app.post('/admin/financeiro/contratos', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const usuarioId = Number(req.body?.usuario_id);
+  if (!usuarioId) return res.status(400).json({ erro: 'usuario_id obrigatório.' });
+  const { rows } = await pool.query(
+    `INSERT INTO financeiro_contratos (usuario_id,tipo,status,valor_base,dia_vencimento,recorrencia,inicio_em,fim_em,metadata,criado_por)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10) RETURNING *`,
+    [usuarioId, req.body?.tipo || 'mensalidade', req.body?.status || 'ativo', money(req.body?.valor_base), Number(req.body?.dia_vencimento || 10), req.body?.recorrencia || 'mensal', req.body?.inicio_em || new Date().toISOString().slice(0,10), req.body?.fim_em || null, JSON.stringify(req.body?.metadata || {}), req.user.id]
+  );
+  await auditEvent(req, 'financial_contract_created', 'usuario', usuarioId, { contrato_id: rows[0].id });
+  res.status(201).json({ ok: true, contrato: rows[0] });
+});
+
+app.post('/admin/financeiro/bolsas-descontos', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const usuarioId = Number(req.body?.usuario_id);
+  if (!usuarioId) return res.status(400).json({ erro: 'usuario_id obrigatório.' });
+  const { rows } = await pool.query(
+    `INSERT INTO financeiro_bolsas_descontos (usuario_id,contrato_id,tipo,descricao,percentual,valor,inicio_em,fim_em,status,criado_por)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+    [usuarioId, req.body?.contrato_id || null, req.body?.tipo || 'desconto', req.body?.descricao || null, req.body?.percentual ?? null, req.body?.valor ?? null, req.body?.inicio_em || new Date().toISOString().slice(0,10), req.body?.fim_em || null, req.body?.status || 'ativo', req.user.id]
+  );
+  await auditEvent(req, 'scholarship_discount_saved', 'usuario', usuarioId, { desconto_id: rows[0].id });
+  res.status(201).json({ ok: true, desconto: rows[0] });
+});
+
+app.post('/admin/financeiro/cobrancas', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const usuarioId = Number(req.body?.usuario_id);
+  if (!usuarioId || !req.body?.descricao || !req.body?.vencimento) return res.status(400).json({ erro: 'usuario_id, descricao e vencimento são obrigatórios.' });
+  const cobranca = await createCharge({ usuarioId, contratoId: req.body?.contrato_id || null, origem: req.body?.origem || 'manual', descricao: req.body.descricao, valor: req.body?.valor, vencimento: req.body.vencimento, metadata: req.body?.metadata || {}, criadoPor: req.user.id });
+  await auditEvent(req, 'charge_created', 'usuario', usuarioId, { cobranca_id: cobranca.id });
+  res.status(201).json({ ok: true, cobranca });
+});
+
+app.post('/admin/financeiro/gerar-mensalidades', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const competencia = String(req.body?.competencia || new Date().toISOString().slice(0,7));
+  const { rows: contratos } = await pool.query("SELECT * FROM financeiro_contratos WHERE status='ativo' AND tipo='mensalidade'");
+  const criadas = [];
+  for (const contrato of contratos) {
+    const due = `${competencia}-${String(contrato.dia_vencimento || 10).padStart(2,'0')}`;
+    const exists = await pool.query("SELECT id FROM financeiro_cobrancas WHERE contrato_id=$1 AND metadata->>'competencia'=$2 LIMIT 1", [contrato.id, competencia]);
+    if (exists.rows.length) continue;
+    criadas.push(await createCharge({ usuarioId: contrato.usuario_id, contratoId: contrato.id, origem: 'mensalidade', descricao: `Mensalidade ${competencia}`, valor: contrato.valor_base, vencimento: due, metadata: { competencia }, criadoPor: req.user.id }));
+  }
+  await auditEvent(req, 'monthly_charges_generated', 'financeiro', competencia, { total: criadas.length });
+  res.json({ ok: true, competencia, criadas });
+});
+
+app.get('/financeiro/cobrancas', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const isAdmin = ['admin','ti'].includes(String(req.user.tipo_usuario).toLowerCase());
+  const usuarioId = isAdmin && req.query?.usuario_id ? Number(req.query.usuario_id) : req.user.id;
+  const { rows } = await pool.query(`SELECT c.*, b.linha_digitavel, b.codigo_barras, b.nosso_numero FROM financeiro_cobrancas c LEFT JOIN financeiro_boletos b ON b.cobranca_id=c.id WHERE c.usuario_id=$1 ORDER BY c.vencimento DESC LIMIT 200`, [usuarioId]);
+  res.json(rows);
+});
+
+app.post('/financeiro/cobrancas/:id/pagar-interno', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const id = Number(req.params.id);
+  const charge = await pool.query('SELECT * FROM financeiro_cobrancas WHERE id=$1', [id]);
+  const cobranca = charge.rows[0];
+  if (!cobranca) return res.status(404).json({ erro: 'Cobrança não encontrada.' });
+  if (cobranca.usuario_id !== req.user.id && !['admin','ti'].includes(req.user.tipo_usuario)) return res.status(403).json({ erro: 'Cobrança restrita.' });
+  const { rows } = await pool.query('INSERT INTO financeiro_pagamentos (cobranca_id,usuario_id,metodo,valor,status,referencia,metadata,pago_em) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,NOW()) RETURNING *', [id, cobranca.usuario_id, req.body?.metodo || 'interno', money(req.body?.valor || cobranca.valor_final), req.body?.status || 'confirmado', req.body?.referencia || crypto.randomUUID(), JSON.stringify(req.body?.metadata || {})]);
+  await pool.query("UPDATE financeiro_cobrancas SET status='paga' WHERE id=$1", [id]);
+  await auditEvent(req, 'internal_payment_registered', 'cobranca', id);
+  res.status(201).json({ ok: true, pagamento: rows[0] });
+});
+
+app.post('/admin/financeiro/notificacoes/processar', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query("UPDATE financeiro_notificacoes SET status='enviada', enviada_em=NOW() WHERE status='pendente' AND agendada_para <= NOW() RETURNING *");
+  for (const row of rows) await pool.query('UPDATE financeiro_cobrancas SET notificacoes_count=notificacoes_count+1 WHERE id=$1', [row.cobranca_id]).catch(() => {});
+  res.json({ ok: true, enviadas: rows });
+});
+
+app.post('/admin/financeiro/cobrancas/:id/preparar-negativacao', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const id = Number(req.params.id);
+  const { rows } = await pool.query("SELECT * FROM financeiro_cobrancas WHERE id=$1 AND status <> 'paga'", [id]);
+  const cobranca = rows[0];
+  if (!cobranca) return res.status(404).json({ erro: 'Cobrança aberta não encontrada.' });
+  if (Number(cobranca.notificacoes_count || 0) < 3) return res.status(409).json({ erro: 'Negativação bloqueada: envie e registre pelo menos 3 notificações prévias.' });
+  const payload = { cobranca_id: id, usuario_id: cobranca.usuario_id, valor: cobranca.valor_final, vencimento: cobranca.vencimento, aviso: 'Payload interno para análise humana/jurídica antes de envio a birôs como Serasa.' };
+  const event = await pool.query("INSERT INTO financeiro_negativacao_eventos (cobranca_id,usuario_id,status,motivo,payload,criado_por) VALUES ($1,$2,'preparado',$3,$4::jsonb,$5) RETURNING *", [id, cobranca.usuario_id, req.body?.motivo || 'inadimplencia_notificada', JSON.stringify(payload), req.user.id]);
+  await pool.query("UPDATE financeiro_cobrancas SET serasa_status='preparado' WHERE id=$1", [id]);
+  await auditEvent(req, 'debt_collection_prepared', 'cobranca', id);
+  res.status(201).json({ ok: true, evento: event.rows[0], payload });
+});
+
+app.get('/admin/financeiro/resumo', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const [cobrancas, pagamentos, contratos, descontos] = await Promise.all([
+    pool.query("SELECT status, COUNT(*)::int total, COALESCE(SUM(valor_final),0)::numeric valor FROM financeiro_cobrancas GROUP BY status"),
+    pool.query("SELECT status, COUNT(*)::int total, COALESCE(SUM(valor),0)::numeric valor FROM financeiro_pagamentos GROUP BY status"),
+    pool.query("SELECT COUNT(*)::int total FROM financeiro_contratos WHERE status='ativo'"),
+    pool.query("SELECT COUNT(*)::int total FROM financeiro_bolsas_descontos WHERE status='ativo'")
+  ]);
+  res.json({ ok: true, cobrancas: cobrancas.rows, pagamentos: pagamentos.rows, contratos_ativos: contratos.rows[0]?.total || 0, bolsas_descontos_ativos: descontos.rows[0]?.total || 0 });
+});
+
 app.get('/produtos', async (_req, res) => {
   if (!pool) return noDbFallback(res, { produtos: [], message: 'Banco offline; catálogo vazio.' });
   try {
@@ -1119,9 +1310,17 @@ app.post('/loja/checkout', authenticateRequest, async (req, res) => {
   if (!pool) return noDbFallback(res, { pedido_id: 0, status: 'pendente' });
   try {
     await ensureCoreTables();
-    const total = Number(req.body?.total || req.body?.valor || 0);
-    const result = await pool.query('INSERT INTO pedidos (usuario_id, descricao, total, status, metadata) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *', [req.user.id, 'Checkout Ordo Caoti', total, 'pendente', JSON.stringify(req.body || {})]);
-    res.status(201).json({ ok: true, pedido_id: result.rows[0].id, pedido: result.rows[0], mercado_pago: { configured: Boolean(process.env.MERCADO_PAGO_ACCESS_TOKEN) } });
+    const itens = Array.isArray(req.body?.itens) ? req.body.itens : [];
+    const total = money(req.body?.total || req.body?.valor || itens.reduce((sum, item) => sum + Number(item.preco || item.valor || 0) * Number(item.quantidade || 1), 0));
+    const metodo = String(req.body?.metodo || 'boleto_interno').toLowerCase();
+    const pedido = await pool.query(
+      'INSERT INTO pedidos (usuario_id, descricao, total, status, metadata) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *',
+      [req.user.id, req.body?.descricao || 'Checkout Ordo Caoti', total, 'aguardando_pagamento', JSON.stringify({ ...req.body, conformidade: { politica: 'estrutura interna; validar emissão fiscal e termos antes de produção' } })]
+    );
+    const vencimento = req.body?.vencimento || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0,10);
+    const cobranca = await createCharge({ usuarioId: req.user.id, pedidoId: pedido.rows[0].id, origem: 'loja', descricao: `Pedido loja #${pedido.rows[0].id}`, valor: total, vencimento, metadata: { metodo, itens }, criadoPor: req.user.id });
+    await auditEvent(req, 'store_checkout_created', 'pedido', pedido.rows[0].id, { total, metodo });
+    res.status(201).json({ ok: true, pedido_id: pedido.rows[0].id, pedido: pedido.rows[0], cobranca, pagamento_interno: { metodo, status: 'aguardando_pagamento' }, mercado_pago: { configured: Boolean(process.env.MERCADO_PAGO_ACCESS_TOKEN) } });
   } catch (error) { res.status(500).json({ erro: 'Falha no checkout.', detalhe: error.message }); }
 });
 
@@ -1575,9 +1774,9 @@ app.get('/api/status', async (_req, res) => {
 
 app.use((req, res) => {
   if (req.method === 'GET' && !req.path.startsWith('/api')) {
-    return res.status(200).sendFile(path.join(rootDir, 'index.html'));
+    return res.status(404).type('html').send(`<h1>Rota não encontrada</h1><p>${req.path}</p><p><a href="/">Voltar ao início</a></p>`);
   }
-  res.status(404).json({ erro: 'Rota não encontrada.', route: req.path, fallback: 'site-memory' });
+  res.status(404).json({ erro: 'Rota não encontrada.', route: req.path });
 });
 
 export default app;

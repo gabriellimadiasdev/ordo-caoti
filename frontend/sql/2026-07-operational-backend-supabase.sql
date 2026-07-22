@@ -205,3 +205,104 @@ CREATE TABLE IF NOT EXISTS arquivos_nuvem (
 INSERT INTO chat_canais (codigo, nome, escopo)
 VALUES ('alunos-geral', 'Chat geral de alunos', 'alunos')
 ON CONFLICT (codigo) DO NOTHING;
+
+-- Financeiro escolar e loja interna
+CREATE TABLE IF NOT EXISTS financeiro_contratos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL DEFAULT 'mensalidade',
+  status TEXT DEFAULT 'ativo',
+  valor_base NUMERIC(12,2) NOT NULL DEFAULT 0,
+  dia_vencimento INTEGER DEFAULT 10,
+  recorrencia TEXT DEFAULT 'mensal',
+  inicio_em DATE DEFAULT CURRENT_DATE,
+  fim_em DATE,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS financeiro_bolsas_descontos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  contrato_id INTEGER REFERENCES financeiro_contratos(id) ON DELETE SET NULL,
+  tipo TEXT NOT NULL DEFAULT 'desconto',
+  descricao TEXT,
+  percentual NUMERIC(6,2),
+  valor NUMERIC(12,2),
+  inicio_em DATE DEFAULT CURRENT_DATE,
+  fim_em DATE,
+  status TEXT DEFAULT 'ativo',
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS financeiro_cobrancas (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  contrato_id INTEGER REFERENCES financeiro_contratos(id) ON DELETE SET NULL,
+  pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL,
+  origem TEXT DEFAULT 'manual',
+  descricao TEXT NOT NULL,
+  valor_original NUMERIC(12,2) NOT NULL DEFAULT 0,
+  valor_desconto NUMERIC(12,2) NOT NULL DEFAULT 0,
+  valor_final NUMERIC(12,2) NOT NULL DEFAULT 0,
+  vencimento DATE NOT NULL,
+  status TEXT DEFAULT 'aberta',
+  serasa_status TEXT DEFAULT 'nao_elegivel',
+  notificacoes_count INTEGER DEFAULT 0,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS financeiro_boletos (
+  id SERIAL PRIMARY KEY,
+  cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE,
+  linha_digitavel TEXT NOT NULL,
+  codigo_barras TEXT NOT NULL,
+  nosso_numero TEXT NOT NULL,
+  valor NUMERIC(12,2) NOT NULL,
+  vencimento DATE NOT NULL,
+  status TEXT DEFAULT 'emitido',
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS financeiro_pagamentos (
+  id SERIAL PRIMARY KEY,
+  cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE SET NULL,
+  pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  metodo TEXT NOT NULL DEFAULT 'interno',
+  valor NUMERIC(12,2) NOT NULL DEFAULT 0,
+  status TEXT DEFAULT 'pendente',
+  referencia TEXT,
+  comprovante_url TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  pago_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS financeiro_notificacoes (
+  id SERIAL PRIMARY KEY,
+  cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  canal TEXT DEFAULT 'interno',
+  tipo TEXT DEFAULT 'vencimento',
+  mensagem TEXT NOT NULL,
+  status TEXT DEFAULT 'pendente',
+  agendada_para TIMESTAMPTZ DEFAULT NOW(),
+  enviada_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS financeiro_negativacao_eventos (
+  id SERIAL PRIMARY KEY,
+  cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'preparado',
+  motivo TEXT,
+  payload JSONB DEFAULT '{}'::jsonb,
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);

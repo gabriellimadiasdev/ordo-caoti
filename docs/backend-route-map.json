@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-22T02:22:53.472Z",
-  "html_count": 70,
+  "generated_at": "2026-07-22T02:32:38.563Z",
+  "html_count": 72,
   "js_count": 15,
-  "routes_count": 120,
+  "routes_count": 129,
   "html_files": [
     "frontend/html/acessibilidade-e-inclusao.html",
     "frontend/html/acompanhamento.html",
@@ -45,6 +45,7 @@
     "frontend/html/dashboard-professor.html",
     "frontend/html/diario.html",
     "frontend/html/esqueci-minha-senha.html",
+    "frontend/html/financeiro-escolar.html",
     "frontend/html/gerar-descontos.html",
     "frontend/html/grimorio-publico.html",
     "frontend/html/grimorio.html",
@@ -56,6 +57,7 @@
     "frontend/html/login-ti.html",
     "frontend/html/login.html",
     "frontend/html/logistica.html",
+    "frontend/html/loja-checkout.html",
     "frontend/html/loja.html",
     "frontend/html/lojista-financeiro.html",
     "frontend/html/manutencao-ti.html",
@@ -272,6 +274,42 @@
     {
       "method": "POST",
       "route": "/logout"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/contratos"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/bolsas-descontos"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/cobrancas"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/gerar-mensalidades"
+    },
+    {
+      "method": "GET",
+      "route": "/financeiro/cobrancas"
+    },
+    {
+      "method": "POST",
+      "route": "/financeiro/cobrancas/:id/pagar-interno"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/notificacoes/processar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/cobrancas/:id/preparar-negativacao"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/financeiro/resumo"
     },
     {
       "method": "GET",
@@ -1126,6 +1164,14 @@
       ]
     },
     {
+      "file": "frontend/html/financeiro-escolar.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login"
+      ]
+    },
+    {
       "file": "frontend/html/gerar-descontos.html",
       "links": [
         "../css/responsivo.css",
@@ -1286,6 +1332,15 @@
         "./dashboard-cliente.html",
         "../img/ordo-caoti-icon.jpeg",
         "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/loja-checkout.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "/loja/checkout"
       ]
     },
     {
