@@ -23,7 +23,7 @@
         <div class="grid">
           <div>
             <label for="tipo">Tipo principal</label>
-            <select id="tipo"><option value="aluno">Membro/Aluno</option><option value="cliente">Cliente</option><option value="lojista">Lojista</option><option value="professor">Professor</option><option value="admin">Admin/Mestre</option><option value="ti">T.I.</option></select>
+            <select id="tipo"><option value="aluno">Membro/Aluno</option><option value="cliente">Cliente</option><option value="lojista">Lojista</option><option value="professor">Professor</option><option value="mentor">Mentor/Professor</option><option value="admin">Admin/Mestre</option><option value="ti">T.I.</option></select>
           </div>
           <div>
             <label for="nivel">Hierarquia acadêmica</label>
@@ -42,6 +42,7 @@
           <label><input type="checkbox" value="mestre_fundador"> Mestre</label>
           <label><input type="checkbox" value="lojista"> Lojista</label>
           <label><input type="checkbox" value="professor"> Professor</label>
+          <label><input type="checkbox" value="mentor"> Mentor</label>
           <label><input type="checkbox" value="admin"> Admin</label>
           <label><input type="checkbox" value="ti"> T.I.</label>
         </div>
@@ -70,6 +71,7 @@
       if (t === 'cliente') defaults.add('cliente');
       if (t === 'lojista') defaults.add('lojista');
       if (t === 'professor') defaults.add('professor');
+      if (t === 'mentor') { defaults.add('mentor'); defaults.add('professor'); }
       if (t === 'admin') { defaults.add('admin'); defaults.add('ti'); defaults.add('mestre_fundador'); }
       if (t === 'ti') { defaults.add('ti'); defaults.add('neofito'); defaults.add('mago_n1'); }
       const hierarchy = ['neofito','mago_n1','mago_n2','mago_n3','mestre_fundador'];

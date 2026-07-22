@@ -1,0 +1,207 @@
+-- Ordo Caoti operational backend schema for Supabase/Postgres
+-- Safe to run more than once. Secrets stay in Vercel/Supabase env vars, never in Git.
+
+CREATE TABLE IF NOT EXISTS usuarios (
+  id SERIAL PRIMARY KEY,
+  nome TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  senha_hash TEXT NOT NULL,
+  tipo_usuario VARCHAR(30) NOT NULL DEFAULT 'aluno',
+  ativo BOOLEAN NOT NULL DEFAULT true,
+  must_change_password BOOLEAN NOT NULL DEFAULT false,
+  cadastro_completo BOOLEAN NOT NULL DEFAULT false,
+  codigo_id TEXT UNIQUE,
+  data_cadastro TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS usuario_niveis (
+  usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+  nivel_codigo VARCHAR(30) NOT NULL DEFAULT 'neofito',
+  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS usuario_perfis (
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  perfil_codigo VARCHAR(30) NOT NULL,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (usuario_id, perfil_codigo)
+);
+
+CREATE TABLE IF NOT EXISTS auditoria_eventos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER,
+  acao TEXT NOT NULL,
+  alvo_tipo TEXT,
+  alvo_id TEXT,
+  ip_origem TEXT,
+  user_agent TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pessoa_dados_sensiveis (
+  usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+  cpf_token TEXT,
+  rg_token TEXT,
+  dados_criptografados TEXT NOT NULL,
+  atualizado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS turmas (
+  id SERIAL PRIMARY KEY,
+  codigo TEXT UNIQUE,
+  nome TEXT NOT NULL,
+  descricao TEXT,
+  ativo BOOLEAN DEFAULT true,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS materias (
+  id SERIAL PRIMARY KEY,
+  nome TEXT NOT NULL,
+  turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL,
+  professor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  tipo_materia TEXT DEFAULT 'obrigatoria',
+  ativo BOOLEAN DEFAULT true,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS aluno_matriculas (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL,
+  codigo_aluno TEXT UNIQUE,
+  status TEXT DEFAULT 'ativo',
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS materia_matriculas (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  materia_id INTEGER REFERENCES materias(id) ON DELETE CASCADE,
+  tipo TEXT DEFAULT 'obrigatoria',
+  status TEXT DEFAULT 'matriculado',
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(usuario_id, materia_id)
+);
+
+CREATE TABLE IF NOT EXISTS workshops (
+  id SERIAL PRIMARY KEY,
+  codigo TEXT UNIQUE,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  obrigatorio BOOLEAN DEFAULT false,
+  inicio_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS workshop_matriculas (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  workshop_id INTEGER REFERENCES workshops(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'matriculado',
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(usuario_id, workshop_id)
+);
+
+CREATE TABLE IF NOT EXISTS live_salas (
+  id SERIAL PRIMARY KEY,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL,
+  materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL,
+  professor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  provider TEXT DEFAULT 'internal',
+  status TEXT DEFAULT 'pendente',
+  link_sala TEXT,
+  inicio_previsto TIMESTAMPTZ,
+  fim_previsto TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS avaliacoes_alunos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL,
+  nota NUMERIC(5,2),
+  tipo TEXT DEFAULT 'avaliacao',
+  observacao TEXT,
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS presencas_alunos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL,
+  aula_id INTEGER REFERENCES live_salas(id) ON DELETE SET NULL,
+  presente BOOLEAN DEFAULT true,
+  justificativa TEXT,
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS gamificacao_eventos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL,
+  pontos INTEGER DEFAULT 0,
+  descricao TEXT,
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS disciplina_eventos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL,
+  descricao TEXT,
+  pontos INTEGER DEFAULT 0,
+  visivel_para_usuario BOOLEAN DEFAULT true,
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS chat_canais (
+  id SERIAL PRIMARY KEY,
+  codigo TEXT UNIQUE,
+  nome TEXT NOT NULL,
+  escopo TEXT DEFAULT 'alunos',
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS chat_mensagens (
+  id SERIAL PRIMARY KEY,
+  canal_id INTEGER REFERENCES chat_canais(id) ON DELETE CASCADE,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  mensagem TEXT NOT NULL,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS grimorio_publico (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  titulo TEXT NOT NULL,
+  tipo_registro TEXT DEFAULT 'estudo',
+  conteudo_texto TEXT NOT NULL,
+  tags JSONB DEFAULT '[]'::jsonb,
+  status TEXT DEFAULT 'publicado',
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS arquivos_nuvem (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  nome_original TEXT NOT NULL,
+  mime_type TEXT,
+  tamanho_bytes INTEGER DEFAULT 0,
+  storage_provider TEXT DEFAULT 'postgres_fallback',
+  storage_key TEXT,
+  conteudo_base64 TEXT,
+  publico BOOLEAN DEFAULT false,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO chat_canais (codigo, nome, escopo)
+VALUES ('alunos-geral', 'Chat geral de alunos', 'alunos')
+ON CONFLICT (codigo) DO NOTHING;

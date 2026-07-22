@@ -248,6 +248,11 @@
           return;
         }
 
+        if (data?.user?.must_complete_profile) {
+          window.location.href = runtime.appRoute('/dados-primeiro-acesso', 'dados-primeiro-acesso.html');
+          return;
+        }
+
         const serverHome = String(data?.user?.home_route || '').trim();
         if (serverHome) {
           const isBackendRoute = runtime.isBackendRouteMode && runtime.isBackendRouteMode();

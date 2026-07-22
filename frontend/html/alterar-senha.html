@@ -51,7 +51,7 @@
         if (!response.ok) throw new Error(data?.erro || 'Falha ao alterar senha.');
         runtime.setUser(data.user);
         setMsg('Senha alterada. Redirecionando...');
-        window.location.href = data?.user?.home_route || user?.home_route || '/dashboard-aluno';
+        window.location.href = data?.user?.must_complete_profile ? '/dados-primeiro-acesso' : (data?.user?.home_route || user?.home_route || '/dashboard-aluno');
       } catch (error) {
         setMsg(error.message, true);
       }

@@ -119,6 +119,11 @@
           return;
         }
 
+        if (data?.user?.must_complete_profile) {
+          window.location.href = runtime.appRoute('/dados-primeiro-acesso', 'dados-primeiro-acesso.html');
+          return;
+        }
+
         window.location.href = runtime.appRoute('/dashboard-TI', 'dashboard-TI.html');
       } catch (error) {
         setMessage(error.message, true);

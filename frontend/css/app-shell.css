@@ -455,3 +455,5 @@ body.a11y-vlibras-enabled { padding-bottom: 0; }
   .a11y-toolbar__body { margin-right: 0; }
   .a11y-toolbar[aria-expanded="false"] .a11y-toolbar__body { display: none; }
 }
+
+.oc-quick-links{position:fixed;right:12px;bottom:12px;z-index:9999;display:flex;gap:6px;flex-wrap:wrap;max-width:min(92vw,620px);justify-content:flex-end}.oc-quick-links a{border:1px solid #3c5778;border-radius:999px;background:#101b2b;color:#f3be49;text-decoration:none;padding:7px 10px;font:700 12px/1.1 'Segoe UI',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.28)}@media(max-width:640px){.oc-quick-links{left:8px;right:8px;bottom:8px;justify-content:center}.oc-quick-links a{font-size:11px;padding:7px 8px}}

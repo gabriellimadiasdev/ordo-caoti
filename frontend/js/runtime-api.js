@@ -88,10 +88,41 @@
     const token = getToken();
     const user = getUser();
     const path = window.location.pathname.replace(/\/+$/, '') || '/';
-    const allowed = ['/alterar-senha', '/primeiro-acesso', '/login', '/login-ti', '/login/ti'];
+    const allowed = ['/alterar-senha', '/primeiro-acesso', '/dados-primeiro-acesso', '/login', '/login-ti', '/login/ti'];
     if (token && user?.must_change_password && !allowed.includes(path)) {
       window.location.href = '/alterar-senha';
+      return;
     }
+    if (token && user?.must_complete_profile && !allowed.includes(path)) {
+      window.location.href = '/dados-primeiro-acesso';
+    }
+  }
+
+  async function auditPageView() {
+    try {
+      if (!getToken()) return;
+      await apiFetch('/api/auditoria/movimento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: window.location.pathname, title: document.title })
+      });
+    } catch (_) {}
+  }
+
+  function renderGlobalQuickLinks() {
+    const token = getToken();
+    if (!token || document.getElementById('oc-quick-links')) return;
+    const nav = document.createElement('nav');
+    nav.id = 'oc-quick-links';
+    nav.className = 'oc-quick-links';
+    nav.innerHTML = [
+      '<a href="/aulas">Aulas</a>',
+      '<a href="/chat-alunos">Chat</a>',
+      '<a href="/grimorio-publico">Grimório público</a>',
+      '<a href="/arquivos">Arquivos</a>',
+      '<a href="/dados-primeiro-acesso">Meus dados</a>'
+    ].join('');
+    document.body.appendChild(nav);
   }
 
   function renderProfileSwitcher() {
@@ -163,7 +194,9 @@
     apiFetch,
     switchProfile,
     renderProfileSwitcher,
+    renderGlobalQuickLinks,
     enforcePasswordChange,
+    auditPageView,
     checkSiteVersion,
     isBackendRouteMode: () => true,
   };
@@ -171,7 +204,9 @@
   document.addEventListener('DOMContentLoaded', () => {
     bindAppRoutes();
     enforcePasswordChange();
+    renderGlobalQuickLinks();
     renderProfileSwitcher();
+    auditPageView();
     checkSiteVersion();
     setInterval(checkSiteVersion, 60000);
   });

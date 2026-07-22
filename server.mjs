@@ -5,10 +5,12 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
+import multer from 'multer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const rootDir = __dirname;
 const frontendDir = path.join(rootDir, 'frontend');
@@ -98,6 +100,11 @@ const htmlRoutes = new Map([
   ['/biblioteca', 'biblioteca-livros.html'],
   ['/diario', 'diario.html'],
   ['/grimorio', 'grimorio.html'],
+  ['/grimorio-publico', 'grimorio-publico.html'],
+  ['/chat-alunos', 'chat-alunos.html'],
+  ['/arquivos', 'arquivos.html'],
+  ['/dados-primeiro-acesso', 'dados-primeiro-acesso.html'],
+  ['/aulas', 'live-center.html'],
 ]);
 
 app.get([...htmlRoutes.keys()], (req, res) => sendHtml(res, htmlRoutes.get(req.path)));
@@ -187,6 +194,7 @@ const profileCatalog = {
   mestre_fundador: { id: 'mestre_fundador', label: 'Mestre', home_route: '/admin/master' },
   lojista: { id: 'lojista', label: 'Lojista', home_route: '/dashboard-lojista' },
   professor: { id: 'professor', label: 'Professor', home_route: '/dashboard-professor' },
+  mentor: { id: 'mentor', label: 'Mentor', home_route: '/dashboard-professor' },
   admin: { id: 'admin', label: 'Admin', home_route: '/admin/master' },
   ti: { id: 'ti', label: 'T.I.', home_route: '/dashboard-TI' },
 };
@@ -203,6 +211,7 @@ function availableProfilesForUser(user = {}, nivelCodigo = 'neofito') {
   if (tipo === 'cliente') profiles.add('cliente');
   if (tipo === 'lojista') profiles.add('lojista');
   if (tipo === 'professor') profiles.add('professor');
+  if (tipo === 'mentor') profiles.add('mentor');
   if (tipo === 'admin') profiles.add('admin');
   if (tipo === 'ti') profiles.add('ti');
 
@@ -343,6 +352,7 @@ async function ensureAuthSchema() {
       )
     `);
     await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false`);
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cadastro_completo BOOLEAN NOT NULL DEFAULT false`);
     const tiEmail = 'g.lima.rocha90@gmail.com';
     const tiPasswordHash = hashPassword('0000');
     const tiUser = await pool.query(
@@ -411,6 +421,7 @@ function publicUser(user, nivelCodigo, profile = '') {
     perfis_disponiveis: perfisDisponiveis,
     home_route: selected.home_route,
     must_change_password: Boolean(user.must_change_password),
+    must_complete_profile: user.cadastro_completo === false,
   };
 }
 
@@ -442,7 +453,7 @@ app.post('/api/inscricao-membro', async (req, res) => {
     const inserted = await client.query(
       `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
        VALUES ($1, $2, $3, $4, true, NOW(), true)
-       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password`,
+       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password, cadastro_completo`,
       [nome, email, senhaHash, tipoUsuario]
     );
     const user = inserted.rows[0];
@@ -526,7 +537,7 @@ async function verifyActiveUserFromRequest(req) {
   const token = getBearerOrCookieToken(req);
   if (!token) return null;
   const payload = jwt.verify(token, jwtSecret);
-  const { rows } = await pool.query('SELECT id, nome, email, tipo_usuario, ativo, must_change_password FROM usuarios WHERE id = $1 LIMIT 1', [payload.id]);
+  const { rows } = await pool.query('SELECT id, nome, email, tipo_usuario, ativo, must_change_password, cadastro_completo, codigo_id FROM usuarios WHERE id = $1 LIMIT 1', [payload.id]);
   const user = rows[0];
   if (!user || user.ativo === false) return null;
   const nivelResult = await pool.query('SELECT nivel_codigo FROM usuario_niveis WHERE usuario_id = $1', [user.id]).catch(() => ({ rows: [] }));
@@ -653,7 +664,7 @@ app.post('/admin/solicitacoes-acesso/:id/aprovar', authenticateRequest, requireA
        VALUES ($1, $2, $3, $4, true, NOW(), true)
        ON CONFLICT (email) DO UPDATE
        SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_usuario = EXCLUDED.tipo_usuario, ativo = true, must_change_password = true
-       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password`,
+       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password, cadastro_completo`,
       [request.nome, request.email, request.senha_hash, tipoUsuario]
     );
     const user = inserted.rows[0];
@@ -737,7 +748,7 @@ app.post('/admin/aprovar-membro', authenticateRequest, requireAdminOrTi, async (
        VALUES ($1, $2, $3, $4, true, NOW(), true)
        ON CONFLICT (email) DO UPDATE
        SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_usuario = EXCLUDED.tipo_usuario, ativo = true, must_change_password = true
-       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password`,
+       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password, cadastro_completo`,
       [request.nome, request.email, request.senha_hash, tipoUsuario]
     );
     const user = inserted.rows[0];
@@ -795,6 +806,23 @@ async function ensureCoreTables() {
   await pool.query(`CREATE TABLE IF NOT EXISTS materias (id SERIAL PRIMARY KEY, nome TEXT NOT NULL, turma_id INTEGER, professor_id INTEGER, tipo_materia TEXT DEFAULT 'obrigatoria', ativo BOOLEAN DEFAULT true, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS live_salas (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, descricao TEXT, turma_id INTEGER, materia_id INTEGER, professor_id INTEGER, provider TEXT DEFAULT 'internal', status TEXT DEFAULT 'pendente', link_sala TEXT, inicio_previsto TIMESTAMPTZ, fim_previsto TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS anexos_academicos (id SERIAL PRIMARY KEY, materia_id INTEGER, autor_id INTEGER, tipo_material TEXT DEFAULT 'texto', titulo TEXT NOT NULL, url TEXT, status_moderacao TEXT DEFAULT 'pendente', comentario_moderacao TEXT, data_criacao TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`ALTER TABLE turmas ADD COLUMN IF NOT EXISTS codigo TEXT UNIQUE`);
+  await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_id TEXT UNIQUE`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS auditoria_eventos (id SERIAL PRIMARY KEY, usuario_id INTEGER, acao TEXT NOT NULL, alvo_tipo TEXT, alvo_id TEXT, ip_origem TEXT, user_agent TEXT, metadata JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS pessoa_dados_sensiveis (usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE, cpf_token TEXT, rg_token TEXT, dados_criptografados TEXT NOT NULL, atualizado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS aluno_matriculas (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL, codigo_aluno TEXT UNIQUE, status TEXT DEFAULT 'ativo', criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS materia_matriculas (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, materia_id INTEGER REFERENCES materias(id) ON DELETE CASCADE, tipo TEXT DEFAULT 'obrigatoria', status TEXT DEFAULT 'matriculado', criado_em TIMESTAMPTZ DEFAULT NOW(), UNIQUE(usuario_id,materia_id))`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS workshops (id SERIAL PRIMARY KEY, codigo TEXT UNIQUE, titulo TEXT NOT NULL, descricao TEXT, obrigatorio BOOLEAN DEFAULT false, inicio_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS workshop_matriculas (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, workshop_id INTEGER REFERENCES workshops(id) ON DELETE CASCADE, status TEXT DEFAULT 'matriculado', criado_em TIMESTAMPTZ DEFAULT NOW(), UNIQUE(usuario_id,workshop_id))`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS avaliacoes_alunos (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL, nota NUMERIC(5,2), tipo TEXT DEFAULT 'avaliacao', observacao TEXT, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS presencas_alunos (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL, aula_id INTEGER REFERENCES live_salas(id) ON DELETE SET NULL, presente BOOLEAN DEFAULT true, justificativa TEXT, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS gamificacao_eventos (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, tipo TEXT NOT NULL, pontos INTEGER DEFAULT 0, descricao TEXT, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS disciplina_eventos (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, tipo TEXT NOT NULL, descricao TEXT, pontos INTEGER DEFAULT 0, visivel_para_usuario BOOLEAN DEFAULT true, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS chat_canais (id SERIAL PRIMARY KEY, codigo TEXT UNIQUE, nome TEXT NOT NULL, escopo TEXT DEFAULT 'alunos', criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS chat_mensagens (id SERIAL PRIMARY KEY, canal_id INTEGER REFERENCES chat_canais(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, mensagem TEXT NOT NULL, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS grimorio_publico (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, titulo TEXT NOT NULL, tipo_registro TEXT DEFAULT 'estudo', conteudo_texto TEXT NOT NULL, tags JSONB DEFAULT '[]'::jsonb, status TEXT DEFAULT 'publicado', criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS arquivos_nuvem (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, nome_original TEXT NOT NULL, mime_type TEXT, tamanho_bytes INTEGER DEFAULT 0, storage_provider TEXT DEFAULT 'postgres_fallback', storage_key TEXT, conteudo_base64 TEXT, publico BOOLEAN DEFAULT false, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`INSERT INTO chat_canais (codigo,nome,escopo) VALUES ('alunos-geral','Chat geral de alunos','alunos') ON CONFLICT (codigo) DO NOTHING`);
   await pool.query(`INSERT INTO biblioteca_temas (nome, ordem_exibicao) VALUES ('Fundamentos', 1), ('Magia do Caos', 2), ('Grimório', 3) ON CONFLICT (nome) DO NOTHING`);
 }
 
@@ -841,6 +869,221 @@ app.post('/me/alterar-senha', authenticateRequest, async (req, res) => {
     console.error(error);
     res.status(500).json({ erro: 'Falha ao alterar senha.' });
   }
+});
+
+
+function sensitiveKey() {
+  return crypto.createHash('sha256').update(String(process.env.SUPABASE_ENCRYPTION_KEY || jwtSecret || 'ordo-caoti-sensitive-fallback')).digest();
+}
+function encryptJson(value) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', sensitiveKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(JSON.stringify(value || {}), 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `v1:${iv.toString('base64')}:${tag.toString('base64')}:${encrypted.toString('base64')}`;
+}
+function decryptJson(payload) {
+  const raw = String(payload || '');
+  const [, iv64, tag64, data64] = raw.split(':');
+  if (!iv64 || !tag64 || !data64) return {};
+  const decipher = crypto.createDecipheriv('aes-256-gcm', sensitiveKey(), Buffer.from(iv64, 'base64'));
+  decipher.setAuthTag(Buffer.from(tag64, 'base64'));
+  const decrypted = Buffer.concat([decipher.update(Buffer.from(data64, 'base64')), decipher.final()]);
+  return JSON.parse(decrypted.toString('utf8'));
+}
+function tokenHash(value) {
+  const normalized = String(value || '').replace(/\D/g, '');
+  return normalized ? crypto.createHash('sha256').update(normalized).digest('hex') : null;
+}
+function canReadSensitive(req, usuarioId) {
+  const own = Number(req.user?.id) === Number(usuarioId);
+  const role = String(req.user?.tipo_usuario || '').toLowerCase();
+  const nivel = String(req.userNivel || req.user?.nivel_codigo || '').toLowerCase();
+  return own || ['ti','admin'].includes(role) || ['mestre_fundador','mestre'].includes(nivel);
+}
+async function auditEvent(req, acao, alvoTipo = null, alvoId = null, metadata = {}) {
+  if (!pool) return;
+  await pool.query(
+    `INSERT INTO auditoria_eventos (usuario_id, acao, alvo_tipo, alvo_id, ip_origem, user_agent, metadata)
+     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb)`,
+    [req.user?.id || null, acao, alvoTipo, alvoId ? String(alvoId) : null, req.ip || null, req.headers['user-agent'] || null, JSON.stringify(metadata || {})]
+  ).catch(() => {});
+}
+
+app.post('/api/auditoria/movimento', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  await auditEvent(req, 'page_view', 'route', req.body?.path || req.headers.referer || null, { title: req.body?.title || null });
+  res.json({ ok: true });
+});
+
+app.get('/admin/auditoria', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT a.*, u.nome, u.email FROM auditoria_eventos a LEFT JOIN usuarios u ON u.id=a.usuario_id ORDER BY a.criado_em DESC LIMIT 300`);
+  res.json(rows);
+});
+
+app.get('/me/dados-completos', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT dados_criptografados, atualizado_em FROM pessoa_dados_sensiveis WHERE usuario_id=$1', [req.user.id]);
+  const dados = rows[0]?.dados_criptografados ? decryptJson(rows[0].dados_criptografados) : null;
+  res.json({ ok: true, completo: Boolean(dados), dados, atualizado_em: rows[0]?.atualizado_em || null });
+});
+
+app.put('/me/dados-completos', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const dados = {
+    nome_completo: req.body?.nome_completo || req.user.nome,
+    email: req.body?.email || req.user.email,
+    whatsapp: req.body?.whatsapp || null,
+    telefones_extras: Array.isArray(req.body?.telefones_extras) ? req.body.telefones_extras : [],
+    endereco: req.body?.endereco || {},
+    cpf: req.body?.cpf || null,
+    rg: req.body?.rg || null,
+    data_nascimento: req.body?.data_nascimento || null,
+    foto_url: req.body?.foto_url || null,
+    pagamento_cobranca: req.body?.pagamento_cobranca || {},
+    consentimento_lgpd: Boolean(req.body?.consentimento_lgpd),
+    atualizado_em: new Date().toISOString()
+  };
+  if (!dados.consentimento_lgpd) return res.status(400).json({ erro: 'Consentimento LGPD é obrigatório para salvar dados pessoais.' });
+  await pool.query(
+    `INSERT INTO pessoa_dados_sensiveis (usuario_id, cpf_token, rg_token, dados_criptografados, atualizado_em)
+     VALUES ($1,$2,$3,$4,NOW())
+     ON CONFLICT (usuario_id) DO UPDATE SET cpf_token=EXCLUDED.cpf_token, rg_token=EXCLUDED.rg_token, dados_criptografados=EXCLUDED.dados_criptografados, atualizado_em=NOW()`,
+    [req.user.id, tokenHash(dados.cpf), tokenHash(dados.rg), encryptJson(dados)]
+  );
+  await pool.query('UPDATE usuarios SET cadastro_completo=true WHERE id=$1', [req.user.id]);
+  await auditEvent(req, 'personal_data_saved', 'usuario', req.user.id, { fields: Object.keys(dados).filter((key) => dados[key] !== null) });
+  req.user.cadastro_completo = true;
+  res.json({ ok: true, user: publicUser(req.user, req.userNivel, req.user?.perfil_login) });
+});
+
+app.get('/admin/dados-pessoais/:usuarioId', authenticateRequest, async (req, res) => {
+  const usuarioId = Number(req.params.usuarioId);
+  if (!canReadSensitive(req, usuarioId)) return res.status(403).json({ erro: 'Dados restritos ao próprio usuário, T.I. e mestres.' });
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT dados_criptografados, atualizado_em FROM pessoa_dados_sensiveis WHERE usuario_id=$1', [usuarioId]);
+  if (!rows.length) return res.status(404).json({ erro: 'Dados não encontrados.' });
+  await auditEvent(req, 'personal_data_read', 'usuario', usuarioId);
+  res.json({ ok: true, dados: decryptJson(rows[0].dados_criptografados), atualizado_em: rows[0].atualizado_em });
+});
+
+app.get('/aluno/perfil-academico', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const usuarioId = req.user.id;
+  const [matricula, materias, workshopsRows, notas, presencas, gamificacao, disciplina] = await Promise.all([
+    pool.query(`SELECT am.*, t.nome AS turma_nome, t.codigo AS turma_codigo FROM aluno_matriculas am LEFT JOIN turmas t ON t.id=am.turma_id WHERE am.usuario_id=$1 ORDER BY am.criado_em DESC LIMIT 1`, [usuarioId]),
+    pool.query(`SELECT mm.*, m.nome, m.tipo_materia, t.nome AS turma_nome FROM materia_matriculas mm JOIN materias m ON m.id=mm.materia_id LEFT JOIN turmas t ON t.id=m.turma_id WHERE mm.usuario_id=$1 ORDER BY m.nome`, [usuarioId]),
+    pool.query(`SELECT wm.*, w.codigo, w.titulo, w.obrigatorio, w.inicio_em FROM workshop_matriculas wm JOIN workshops w ON w.id=wm.workshop_id WHERE wm.usuario_id=$1 ORDER BY w.inicio_em NULLS LAST`, [usuarioId]),
+    pool.query(`SELECT * FROM avaliacoes_alunos WHERE usuario_id=$1 ORDER BY criado_em DESC LIMIT 100`, [usuarioId]),
+    pool.query(`SELECT * FROM presencas_alunos WHERE usuario_id=$1 ORDER BY criado_em DESC LIMIT 100`, [usuarioId]),
+    pool.query(`SELECT COALESCE(SUM(pontos),0)::int AS pontos, json_agg(gamificacao_eventos ORDER BY criado_em DESC) AS eventos FROM gamificacao_eventos WHERE usuario_id=$1`, [usuarioId]),
+    pool.query(`SELECT * FROM disciplina_eventos WHERE usuario_id=$1 AND (visivel_para_usuario=true OR $2=ANY($3::text[])) ORDER BY criado_em DESC LIMIT 100`, [usuarioId, req.user.tipo_usuario, ['admin','ti']])
+  ]);
+  res.json({ ok: true, codigo_id: req.user.codigo_id || matricula.rows[0]?.codigo_aluno || `OC-${usuarioId}`, matricula: matricula.rows[0] || null, materias: materias.rows, workshops: workshopsRows.rows, notas: notas.rows, presencas: presencas.rows, faltas: presencas.rows.filter((p) => !p.presente), gamificacao: gamificacao.rows[0] || { pontos: 0, eventos: [] }, disciplina: disciplina.rows });
+});
+
+app.post('/admin/alunos/:usuarioId/matricula', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const usuarioId = Number(req.params.usuarioId);
+  const codigoAluno = String(req.body?.codigo_aluno || `OC-${usuarioId}`).trim();
+  const turmaId = req.body?.turma_id || null;
+  const { rows } = await pool.query(
+    `INSERT INTO aluno_matriculas (usuario_id,turma_id,codigo_aluno,status) VALUES ($1,$2,$3,$4)
+     ON CONFLICT (codigo_aluno) DO UPDATE SET turma_id=EXCLUDED.turma_id,status=EXCLUDED.status
+     RETURNING *`,
+    [usuarioId, turmaId, codigoAluno, req.body?.status || 'ativo']
+  );
+  await pool.query('UPDATE usuarios SET codigo_id=COALESCE(codigo_id,$2) WHERE id=$1', [usuarioId, codigoAluno]);
+  await auditEvent(req, 'student_enrollment_saved', 'usuario', usuarioId, { turma_id: turmaId });
+  res.status(201).json({ ok: true, matricula: rows[0] });
+});
+
+app.post('/admin/alunos/:usuarioId/nota', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('INSERT INTO avaliacoes_alunos (usuario_id,materia_id,nota,tipo,observacao,criado_por) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [Number(req.params.usuarioId), req.body?.materia_id || null, req.body?.nota ?? null, req.body?.tipo || 'avaliacao', req.body?.observacao || null, req.user.id]);
+  await auditEvent(req, 'student_grade_saved', 'usuario', req.params.usuarioId);
+  res.status(201).json({ ok: true, nota: rows[0] });
+});
+
+app.post('/admin/alunos/:usuarioId/presenca', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('INSERT INTO presencas_alunos (usuario_id,materia_id,aula_id,presente,justificativa,criado_por) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [Number(req.params.usuarioId), req.body?.materia_id || null, req.body?.aula_id || null, req.body?.presente !== false, req.body?.justificativa || null, req.user.id]);
+  await auditEvent(req, 'student_attendance_saved', 'usuario', req.params.usuarioId);
+  res.status(201).json({ ok: true, presenca: rows[0] });
+});
+
+app.get('/grimorio/publico', authenticateRequest, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT gp.*, u.nome AS autor_nome FROM grimorio_publico gp LEFT JOIN usuarios u ON u.id=gp.usuario_id WHERE gp.status='publicado' ORDER BY gp.criado_em DESC LIMIT 100`);
+  res.json(rows);
+});
+
+app.post('/grimorio/publico', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const allowed = new Set(['mago_n1','mago_n2','mago_n3','mestre_fundador','mentor','professor','admin','ti']);
+  const userProfiles = availableProfilesForUser(req.user, req.userNivel).map((p) => p.id);
+  if (!userProfiles.some((profile) => allowed.has(profile))) return res.status(403).json({ erro: 'Publicação restrita a magos iniciados, elevados, soberanos, mestres e mentores.' });
+  const { rows } = await pool.query('INSERT INTO grimorio_publico (usuario_id,titulo,tipo_registro,conteudo_texto,tags,status) VALUES ($1,$2,$3,$4,$5::jsonb,$6) RETURNING *', [req.user.id, req.body?.titulo || 'Registro público', req.body?.tipo_registro || 'estudo', req.body?.conteudo_texto || '', JSON.stringify(req.body?.tags || []), 'publicado']);
+  await auditEvent(req, 'public_grimoire_posted', 'grimorio_publico', rows[0].id);
+  res.status(201).json(rows[0]);
+});
+
+app.get('/chat/alunos/canais', authenticateRequest, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query("SELECT * FROM chat_canais WHERE escopo='alunos' ORDER BY nome");
+  res.json(rows);
+});
+app.get('/chat/alunos/:canalCodigo/mensagens', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT cm.*, u.nome AS autor_nome FROM chat_mensagens cm JOIN chat_canais cc ON cc.id=cm.canal_id LEFT JOIN usuarios u ON u.id=cm.usuario_id WHERE cc.codigo=$1 ORDER BY cm.criado_em DESC LIMIT 100`, [req.params.canalCodigo]);
+  res.json(rows.reverse());
+});
+app.post('/chat/alunos/:canalCodigo/mensagens', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const channel = await pool.query('SELECT id FROM chat_canais WHERE codigo=$1 LIMIT 1', [req.params.canalCodigo]);
+  if (!channel.rows.length) return res.status(404).json({ erro: 'Canal não encontrado.' });
+  const mensagem = String(req.body?.mensagem || '').trim();
+  if (!mensagem) return res.status(400).json({ erro: 'Mensagem obrigatória.' });
+  const { rows } = await pool.query('INSERT INTO chat_mensagens (canal_id,usuario_id,mensagem) VALUES ($1,$2,$3) RETURNING *', [channel.rows[0].id, req.user.id, mensagem.slice(0, 4000)]);
+  await auditEvent(req, 'chat_message_sent', 'chat_canal', req.params.canalCodigo);
+  res.status(201).json(rows[0]);
+});
+
+app.get('/api/arquivos', authenticateRequest, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT id,nome_original,mime_type,tamanho_bytes,storage_provider,publico,criado_em FROM arquivos_nuvem ORDER BY criado_em DESC LIMIT 100`);
+  res.json(rows);
+});
+app.post('/api/arquivos/upload', authenticateRequest, upload.single('arquivo'), async (req, res) => {
+  await ensureCoreTables();
+  if (!req.file) return res.status(400).json({ erro: 'Arquivo obrigatório.' });
+  const provider = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY ? 'supabase_configured_fallback_saved' : 'postgres_fallback';
+  const { rows } = await pool.query('INSERT INTO arquivos_nuvem (usuario_id,nome_original,mime_type,tamanho_bytes,storage_provider,storage_key,conteudo_base64,publico) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,nome_original,mime_type,tamanho_bytes,storage_provider,criado_em', [req.user.id, req.file.originalname, req.file.mimetype, req.file.size, provider, crypto.randomUUID(), req.file.buffer.toString('base64'), req.body?.publico === 'true']);
+  await auditEvent(req, 'file_uploaded', 'arquivo', rows[0].id, { nome: req.file.originalname, bytes: req.file.size });
+  res.status(201).json({ ok: true, arquivo: rows[0] });
+});
+app.get('/api/arquivos/:id/download', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM arquivos_nuvem WHERE id=$1', [Number(req.params.id)]);
+  const file = rows[0];
+  if (!file) return res.status(404).json({ erro: 'Arquivo não encontrado.' });
+  await auditEvent(req, 'file_downloaded', 'arquivo', file.id);
+  res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${String(file.nome_original || 'arquivo').replace(/"/g, '')}"`);
+  res.send(Buffer.from(file.conteudo_base64 || '', 'base64'));
+});
+
+app.get('/api/integracoes/status', authenticateRequest, (_req, res) => {
+  res.json({ ok: true, providers: { daily: Boolean(process.env.DAILY_API_KEY), google: Boolean(process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_SERVICE_ACCOUNT_JSON), zoom: Boolean(process.env.ZOOM_CLIENT_ID), teams: Boolean(process.env.MICROSOFT_CLIENT_ID), supabase: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY), aws_s3: Boolean(process.env.AWS_S3_BUCKET) }, fallback_interno: true });
+});
+app.post('/api/google/importar-classroom', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await auditEvent(req, 'google_classroom_import_requested', 'integration', 'google_classroom');
+  res.json({ ok: true, imported: false, provider_configured: Boolean(process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_SERVICE_ACCOUNT_JSON), fallback: 'Importação manual disponível: envie CSV/JSON pelo módulo de arquivos até configurar credenciais Google.' });
+});
+app.post('/api/google/importar-drive', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await auditEvent(req, 'google_drive_import_requested', 'integration', 'google_drive');
+  res.json({ ok: true, imported: false, provider_configured: Boolean(process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_SERVICE_ACCOUNT_JSON), fallback: 'Drive externo exige credenciais Google; uploads internos já funcionam em /arquivos/upload.' });
 });
 
 
@@ -1254,7 +1497,7 @@ app.get('/manutencao/status', async (req, res) => {
 function coerceUserTypeAndLevel(body = {}) {
   const requested = resolveRequestedAccess(body);
   const tipo = String(body.tipo_usuario || requested.tipoUsuario || 'aluno').trim().toLowerCase();
-  if (['cliente','lojista','professor','admin','ti'].includes(tipo)) {
+  if (['cliente','lojista','professor','mentor','admin','ti'].includes(tipo)) {
     return { tipoUsuario: tipo, nivelCodigo: tipo === 'ti' ? 'ti' : (body.nivel_codigo ? normalizeNivelCodigo(body.nivel_codigo) : (tipo === 'cliente' ? 'cliente' : 'neofito')) };
   }
   return { tipoUsuario: requested.tipoUsuario, nivelCodigo: requested.nivelCodigo };
@@ -1280,7 +1523,7 @@ app.post('/admin/criar-login', authenticateRequest, requireAdminOrTi, async (req
        VALUES ($1,$2,$3,$4,$5,NOW(),true)
        ON CONFLICT (email) DO UPDATE
        SET nome=EXCLUDED.nome, senha_hash=EXCLUDED.senha_hash, tipo_usuario=EXCLUDED.tipo_usuario, ativo=EXCLUDED.ativo, must_change_password=true
-       RETURNING id,nome,email,tipo_usuario,ativo,must_change_password`,
+       RETURNING id,nome,email,tipo_usuario,ativo,must_change_password,cadastro_completo`,
       [nome, email, senhaHash, tipoUsuario, ativo]
     );
     const user = rows[0];
