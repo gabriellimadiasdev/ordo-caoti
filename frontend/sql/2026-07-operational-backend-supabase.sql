@@ -336,3 +336,45 @@ CREATE TABLE IF NOT EXISTS agenda_notificacoes (
   enviada_em TIMESTAMPTZ,
   criado_em TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Pós-venda, CDC e resolução de problemas de compra
+CREATE TABLE IF NOT EXISTS vendas_politicas_cdc (
+  id SERIAL PRIMARY KEY,
+  codigo TEXT UNIQUE NOT NULL,
+  titulo TEXT NOT NULL,
+  base_legal TEXT NOT NULL,
+  descricao TEXT NOT NULL,
+  prazo_dias INTEGER,
+  ativo BOOLEAN DEFAULT true,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS vendas_resolucoes (
+  id SERIAL PRIMARY KEY,
+  pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  tipo TEXT NOT NULL,
+  status TEXT DEFAULT 'aberta',
+  prioridade TEXT DEFAULT 'normal',
+  base_legal TEXT,
+  prazo_resposta_em TIMESTAMPTZ,
+  descricao TEXT NOT NULL,
+  solucao_solicitada TEXT,
+  solucao_aplicada TEXT,
+  evidencias JSONB DEFAULT '[]'::jsonb,
+  lojista_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  criado_por INTEGER,
+  atualizado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  atualizado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS vendas_resolucao_movimentos (
+  id SERIAL PRIMARY KEY,
+  resolucao_id INTEGER REFERENCES vendas_resolucoes(id) ON DELETE CASCADE,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  acao TEXT NOT NULL,
+  mensagem TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);

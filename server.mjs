@@ -110,6 +110,8 @@ const protectedUserHtmlRoutes = new Map([
   ['/area-cliente', 'dashboard-cliente.html'],
   ['/dashboard-cliente/reembolso', 'dashboard-cliente-reembolso.html'],
   ['/cliente/reembolso', 'dashboard-cliente-reembolso.html'],
+  ['/cliente/resolucao', 'resolucao-vendas.html'],
+  ['/pos-venda', 'resolucao-vendas.html'],
   ['/dashboard-lojista', 'dashboard-lojista.html'],
   ['/lojista', 'dashboard-lojista.html'],
   ['/area-lojista', 'dashboard-lojista.html'],
@@ -144,6 +146,7 @@ const protectedTiHtmlRoutes = new Map([
   ['/ti/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
   ['/admin/biblioteca', 'admin-biblioteca.html'],
   ['/admin/financeiro', 'admin-financeiro.html'],
+  ['/admin/pos-venda', 'admin-pos-venda.html'],
   ['/admin/inscricoes-ordem', 'admin-inscricoes-ordem.html'],
   ['/admin/loja-produtos', 'admin-loja-produtos.html'],
   ['/admin/aprovacao-financeira', 'aprovacao-financeira.html'],
@@ -869,6 +872,16 @@ async function ensureCoreTables() {
   await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_pagamentos (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE SET NULL, pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, metodo TEXT NOT NULL DEFAULT 'interno', valor NUMERIC(12,2) NOT NULL DEFAULT 0, status TEXT DEFAULT 'pendente', referencia TEXT, comprovante_url TEXT, metadata JSONB DEFAULT '{}'::jsonb, pago_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_notificacoes (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, canal TEXT DEFAULT 'interno', tipo TEXT DEFAULT 'vencimento', mensagem TEXT NOT NULL, status TEXT DEFAULT 'pendente', agendada_para TIMESTAMPTZ DEFAULT NOW(), enviada_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_negativacao_eventos (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, status TEXT DEFAULT 'preparado', motivo TEXT, payload JSONB DEFAULT '{}'::jsonb, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS vendas_politicas_cdc (id SERIAL PRIMARY KEY, codigo TEXT UNIQUE NOT NULL, titulo TEXT NOT NULL, base_legal TEXT NOT NULL, descricao TEXT NOT NULL, prazo_dias INTEGER, ativo BOOLEAN DEFAULT true, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS vendas_resolucoes (id SERIAL PRIMARY KEY, pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, tipo TEXT NOT NULL, status TEXT DEFAULT 'aberta', prioridade TEXT DEFAULT 'normal', base_legal TEXT, prazo_resposta_em TIMESTAMPTZ, descricao TEXT NOT NULL, solucao_solicitada TEXT, solucao_aplicada TEXT, evidencias JSONB DEFAULT '[]'::jsonb, lojista_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_por INTEGER, atualizado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW(), atualizado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS vendas_resolucao_movimentos (id SERIAL PRIMARY KEY, resolucao_id INTEGER REFERENCES vendas_resolucoes(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, acao TEXT NOT NULL, mensagem TEXT, metadata JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`INSERT INTO vendas_politicas_cdc (codigo,titulo,base_legal,descricao,prazo_dias) VALUES
+    ('arrependimento_7_dias','Arrependimento em compra online','CDC art. 49','Cliente pode solicitar cancelamento em até 7 dias quando a contratação ocorrer fora do estabelecimento comercial.',7),
+    ('produto_defeito_30_90','Produto ou serviço com defeito','CDC arts. 18, 20 e 26','Tratativa para vício/defeito: 30 dias para não duráveis e 90 dias para duráveis, com solução adequada conforme o caso.',90),
+    ('cobranca_indevida','Cobrança indevida','CDC art. 42','Cobrança indevida deve ser analisada e pode gerar restituição conforme apuração.',30),
+    ('oferta_descumprida','Oferta não cumprida','CDC arts. 30 e 35','Oferta vincula o fornecedor; cliente pode exigir cumprimento, aceitar equivalente ou rescindir conforme o caso.',30),
+    ('atraso_entrega','Atraso ou não entrega','CDC arts. 30, 35 e 39','Atraso ou ausência de entrega deve gerar opção de cumprimento, substituição, abatimento, cancelamento ou reembolso conforme apuração.',30)
+    ON CONFLICT (codigo) DO UPDATE SET titulo=EXCLUDED.titulo, base_legal=EXCLUDED.base_legal, descricao=EXCLUDED.descricao, prazo_dias=EXCLUDED.prazo_dias, ativo=true`);
   await pool.query(`CREATE TABLE IF NOT EXISTS agenda_eventos (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, descricao TEXT, inicio_em TIMESTAMPTZ NOT NULL, fim_em TIMESTAMPTZ, foto_url TEXT, localizacao TEXT, links_sociais JSONB DEFAULT '[]'::jsonb, publico BOOLEAN DEFAULT true, criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, atualizado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_em TIMESTAMPTZ DEFAULT NOW(), atualizado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS agenda_notificacoes (id SERIAL PRIMARY KEY, evento_id INTEGER REFERENCES agenda_eventos(id) ON DELETE CASCADE, canal TEXT NOT NULL, destinatario TEXT, mensagem TEXT NOT NULL, status TEXT DEFAULT 'pendente', provider_configurado BOOLEAN DEFAULT false, agendada_para TIMESTAMPTZ DEFAULT NOW(), enviada_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`INSERT INTO biblioteca_temas (nome, ordem_exibicao) VALUES ('Fundamentos', 1), ('Magia do Caos', 2), ('Grimório', 3) ON CONFLICT (nome) DO NOTHING`);
@@ -1381,6 +1394,83 @@ app.get('/admin/financeiro/resumo', authenticateRequest, requireAdminOrTi, async
     pool.query("SELECT COUNT(*)::int total FROM financeiro_bolsas_descontos WHERE status='ativo'")
   ]);
   res.json({ ok: true, cobrancas: cobrancas.rows, pagamentos: pagamentos.rows, contratos_ativos: contratos.rows[0]?.total || 0, bolsas_descontos_ativos: descontos.rows[0]?.total || 0 });
+});
+
+
+function policyForResolutionType(tipo) {
+  const t = String(tipo || '').toLowerCase();
+  if (['arrependimento','cancelamento_online'].includes(t)) return { codigo: 'arrependimento_7_dias', base: 'CDC art. 49', prazo: 7 };
+  if (['defeito','vicio','servico_defeituoso'].includes(t)) return { codigo: 'produto_defeito_30_90', base: 'CDC arts. 18, 20 e 26', prazo: 30 };
+  if (['cobranca_indevida','pagamento_duplicado'].includes(t)) return { codigo: 'cobranca_indevida', base: 'CDC art. 42', prazo: 10 };
+  if (['oferta_descumprida','preco_divergente'].includes(t)) return { codigo: 'oferta_descumprida', base: 'CDC arts. 30 e 35', prazo: 10 };
+  if (['atraso','nao_entregue','logistica'].includes(t)) return { codigo: 'atraso_entrega', base: 'CDC arts. 30, 35 e 39', prazo: 10 };
+  return { codigo: 'analise_consumidor', base: 'CDC e legislação brasileira aplicável', prazo: 10 };
+}
+function canHandleSalesResolution(req, row = {}) {
+  const tipo = String(req.user?.tipo_usuario || '').toLowerCase();
+  return ['admin','ti','lojista'].includes(tipo) || Number(row.lojista_id) === Number(req.user?.id);
+}
+
+app.get('/vendas/politicas-cdc', async (_req, res) => {
+  if (!pool) return res.json([]);
+  await ensureCoreTables();
+  const { rows } = await pool.query("SELECT codigo,titulo,base_legal,descricao,prazo_dias FROM vendas_politicas_cdc WHERE ativo=true ORDER BY id");
+  res.json(rows);
+});
+
+app.get('/vendas/resolucoes', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const isStaff = ['admin','ti','lojista'].includes(String(req.user.tipo_usuario).toLowerCase());
+  const query = isStaff
+    ? `SELECT vr.*, u.nome AS cliente_nome FROM vendas_resolucoes vr LEFT JOIN usuarios u ON u.id=vr.usuario_id ORDER BY vr.criado_em DESC LIMIT 200`
+    : `SELECT vr.*, u.nome AS cliente_nome FROM vendas_resolucoes vr LEFT JOIN usuarios u ON u.id=vr.usuario_id WHERE vr.usuario_id=$1 ORDER BY vr.criado_em DESC LIMIT 100`;
+  const params = isStaff ? [] : [req.user.id];
+  const { rows } = await pool.query(query, params);
+  res.json(rows);
+});
+
+app.post('/vendas/resolucoes', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const tipo = String(req.body?.tipo || '').trim().toLowerCase();
+  const descricao = String(req.body?.descricao || '').trim();
+  if (!tipo || !descricao) return res.status(400).json({ erro: 'tipo e descricao são obrigatórios.' });
+  const policy = policyForResolutionType(tipo);
+  const pedidoId = req.body?.pedido_id ? Number(req.body.pedido_id) : null;
+  const prazo = new Date(Date.now() + policy.prazo * 24 * 60 * 60 * 1000).toISOString();
+  const { rows } = await pool.query(
+    `INSERT INTO vendas_resolucoes (pedido_id,usuario_id,tipo,status,base_legal,prazo_resposta_em,descricao,solucao_solicitada,evidencias,criado_por,atualizado_por)
+     VALUES ($1,$2,$3,'aberta',$4,$5,$6,$7,$8::jsonb,$2,$2) RETURNING *`,
+    [pedidoId, req.user.id, tipo, policy.base, prazo, descricao, req.body?.solucao_solicitada || null, JSON.stringify(req.body?.evidencias || [])]
+  );
+  await pool.query('INSERT INTO vendas_resolucao_movimentos (resolucao_id,usuario_id,acao,mensagem,metadata) VALUES ($1,$2,$3,$4,$5::jsonb)', [rows[0].id, req.user.id, 'abertura_cliente', descricao, JSON.stringify({ policy })]);
+  await auditEvent(req, 'sales_resolution_opened', 'vendas_resolucao', rows[0].id, { tipo, base_legal: policy.base });
+  res.status(201).json({ ok: true, resolucao: rows[0], politica: policy });
+});
+
+app.get('/vendas/resolucoes/:id', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM vendas_resolucoes WHERE id=$1', [Number(req.params.id)]);
+  const row = rows[0];
+  if (!row) return res.status(404).json({ erro: 'Solicitação não encontrada.' });
+  if (row.usuario_id !== req.user.id && !canHandleSalesResolution(req, row)) return res.status(403).json({ erro: 'Solicitação restrita.' });
+  const moves = await pool.query('SELECT m.*, u.nome AS autor_nome FROM vendas_resolucao_movimentos m LEFT JOIN usuarios u ON u.id=m.usuario_id WHERE resolucao_id=$1 ORDER BY criado_em ASC', [row.id]);
+  res.json({ ...row, movimentos: moves.rows });
+});
+
+app.post('/vendas/resolucoes/:id/movimentos', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM vendas_resolucoes WHERE id=$1', [Number(req.params.id)]);
+  const row = rows[0];
+  if (!row) return res.status(404).json({ erro: 'Solicitação não encontrada.' });
+  if (row.usuario_id !== req.user.id && !canHandleSalesResolution(req, row)) return res.status(403).json({ erro: 'Solicitação restrita.' });
+  const acao = String(req.body?.acao || (canHandleSalesResolution(req, row) ? 'resposta_fornecedor' : 'mensagem_cliente')).trim();
+  const mensagem = String(req.body?.mensagem || '').trim();
+  const status = req.body?.status || null;
+  const solucao = req.body?.solucao_aplicada || null;
+  const move = await pool.query('INSERT INTO vendas_resolucao_movimentos (resolucao_id,usuario_id,acao,mensagem,metadata) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *', [row.id, req.user.id, acao, mensagem, JSON.stringify(req.body?.metadata || {})]);
+  if (status || solucao) await pool.query('UPDATE vendas_resolucoes SET status=COALESCE($2,status), solucao_aplicada=COALESCE($3,solucao_aplicada), atualizado_por=$4, atualizado_em=NOW() WHERE id=$1', [row.id, status, solucao, req.user.id]);
+  await auditEvent(req, 'sales_resolution_movement', 'vendas_resolucao', row.id, { acao, status });
+  res.status(201).json({ ok: true, movimento: move.rows[0] });
 });
 
 app.get('/produtos', async (_req, res) => {

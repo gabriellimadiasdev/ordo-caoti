@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-22T02:43:39.440Z",
-  "html_count": 74,
+  "generated_at": "2026-07-22T02:48:57.136Z",
+  "html_count": 76,
   "js_count": 15,
-  "routes_count": 135,
+  "routes_count": 140,
   "html_files": [
     "frontend/html/acessibilidade-e-inclusao.html",
     "frontend/html/acompanhamento.html",
@@ -10,6 +10,7 @@
     "frontend/html/admin-financeiro.html",
     "frontend/html/admin-inscricoes-ordem.html",
     "frontend/html/admin-loja-produtos.html",
+    "frontend/html/admin-pos-venda.html",
     "frontend/html/agenda.html",
     "frontend/html/alterar-senha.html",
     "frontend/html/aprovacao-de-registro.html",
@@ -74,6 +75,7 @@
     "frontend/html/redefinir-senha.html",
     "frontend/html/reembolso-e-logistica.html",
     "frontend/html/regras.html",
+    "frontend/html/resolucao-vendas.html",
     "frontend/html/reunioes-daily.html",
     "frontend/html/solicitar-acesso.html",
     "frontend/html/termos-de-uso.html",
@@ -332,6 +334,26 @@
     {
       "method": "GET",
       "route": "/admin/financeiro/resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/vendas/politicas-cdc"
+    },
+    {
+      "method": "GET",
+      "route": "/vendas/resolucoes"
+    },
+    {
+      "method": "POST",
+      "route": "/vendas/resolucoes"
+    },
+    {
+      "method": "GET",
+      "route": "/vendas/resolucoes/:id"
+    },
+    {
+      "method": "POST",
+      "route": "/vendas/resolucoes/:id/movimentos"
     },
     {
       "method": "GET",
@@ -739,6 +761,14 @@
       ]
     },
     {
+      "file": "frontend/html/admin-pos-venda.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login-ti?next=/admin/pos-venda"
+      ]
+    },
+    {
       "file": "frontend/html/agenda.html",
       "links": [
         "../css/app-shell.css",
@@ -1140,7 +1170,14 @@
     },
     {
       "file": "frontend/html/dashboard-cliente-reembolso.html",
-      "links": []
+      "links": [
+        "../css/app-shell.css",
+        "/cliente/resolucao",
+        "/dashboard-cliente",
+        "/reembolso-e-logistica",
+        "../js/runtime-api.js",
+        "/login/loja/cliente?next=/dashboard-cliente/reembolso"
+      ]
     },
     {
       "file": "frontend/html/dashboard-cliente.html",
@@ -1150,6 +1187,7 @@
         "/loja",
         "/loja-checkout",
         "/dashboard-cliente/reembolso",
+        "/cliente/resolucao",
         "/chat-alunos",
         "/login/loja/cliente",
         "/login/loja/lojista",
@@ -1578,6 +1616,15 @@
         "/legal/termos-de-uso",
         "../js/app-shell.js",
         "/api/inscricao-checkout"
+      ]
+    },
+    {
+      "file": "frontend/html/resolucao-vendas.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login/loja/cliente?next=/cliente/resolucao",
+        "/vendas/politicas-cdc"
       ]
     },
     {
