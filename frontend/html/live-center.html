@@ -332,13 +332,13 @@
           <td><strong>${room.titulo || "-"}</strong><br><span class="small">${room.descricao || ""}</span></td>
           <td>${room.turma_nome || room.turma_id || "-"} / ${room.materia_nome || room.materia_id || "-"}</td>
           <td>${toTag(room.status)}</td>
-          <td>${room.provedor_sala || "-"}</td>
+          <td>${room.provider || room.provedor_sala || "interno"}</td>
           <td>${formatDate(room.inicio_previsto)}<br>${formatDate(room.fim_previsto)}</td>
           <td>
             <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
               <button class="btn" type="button" data-enter="${room.id}">Entrar</button>
               <button class="btn" type="button" data-link="${room.id}">Gerar link</button>
-              <button class="btn" type="button" data-close="${room.id}">Encerrar</button>
+              <button class="btn" type="button" data-groups="${room.id}">Grupos</button><button class="btn" type="button" data-close="${room.id}">Encerrar</button>
             </div>
           </td>
         </tr>
@@ -355,6 +355,13 @@
         button.addEventListener("click", async () => {
           const id = Number(button.getAttribute("data-link"));
           await regenerateLink(id);
+        });
+      });
+
+      roomsBody.querySelectorAll("[data-groups]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const id = Number(button.getAttribute("data-groups"));
+          await manageGroups(id);
         });
       });
 
@@ -450,7 +457,7 @@
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.erro || "Falha ao entrar na sala.");
-        const link = String(data?.sala?.link_sala || "").trim();
+        const link = String(data?.sala?.link_sala || data?.link_sala || "").trim();
         if (/^https?:\/\//i.test(link)) {
           window.open(link, "_blank", "noopener,noreferrer");
         }
@@ -480,6 +487,21 @@
       } catch (error) {
         setListStatus(error.message);
       }
+    }
+
+
+    async function manageGroups(roomId) {
+      const name = window.prompt("Nome do grupo de trabalho:", "Grupo 1");
+      if (!name) return;
+      const limit = Number(window.prompt("Limite de participantes:", "8") || 8);
+      try {
+        const response = await fetch(runtime.apiUrl(`/live/salas/${roomId}/grupos`), { method: "POST", headers: authHeaders(true), body: JSON.stringify({ nome: name, limite_participantes: limit }) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || "Falha ao criar grupo.");
+        const groupsResponse = await fetch(runtime.apiUrl(`/live/salas/${roomId}/grupos`), { headers: authHeaders() });
+        const groups = await groupsResponse.json().catch(() => []);
+        setListStatus(`Grupo criado. Salas de trabalho: ${(groups || []).map((g) => `${g.nome} (${g.participantes}/${g.limite_participantes})`).join(', ')}`);
+      } catch (error) { setListStatus(error.message); }
     }
 
     async function closeRoom(id) {

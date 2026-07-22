@@ -836,7 +836,7 @@
     const FOUNDERS_EMAILS = ['contatocaiozanoni@gmail.com', 'dayeekennedy@gmail.com'];
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
-    const isTiLocal = user.tipo === 'ti';
+    const isTiLocal = token === 'ti-local-mode';
     const normalizedUserEmail = String(user.email || '').trim().toLowerCase();
     const isFounderAccount = FOUNDERS_EMAILS.includes(normalizedUserEmail);
     const isFounderAccount = FOUNDERS_EMAILS.includes(normalizedUserEmail);
@@ -1657,7 +1657,7 @@
         document.getElementById('updatedAt').textContent = `Atualizado em ${new Date().toLocaleString('pt-BR')}`;
       } catch (error) {
         console.error(error);
-        alert('Falha ao carregar dados do painel mestre.');
+        document.getElementById('updatedAt').textContent = `Falha ao atualizar: ${error.message || 'verifique a conexão'}`;
       }
     }
 
