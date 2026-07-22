@@ -234,13 +234,13 @@
         }
 
         if (sessionType === 'persistent') {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
+          if (runtime.saveSession) runtime.saveSession(data.token, data.user, data.expiresAt, true);
+          else { localStorage.setItem('token', data.token); localStorage.setItem('user', JSON.stringify(data.user)); }
           sessionStorage.removeItem('token');
           sessionStorage.removeItem('user');
         } else {
-          sessionStorage.setItem('token', data.token);
-          sessionStorage.setItem('user', JSON.stringify(data.user));
+          if (runtime.saveSession) runtime.saveSession(data.token, data.user, data.expiresAt, false);
+          else { sessionStorage.setItem('token', data.token); sessionStorage.setItem('user', JSON.stringify(data.user)); }
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }

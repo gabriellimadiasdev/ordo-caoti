@@ -571,6 +571,10 @@ async function verifyActiveUserFromRequest(req) {
   const token = getBearerOrCookieToken(req);
   if (!token) return null;
   const payload = jwt.verify(token, jwtSecret);
+  if (payload.jti) {
+    const session = await pool.query('SELECT id FROM usuario_sessoes WHERE usuario_id=$1 AND jwt_id=$2 AND revogado_em IS NULL AND (expira_em IS NULL OR expira_em > NOW()) LIMIT 1', [payload.id, payload.jti]).catch(() => ({ rows: [] }));
+    if (!session.rows.length) return null;
+  }
   const { rows } = await pool.query('SELECT id, nome, email, tipo_usuario, ativo, must_change_password, cadastro_completo, codigo_id FROM usuarios WHERE id = $1 LIMIT 1', [payload.id]);
   const user = rows[0];
   if (!user || user.ativo === false) return null;
@@ -1471,7 +1475,14 @@ app.get('/api/route-exists', (req, res) => {
   res.json({ ok: true, route, exists: Boolean(found), match: found || null });
 });
 
-app.post('/logout', (_req, res) => {
+app.post('/logout', async (req, res) => {
+  try {
+    const token = getBearerOrCookieToken(req);
+    if (token) {
+      const payload = jwt.verify(token, jwtSecret);
+      if (payload?.id && payload?.jti) await pool?.query('UPDATE usuario_sessoes SET revogado_em=NOW(), motivo_revogacao=$3 WHERE usuario_id=$1 AND jwt_id=$2 AND revogado_em IS NULL', [payload.id, payload.jti, 'logout']);
+    }
+  } catch (_) {}
   res.cookie('oc_session', '', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 0, path: '/' });
   res.json({ ok: true });
 });
