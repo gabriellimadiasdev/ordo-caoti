@@ -121,6 +121,7 @@ const protectedUserHtmlRoutes = new Map([
   ['/financeiro-escolar', 'financeiro-escolar.html'],
   ['/area-financeira-aluno', 'area-financeira-aluno.html'],
   ['/loja-checkout', 'loja-checkout.html'],
+  ['/agenda', 'agenda.html'],
 ]);
 
 
@@ -565,11 +566,11 @@ async function requireUserPage(req, res, next) {
   try {
     await ensureAuthSchema();
     const user = await verifyActiveUserFromRequest(req);
-    if (!user) return res.redirect('/login');
+    if (!user) return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl || req.url || '/')}`);
     req.user = user;
     next();
   } catch (_error) {
-    return res.redirect('/login');
+    return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl || req.url || '/')}`);
   }
 }
 
@@ -578,12 +579,12 @@ async function requireTiPage(req, res, next) {
     await ensureAuthSchema();
     const user = await verifyActiveUserFromRequest(req);
     if (!user || !['ti', 'admin'].includes(String(user.tipo_usuario || '').toLowerCase())) {
-      return res.redirect('/login-ti');
+      return res.redirect(`/login-ti?next=${encodeURIComponent(req.originalUrl || req.url || '/dashboard-ti')}`);
     }
     req.user = user;
     next();
   } catch (_error) {
-    return res.redirect('/login-ti');
+    return res.redirect(`/login-ti?next=${encodeURIComponent(req.originalUrl || req.url || '/dashboard-ti')}`);
   }
 }
 
@@ -862,6 +863,8 @@ async function ensureCoreTables() {
   await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_pagamentos (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE SET NULL, pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, metodo TEXT NOT NULL DEFAULT 'interno', valor NUMERIC(12,2) NOT NULL DEFAULT 0, status TEXT DEFAULT 'pendente', referencia TEXT, comprovante_url TEXT, metadata JSONB DEFAULT '{}'::jsonb, pago_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_notificacoes (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, canal TEXT DEFAULT 'interno', tipo TEXT DEFAULT 'vencimento', mensagem TEXT NOT NULL, status TEXT DEFAULT 'pendente', agendada_para TIMESTAMPTZ DEFAULT NOW(), enviada_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS financeiro_negativacao_eventos (id SERIAL PRIMARY KEY, cobranca_id INTEGER REFERENCES financeiro_cobrancas(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, status TEXT DEFAULT 'preparado', motivo TEXT, payload JSONB DEFAULT '{}'::jsonb, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS agenda_eventos (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, descricao TEXT, inicio_em TIMESTAMPTZ NOT NULL, fim_em TIMESTAMPTZ, foto_url TEXT, localizacao TEXT, links_sociais JSONB DEFAULT '[]'::jsonb, publico BOOLEAN DEFAULT true, criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, atualizado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, criado_em TIMESTAMPTZ DEFAULT NOW(), atualizado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS agenda_notificacoes (id SERIAL PRIMARY KEY, evento_id INTEGER REFERENCES agenda_eventos(id) ON DELETE CASCADE, canal TEXT NOT NULL, destinatario TEXT, mensagem TEXT NOT NULL, status TEXT DEFAULT 'pendente', provider_configurado BOOLEAN DEFAULT false, agendada_para TIMESTAMPTZ DEFAULT NOW(), enviada_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`INSERT INTO biblioteca_temas (nome, ordem_exibicao) VALUES ('Fundamentos', 1), ('Magia do Caos', 2), ('Grimório', 3) ON CONFLICT (nome) DO NOTHING`);
 }
 
@@ -1126,6 +1129,87 @@ app.post('/api/google/importar-drive', authenticateRequest, requireAdminOrTi, as
 });
 
 
+
+function canEditAgenda(user = {}, nivelCodigo = '') {
+  const tipo = String(user.tipo_usuario || '').toLowerCase();
+  const profiles = availableProfilesForUser(user, nivelCodigo).map((p) => p.id);
+  return ['admin','ti','mentor','professor'].includes(tipo) || profiles.some((p) => ['mestre_fundador','mentor','ti','admin'].includes(p));
+}
+function notificationProviderConfigured(channel) {
+  const c = String(channel || '').toLowerCase();
+  if (c === 'google_calendar') return Boolean(process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  if (c === 'email') return Boolean(process.env.SMTP_URL || process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY);
+  if (c === 'whatsapp') return Boolean(process.env.WHATSAPP_API_TOKEN || process.env.TWILIO_ACCOUNT_SID);
+  if (c === 'sms') return Boolean(process.env.TWILIO_ACCOUNT_SID || process.env.SMS_API_TOKEN);
+  return false;
+}
+async function enqueueAgendaNotifications(req, evento, channels = []) {
+  const selected = Array.isArray(channels) && channels.length ? channels : ['interno'];
+  const message = `Agenda Ordo Caoti: ${evento.titulo} em ${new Date(evento.inicio_em).toLocaleString('pt-BR')}`;
+  for (const canal of selected) {
+    await pool.query(
+      `INSERT INTO agenda_notificacoes (evento_id, canal, mensagem, provider_configurado, agendada_para)
+       VALUES ($1,$2,$3,$4,NOW())`,
+      [evento.id, canal, message, notificationProviderConfigured(canal)]
+    );
+  }
+  await auditEvent(req, 'agenda_notifications_queued', 'agenda_evento', evento.id, { channels: selected });
+}
+
+app.get('/agenda/eventos', authenticateRequest, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT e.*, u.nome AS autor_nome FROM agenda_eventos e LEFT JOIN usuarios u ON u.id=e.criado_por WHERE e.publico=true OR e.criado_por=$1 ORDER BY e.inicio_em ASC LIMIT 200`, [_req.user.id]);
+  res.json({ ok: true, can_edit: canEditAgenda(_req.user, _req.userNivel), eventos: rows });
+});
+
+app.post('/agenda/eventos', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  if (!canEditAgenda(req.user, req.userNivel)) return res.status(403).json({ erro: 'Agenda editável apenas por mestres, mentores e T.I.' });
+  const titulo = String(req.body?.titulo || '').trim();
+  const inicio = req.body?.inicio_em;
+  if (!titulo || !inicio) return res.status(400).json({ erro: 'titulo e inicio_em são obrigatórios.' });
+  const { rows } = await pool.query(
+    `INSERT INTO agenda_eventos (titulo,descricao,inicio_em,fim_em,foto_url,localizacao,links_sociais,publico,criado_por,atualizado_por)
+     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$9) RETURNING *`,
+    [titulo, req.body?.descricao || null, inicio, req.body?.fim_em || null, req.body?.foto_url || null, req.body?.localizacao || null, JSON.stringify(req.body?.links_sociais || []), req.body?.publico !== false, req.user.id]
+  );
+  await enqueueAgendaNotifications(req, rows[0], req.body?.notificar_canais || []);
+  await auditEvent(req, 'agenda_event_created', 'agenda_evento', rows[0].id);
+  res.status(201).json({ ok: true, evento: rows[0] });
+});
+
+app.put('/agenda/eventos/:id', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  if (!canEditAgenda(req.user, req.userNivel)) return res.status(403).json({ erro: 'Agenda editável apenas por mestres, mentores e T.I.' });
+  const { rows } = await pool.query(
+    `UPDATE agenda_eventos SET titulo=COALESCE($2,titulo), descricao=COALESCE($3,descricao), inicio_em=COALESCE($4,inicio_em), fim_em=$5, foto_url=$6, localizacao=$7, links_sociais=COALESCE($8::jsonb,links_sociais), publico=COALESCE($9,publico), atualizado_por=$10, atualizado_em=NOW() WHERE id=$1 RETURNING *`,
+    [Number(req.params.id), req.body?.titulo || null, req.body?.descricao || null, req.body?.inicio_em || null, req.body?.fim_em || null, req.body?.foto_url || null, req.body?.localizacao || null, req.body?.links_sociais ? JSON.stringify(req.body.links_sociais) : null, req.body?.publico, req.user.id]
+  );
+  if (!rows.length) return res.status(404).json({ erro: 'Evento não encontrado.' });
+  await enqueueAgendaNotifications(req, rows[0], req.body?.notificar_canais || []);
+  await auditEvent(req, 'agenda_event_updated', 'agenda_evento', rows[0].id);
+  res.json({ ok: true, evento: rows[0] });
+});
+
+app.post('/agenda/notificacoes/processar', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  if (!canEditAgenda(req.user, req.userNivel)) return res.status(403).json({ erro: 'Restrito a editores da agenda.' });
+  const { rows } = await pool.query(`UPDATE agenda_notificacoes SET status='registrada', enviada_em=NOW() WHERE status='pendente' AND agendada_para <= NOW() RETURNING *`);
+  res.json({ ok: true, processadas: rows, aviso: 'Canais externos são registrados como fallback interno quando credenciais não existem.' });
+});
+
+app.post('/api/inscricao-checkout', async (req, res) => {
+  if (!pool) return res.status(503).json({ erro: 'Banco indisponível.' });
+  await ensureCoreTables();
+  const nome = String(req.body?.nome || '').trim();
+  const email = normalizeEmail(req.body?.email);
+  if (!nome || !email) return res.status(400).json({ erro: 'nome e email são obrigatórios.' });
+  const metadata = { origem: 'regras', dados: req.body || {}, termo_aceito: true };
+  const pedido = await pool.query('INSERT INTO pedidos (usuario_id, descricao, total, status, metadata) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *', [null, 'Inscrição Ordo Caoti', 80, 'aguardando_pagamento', JSON.stringify(metadata)]);
+  const checkoutUrl = process.env.MERCADO_PAGO_CHECKOUT_URL || `/loja-checkout?public=1&pedido_id=${encodeURIComponent(pedido.rows[0].id)}&valor=80&descricao=${encodeURIComponent('Inscrição Ordo Caoti')}`;
+  res.status(201).json({ ok: true, pedido: pedido.rows[0], checkout_url: checkoutUrl, mercado_pago_configured: Boolean(process.env.MERCADO_PAGO_CHECKOUT_URL || process.env.MERCADO_PAGO_ACCESS_TOKEN) });
+});
+
 app.get('/site-memory.json', (_req, res) => res.json(siteMemory));
 app.get('/api/site-memory', (_req, res) => res.json({ ok: true, version: deployVersion, ...siteMemory }));
 app.get('/api/site-version', (_req, res) => res.json({ ok: true, version: deployVersion, generated_at: new Date().toISOString() }));
@@ -1304,6 +1388,16 @@ app.get('/produtos', async (_req, res) => {
 
 app.post('/loja/carrinho', async (req, res) => {
   res.status(201).json({ ok: true, item: req.body || {}, carrinho_id: crypto.randomUUID() });
+});
+
+
+app.post('/api/checkout-publico', async (req, res) => {
+  if (!pool) return res.status(503).json({ erro: 'Banco indisponível.' });
+  await ensureCoreTables();
+  const total = money(req.body?.total || req.body?.valor || 80);
+  const pedido = await pool.query('INSERT INTO pedidos (usuario_id, descricao, total, status, metadata) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *', [null, req.body?.descricao || 'Checkout público Ordo Caoti', total, 'aguardando_pagamento', JSON.stringify({ ...req.body, origem: 'checkout_publico' })]);
+  const checkoutUrl = process.env.MERCADO_PAGO_CHECKOUT_URL || null;
+  res.status(201).json({ ok: true, pedido_id: pedido.rows[0].id, pedido: pedido.rows[0], pagamento_interno: { metodo: req.body?.metodo || 'boleto_interno', status: 'aguardando_pagamento' }, redirect_url: checkoutUrl, mercado_pago: { configured: Boolean(checkoutUrl || process.env.MERCADO_PAGO_ACCESS_TOKEN) } });
 });
 
 app.post('/loja/checkout', authenticateRequest, async (req, res) => {

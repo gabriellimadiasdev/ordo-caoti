@@ -124,7 +124,8 @@
           return;
         }
 
-        window.location.href = runtime.appRoute('/dashboard-TI', 'dashboard-TI.html');
+        const nextUrl = new URLSearchParams(window.location.search).get('next');
+        window.location.href = nextUrl || runtime.appRoute('/dashboard-TI', 'dashboard-TI.html');
       } catch (error) {
         setMessage(error.message, true);
       }

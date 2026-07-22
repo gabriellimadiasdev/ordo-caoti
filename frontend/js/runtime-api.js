@@ -109,6 +109,21 @@
     } catch (_) {}
   }
 
+  async function renderDashboardAgenda() {
+    try {
+      const token = getToken();
+      if (!token || !/dashboard/i.test(window.location.pathname) || document.getElementById('oc-dashboard-agenda')) return;
+      const response = await apiFetch('/agenda/eventos');
+      const data = await response.json().catch(() => ({}));
+      const events = Array.isArray(data.eventos) ? data.eventos.slice(0, 3) : [];
+      const box = document.createElement('section');
+      box.id = 'oc-dashboard-agenda';
+      box.className = 'oc-dashboard-agenda';
+      box.innerHTML = `<h2>Agenda Ordo Caoti</h2>${events.map((event) => `<article><strong>${event.titulo || 'Evento'}</strong><br><span>${event.inicio_em ? new Date(event.inicio_em).toLocaleString('pt-BR') : '-'}</span><br>${event.localizacao ? `<a href="${event.localizacao}">Abrir link/local</a>` : ''}</article>`).join('') || '<p>Sem eventos próximos.</p>'}<a href="/agenda">Ver agenda completa</a>`;
+      document.body.prepend(box);
+    } catch (_) {}
+  }
+
   function renderGlobalQuickLinks() {
     const token = getToken();
     if (!token || document.getElementById('oc-quick-links')) return;
@@ -116,6 +131,7 @@
     nav.id = 'oc-quick-links';
     nav.className = 'oc-quick-links';
     nav.innerHTML = [
+      '<a href="/agenda">Agenda</a>',
       '<a href="/aulas">Aulas</a>',
       '<a href="/chat-alunos">Chat</a>',
       '<a href="/grimorio-publico">Grimório público</a>',
@@ -195,6 +211,7 @@
     switchProfile,
     renderProfileSwitcher,
     renderGlobalQuickLinks,
+    renderDashboardAgenda,
     enforcePasswordChange,
     auditPageView,
     checkSiteVersion,
@@ -205,6 +222,7 @@
     bindAppRoutes();
     enforcePasswordChange();
     renderGlobalQuickLinks();
+    renderDashboardAgenda();
     renderProfileSwitcher();
     auditPageView();
     checkSiteVersion();

@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-22T02:32:38.563Z",
-  "html_count": 72,
+  "generated_at": "2026-07-22T02:40:43.625Z",
+  "html_count": 73,
   "js_count": 15,
-  "routes_count": 129,
+  "routes_count": 135,
   "html_files": [
     "frontend/html/acessibilidade-e-inclusao.html",
     "frontend/html/acompanhamento.html",
@@ -10,6 +10,7 @@
     "frontend/html/admin-financeiro.html",
     "frontend/html/admin-inscricoes-ordem.html",
     "frontend/html/admin-loja-produtos.html",
+    "frontend/html/agenda.html",
     "frontend/html/alterar-senha.html",
     "frontend/html/aprovacao-de-registro.html",
     "frontend/html/aprovacao-financeira.html",
@@ -257,6 +258,26 @@
     },
     {
       "method": "GET",
+      "route": "/agenda/eventos"
+    },
+    {
+      "method": "POST",
+      "route": "/agenda/eventos"
+    },
+    {
+      "method": "PUT",
+      "route": "/agenda/eventos/:id"
+    },
+    {
+      "method": "POST",
+      "route": "/agenda/notificacoes/processar"
+    },
+    {
+      "method": "POST",
+      "route": "/api/inscricao-checkout"
+    },
+    {
+      "method": "GET",
       "route": "/site-memory.json"
     },
     {
@@ -318,6 +339,10 @@
     {
       "method": "POST",
       "route": "/loja/carrinho"
+    },
+    {
+      "method": "POST",
+      "route": "/api/checkout-publico"
     },
     {
       "method": "POST",
@@ -623,15 +648,22 @@
     "IT_SESSION_SECRET",
     "JWT_SECRET",
     "MERCADO_PAGO_ACCESS_TOKEN",
+    "MERCADO_PAGO_CHECKOUT_URL",
     "MICROSOFT_CLIENT_ID",
     "NEXTAUTH_SECRET",
     "NODE_ENV",
     "POSTGRES_URL",
+    "RESEND_API_KEY",
+    "SENDGRID_API_KEY",
+    "SMS_API_TOKEN",
+    "SMTP_URL",
     "SUPABASE_ENCRYPTION_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
     "SUPABASE_URL",
+    "TWILIO_ACCOUNT_SID",
     "VERCEL_DEPLOYMENT_ID",
     "VERCEL_GIT_COMMIT_SHA",
+    "WHATSAPP_API_TOKEN",
     "ZOOM_CLIENT_ID"
   ],
   "html_links": [
@@ -703,6 +735,16 @@
         "/admin/loja/produtos-pendentes",
         "/admin/loja/produtos/${id}/aprovar",
         "/admin/loja/produtos/${id}/reprovar"
+      ]
+    },
+    {
+      "file": "frontend/html/agenda.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "${esc(e.foto_url)}",
+        "${esc(l)}"
       ]
     },
     {
@@ -1340,6 +1382,7 @@
         "../css/app-shell.css",
         "../js/runtime-api.js",
         "/login",
+        "/api/checkout-publico",
         "/loja/checkout"
       ]
     },
@@ -1515,14 +1558,8 @@
         "../manifest.webmanifest",
         "/legal/politica-privacidade",
         "/legal/termos-de-uso",
-        "https://docs.google.com/forms/d/e/1cfjFcL-Y3XCDEe_tlsBnuY7nFi_G6048otbPx4dWjRA/viewform?embedded=true",
-        "/cadastro-neofitos",
-        "/cadastro-magos-n1",
-        "/cadastro-magos-n2",
-        "/cadastro-magos-n3",
-        "/cadastro-fundadores",
-        "/cadastro-ti",
-        "../js/app-shell.js"
+        "../js/app-shell.js",
+        "/api/inscricao-checkout"
       ]
     },
     {

@@ -306,3 +306,33 @@ CREATE TABLE IF NOT EXISTS financeiro_negativacao_eventos (
   criado_por INTEGER,
   criado_em TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Agenda global dos dashboards
+CREATE TABLE IF NOT EXISTS agenda_eventos (
+  id SERIAL PRIMARY KEY,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  inicio_em TIMESTAMPTZ NOT NULL,
+  fim_em TIMESTAMPTZ,
+  foto_url TEXT,
+  localizacao TEXT,
+  links_sociais JSONB DEFAULT '[]'::jsonb,
+  publico BOOLEAN DEFAULT true,
+  criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  atualizado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  atualizado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS agenda_notificacoes (
+  id SERIAL PRIMARY KEY,
+  evento_id INTEGER REFERENCES agenda_eventos(id) ON DELETE CASCADE,
+  canal TEXT NOT NULL,
+  destinatario TEXT,
+  mensagem TEXT NOT NULL,
+  status TEXT DEFAULT 'pendente',
+  provider_configurado BOOLEAN DEFAULT false,
+  agendada_para TIMESTAMPTZ DEFAULT NOW(),
+  enviada_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
