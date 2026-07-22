@@ -552,6 +552,11 @@ app.post('/login', async (req, res) => {
     if (user.ativo === false) {
       return res.status(403).json({ erro: 'Conta bloqueada. Contate a administração.' });
     }
+    const usesDefaultPassword = await verifyPassword('0000', user.senha_hash);
+    if (usesDefaultPassword && !user.must_change_password) {
+      await pool.query('UPDATE usuarios SET must_change_password=true WHERE id=$1', [user.id]);
+      user.must_change_password = true;
+    }
     const nivelResult = await pool.query('SELECT nivel_codigo FROM usuario_niveis WHERE usuario_id = $1', [user.id]).catch(() => ({ rows: [] }));
     const nivelCodigo = nivelResult.rows[0]?.nivel_codigo || (user.tipo_usuario === 'ti' ? 'ti' : 'neofito');
     user.perfis_atribuidos = await getAssignedProfileIds(user.id, user, nivelCodigo);
@@ -644,6 +649,13 @@ async function authenticateRequest(req, res, next) {
     if (!user) return res.status(401).json({ erro: 'Sessão inválida.' });
     req.user = user;
     req.userNivel = user.nivel_codigo;
+    const onboardingAllowed = new Set(['/me/alterar-senha', '/me/dados-completos', '/logout', '/me/perfis', '/perfil/trocar']);
+    if (user.must_change_password && !onboardingAllowed.has(req.path)) {
+      return res.status(428).json({ erro: 'Troca de senha obrigatória antes de acessar esta área.', proximo_passo: '/alterar-senha' });
+    }
+    if (!user.must_change_password && user.cadastro_completo === false && !onboardingAllowed.has(req.path)) {
+      return res.status(428).json({ erro: 'Complete seus dados cadastrais antes de acessar esta área.', proximo_passo: '/dados-primeiro-acesso' });
+    }
     next();
   } catch (_error) {
     return res.status(401).json({ erro: 'Token inválido ou expirado.' });
