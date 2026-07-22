@@ -119,6 +119,7 @@ const protectedUserHtmlRoutes = new Map([
   ['/biblioteca', 'biblioteca-livros.html'],
   ['/biblioteca-livros', 'biblioteca-livros.html'],
   ['/diario', 'diario.html'],
+  ['/cadernos', 'cadernos.html'],
   ['/grimorio', 'grimorio.html'],
   ['/grimorio-publico', 'grimorio-publico.html'],
   ['/chat-alunos', 'chat-alunos.html'],
@@ -127,6 +128,8 @@ const protectedUserHtmlRoutes = new Map([
   ['/arquivos', 'arquivos.html'],
   ['/dados-primeiro-acesso', 'dados-primeiro-acesso.html'],
   ['/aulas', 'live-center.html'],
+  ['/importar-aulas', 'importar-aulas.html'],
+  ['/assistente-aulas', 'assistente-aulas.html'],
   ['/live-center', 'live-center.html'],
   ['/financeiro-escolar', 'financeiro-escolar.html'],
   ['/area-financeira-aluno', 'area-financeira-aluno.html'],
@@ -853,6 +856,13 @@ async function ensureCoreTables() {
   await pool.query(`CREATE TABLE IF NOT EXISTS pedidos (id SERIAL PRIMARY KEY, usuario_id INTEGER, descricao TEXT, total NUMERIC(12,2) DEFAULT 0, status TEXT DEFAULT 'pendente', data_pedido TIMESTAMPTZ DEFAULT NOW(), metadata JSONB DEFAULT '{}'::jsonb)`);
   await pool.query(`CREATE TABLE IF NOT EXISTS diario_pessoal (id SERIAL PRIMARY KEY, usuario_id INTEGER, titulo TEXT, conteudo_texto TEXT, sentimento TEXT, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS grimorio_pessoal (id SERIAL PRIMARY KEY, usuario_id INTEGER, titulo TEXT, tipo_registro TEXT DEFAULT 'anotacao', conteudo_texto TEXT, tags JSONB DEFAULT '[]'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`ALTER TABLE diario_pessoal ADD COLUMN IF NOT EXISTS sinalizacao TEXT DEFAULT 'normal'`);
+  await pool.query(`ALTER TABLE diario_pessoal ADD COLUMN IF NOT EXISTS visivel_supervisao BOOLEAN DEFAULT true`);
+  await pool.query(`ALTER TABLE grimorio_pessoal ADD COLUMN IF NOT EXISTS privado BOOLEAN DEFAULT true`);
+  await pool.query(`ALTER TABLE grimorio_pessoal ADD COLUMN IF NOT EXISTS publicar_publico BOOLEAN DEFAULT false`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS aluno_cadernos (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, titulo TEXT NOT NULL, materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL, privacidade TEXT DEFAULT 'privado_supervisionado', criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS aluno_caderno_registros (id SERIAL PRIMARY KEY, caderno_id INTEGER REFERENCES aluno_cadernos(id) ON DELETE CASCADE, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, titulo TEXT, conteudo_texto TEXT NOT NULL, tags JSONB DEFAULT '[]'::jsonb, sinalizacao TEXT DEFAULT 'normal', criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS supervisao_alertas (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, origem TEXT NOT NULL, origem_id INTEGER, severidade TEXT DEFAULT 'observacao', termos_detectados JSONB DEFAULT '[]'::jsonb, status TEXT DEFAULT 'aberto', criado_em TIMESTAMPTZ DEFAULT NOW(), visto_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, visto_em TIMESTAMPTZ)`);
   await pool.query(`CREATE TABLE IF NOT EXISTS biblioteca_temas (id SERIAL PRIMARY KEY, nome TEXT NOT NULL UNIQUE, ativo BOOLEAN DEFAULT true, ordem_exibicao INTEGER DEFAULT 0)`);
   await pool.query(`CREATE TABLE IF NOT EXISTS biblioteca_livros (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, autores JSONB DEFAULT '[]'::jsonb, tema_id INTEGER, descricao TEXT, capa_url TEXT, ativo BOOLEAN DEFAULT true, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS biblioteca_recursos (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, descricao TEXT, tipo_recurso TEXT DEFAULT 'link', url TEXT, status TEXT DEFAULT 'ativo', criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
@@ -860,6 +870,9 @@ async function ensureCoreTables() {
   await pool.query(`CREATE TABLE IF NOT EXISTS materias (id SERIAL PRIMARY KEY, nome TEXT NOT NULL, turma_id INTEGER, professor_id INTEGER, tipo_materia TEXT DEFAULT 'obrigatoria', ativo BOOLEAN DEFAULT true, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS live_salas (id SERIAL PRIMARY KEY, titulo TEXT NOT NULL, descricao TEXT, turma_id INTEGER, materia_id INTEGER, professor_id INTEGER, provider TEXT DEFAULT 'internal', status TEXT DEFAULT 'pendente', link_sala TEXT, inicio_previsto TIMESTAMPTZ, fim_previsto TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS anexos_academicos (id SERIAL PRIMARY KEY, materia_id INTEGER, autor_id INTEGER, tipo_material TEXT DEFAULT 'texto', titulo TEXT NOT NULL, url TEXT, status_moderacao TEXT DEFAULT 'pendente', comentario_moderacao TEXT, data_criacao TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS importacoes_academicas (id SERIAL PRIMARY KEY, origem TEXT NOT NULL, titulo TEXT, conteudo_texto TEXT, itens JSONB DEFAULT '[]'::jsonb, status TEXT DEFAULT 'pendente_aprovacao', importado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS assistente_aulas (id SERIAL PRIMARY KEY, tema TEXT NOT NULL, materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL, turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL, nivel_codigo TEXT, objetivo TEXT, plano_aula JSONB DEFAULT '{}'::jsonb, status TEXT DEFAULT 'pendente_aprovacao', criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS conteudos_aprovacao (id SERIAL PRIMARY KEY, tipo TEXT NOT NULL, referencia_id INTEGER, titulo TEXT, conteudo JSONB DEFAULT '{}'::jsonb, status TEXT DEFAULT 'pendente', criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, comentario TEXT, criado_em TIMESTAMPTZ DEFAULT NOW(), decidido_em TIMESTAMPTZ)`);
   await pool.query(`ALTER TABLE turmas ADD COLUMN IF NOT EXISTS codigo TEXT UNIQUE`);
   await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_id TEXT UNIQUE`);
   await pool.query(`CREATE TABLE IF NOT EXISTS auditoria_eventos (id SERIAL PRIMARY KEY, usuario_id INTEGER, acao TEXT NOT NULL, alvo_tipo TEXT, alvo_id TEXT, ip_origem TEXT, user_agent TEXT, metadata JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
@@ -1241,6 +1254,87 @@ app.post('/api/inscricao-checkout', async (req, res) => {
   res.status(201).json({ ok: true, pedido: pedido.rows[0], checkout_url: checkoutUrl, mercado_pago_configured: Boolean(process.env.MERCADO_PAGO_CHECKOUT_URL || process.env.MERCADO_PAGO_ACCESS_TOKEN) });
 });
 
+
+function canManageAcademicContent(req) {
+  const tipo = String(req.user?.tipo_usuario || '').toLowerCase();
+  const profiles = availableProfilesForUser(req.user || {}, req.userNivel || req.user?.nivel_codigo).map((p) => p.id);
+  return ['admin','ti','mentor','professor'].includes(tipo) || profiles.some((p) => ['mestre_fundador','mentor','admin','ti'].includes(p));
+}
+function parseImportedItems(text = '') {
+  return String(text || '').split(/\n{2,}|\r?\n-\s*/).map((item) => item.trim()).filter(Boolean).map((item, index) => ({ ordem: index + 1, titulo: item.slice(0, 90), conteudo: item }));
+}
+function buildLessonPlan({ tema, objetivo, nivel_codigo }) {
+  const theme = String(tema || 'Aula').trim();
+  const goal = String(objetivo || `Compreender e praticar ${theme}`).trim();
+  return {
+    titulo: theme,
+    objetivo: goal,
+    nivel: nivel_codigo || 'geral',
+    duracao_sugerida_min: 60,
+    roteiro: [
+      'Abertura e alinhamento do objetivo da aula',
+      'Explicação simples dos conceitos essenciais',
+      'Exemplo guiado com participação dos alunos',
+      'Atividade prática ou reflexão individual',
+      'Fechamento com tarefa e registro no caderno'
+    ],
+    materiais: ['Resumo da aula', 'Exercício prático', 'Perguntas de revisão'],
+    avaliacao: ['Participação', 'Registro no caderno', 'Entrega da atividade'],
+    observacao: 'Conteúdo gerado como rascunho: exige aprovação de mentor, mestre ou T.I. antes de publicar.'
+  };
+}
+
+app.post('/academico/importar/classroom', authenticateRequest, async (req, res) => {
+  if (!canManageAcademicContent(req)) return res.status(403).json({ erro: 'Importação restrita a mentores, mestres e T.I.' });
+  await ensureCoreTables();
+  const conteudo = String(req.body?.conteudo || req.body?.texto || '').trim();
+  const itens = Array.isArray(req.body?.itens) ? req.body.itens : parseImportedItems(conteudo);
+  const { rows } = await pool.query('INSERT INTO importacoes_academicas (origem,titulo,conteudo_texto,itens,importado_por) VALUES ($1,$2,$3,$4::jsonb,$5) RETURNING *', ['classroom', req.body?.titulo || 'Importação Classroom', conteudo, JSON.stringify(itens), req.user.id]);
+  await pool.query('INSERT INTO conteudos_aprovacao (tipo,referencia_id,titulo,conteudo,criado_por) VALUES ($1,$2,$3,$4::jsonb,$5)', ['importacao_classroom', rows[0].id, rows[0].titulo, JSON.stringify({ itens, conteudo }), req.user.id]);
+  await auditEvent(req, 'classroom_import_created', 'importacao_academica', rows[0].id);
+  res.status(201).json({ ok: true, importacao: rows[0], provider_configured: Boolean(process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_SERVICE_ACCOUNT_JSON), fallback: 'Conteúdo importado por colagem/envio manual e enviado para aprovação.' });
+});
+
+app.post('/academico/importar/notion', authenticateRequest, async (req, res) => {
+  if (!canManageAcademicContent(req)) return res.status(403).json({ erro: 'Importação restrita a mentores, mestres e T.I.' });
+  await ensureCoreTables();
+  const conteudo = String(req.body?.conteudo || req.body?.texto || '').trim();
+  const itens = Array.isArray(req.body?.itens) ? req.body.itens : parseImportedItems(conteudo);
+  const { rows } = await pool.query('INSERT INTO importacoes_academicas (origem,titulo,conteudo_texto,itens,importado_por) VALUES ($1,$2,$3,$4::jsonb,$5) RETURNING *', ['notion', req.body?.titulo || 'Importação Notion', conteudo, JSON.stringify(itens), req.user.id]);
+  await pool.query('INSERT INTO conteudos_aprovacao (tipo,referencia_id,titulo,conteudo,criado_por) VALUES ($1,$2,$3,$4::jsonb,$5)', ['importacao_notion', rows[0].id, rows[0].titulo, JSON.stringify({ itens, conteudo }), req.user.id]);
+  await auditEvent(req, 'notion_import_created', 'importacao_academica', rows[0].id);
+  res.status(201).json({ ok: true, importacao: rows[0], provider_configured: Boolean(process.env.NOTION_API_KEY), fallback: 'Conteúdo importado por colagem/envio manual e enviado para aprovação.' });
+});
+
+app.post('/academico/assistente-aulas', authenticateRequest, async (req, res) => {
+  if (!canManageAcademicContent(req)) return res.status(403).json({ erro: 'Assistente restrito a mentores, mestres e T.I.' });
+  await ensureCoreTables();
+  const tema = String(req.body?.tema || '').trim();
+  if (!tema) return res.status(400).json({ erro: 'Informe o assunto da aula.' });
+  const plano = buildLessonPlan({ tema, objetivo: req.body?.objetivo, nivel_codigo: req.body?.nivel_codigo });
+  const { rows } = await pool.query('INSERT INTO assistente_aulas (tema,materia_id,turma_id,nivel_codigo,objetivo,plano_aula,criado_por) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7) RETURNING *', [tema, req.body?.materia_id || null, req.body?.turma_id || null, req.body?.nivel_codigo || null, req.body?.objetivo || null, JSON.stringify(plano), req.user.id]);
+  await pool.query('INSERT INTO conteudos_aprovacao (tipo,referencia_id,titulo,conteudo,criado_por) VALUES ($1,$2,$3,$4::jsonb,$5)', ['plano_aula_ia', rows[0].id, plano.titulo, JSON.stringify(plano), req.user.id]);
+  await auditEvent(req, 'lesson_ai_draft_created', 'assistente_aula', rows[0].id);
+  res.status(201).json({ ok: true, rascunho: rows[0], plano, aviso: 'Rascunho criado e enviado para aprovação antes de publicar.' });
+});
+
+app.get('/academico/aprovacoes', authenticateRequest, async (req, res) => {
+  if (!canManageAcademicContent(req)) return res.status(403).json({ erro: 'Aprovações restritas a mentores, mestres e T.I.' });
+  await ensureCoreTables();
+  const { rows } = await pool.query("SELECT * FROM conteudos_aprovacao ORDER BY criado_em DESC LIMIT 200");
+  res.json(rows);
+});
+
+app.post('/academico/aprovacoes/:id/decidir', authenticateRequest, async (req, res) => {
+  if (!canManageAcademicContent(req)) return res.status(403).json({ erro: 'Aprovações restritas a mentores, mestres e T.I.' });
+  await ensureCoreTables();
+  const status = req.body?.status === 'rejeitado' ? 'rejeitado' : 'aprovado';
+  const { rows } = await pool.query('UPDATE conteudos_aprovacao SET status=$2, aprovado_por=$3, comentario=$4, decidido_em=NOW() WHERE id=$1 RETURNING *', [Number(req.params.id), status, req.user.id, req.body?.comentario || null]);
+  if (!rows.length) return res.status(404).json({ erro: 'Item não encontrado.' });
+  await auditEvent(req, 'academic_content_decided', 'conteudo_aprovacao', rows[0].id, { status });
+  res.json({ ok: true, aprovacao: rows[0] });
+});
+
 app.get('/site-memory.json', (_req, res) => res.json(siteMemory));
 app.get('/api/site-memory', (_req, res) => res.json({ ok: true, version: deployVersion, ...siteMemory }));
 app.get('/api/site-version', (_req, res) => res.json({ ok: true, version: deployVersion, generated_at: new Date().toISOString() }));
@@ -1575,6 +1669,62 @@ app.get('/aluno/faltas/minhas', authenticateRequest, (_req, res) => res.json([])
 app.get('/aluno/gamificacao/progresso', authenticateRequest, (_req, res) => res.json({ pontos: 0, nivel: 'inicial', conquistas: [] }));
 app.get('/aluno/gamificacao/top10', authenticateRequest, (_req, res) => res.json([]));
 
+
+const concernTerms = ['depressao','depressão','ansiedade','suicidio','suicídio','me matar','morrer','sem sentido','pânico','panico','automutilacao','automutilação'];
+function detectConcern(text = '') {
+  const lower = String(text || '').toLowerCase();
+  const terms = concernTerms.filter((term) => lower.includes(term));
+  return { terms, severity: terms.length ? 'atencao' : 'normal' };
+}
+function canSuperviseStudentContent(req) {
+  const email = String(req.user?.email || '').toLowerCase();
+  const tipo = String(req.user?.tipo_usuario || '').toLowerCase();
+  return ['contatocaiozanoni@gmail.com','dayeekennedy@gmail.com'].includes(email) || ['admin','ti'].includes(tipo);
+}
+async function createConcernAlert(usuarioId, origem, origemId, text) {
+  const detected = detectConcern(text);
+  if (!detected.terms.length || !pool) return detected;
+  await pool.query('INSERT INTO supervisao_alertas (usuario_id,origem,origem_id,severidade,termos_detectados) VALUES ($1,$2,$3,$4,$5::jsonb)', [usuarioId, origem, origemId, detected.severity, JSON.stringify(detected.terms)]).catch(() => {});
+  return detected;
+}
+
+app.get('/supervisao/registros', authenticateRequest, async (req, res) => {
+  if (!canSuperviseStudentContent(req)) return res.status(403).json({ erro: 'Supervisão restrita a Caio, Dayenne, T.I. e admin.' });
+  await ensureCoreTables();
+  const [diarios, cadernos, grimorios, alertas] = await Promise.all([
+    pool.query('SELECT d.*, u.nome, u.email FROM diario_pessoal d JOIN usuarios u ON u.id=d.usuario_id ORDER BY d.criado_em DESC LIMIT 200'),
+    pool.query('SELECT r.*, u.nome, u.email, c.titulo AS caderno_titulo FROM aluno_caderno_registros r JOIN usuarios u ON u.id=r.usuario_id LEFT JOIN aluno_cadernos c ON c.id=r.caderno_id ORDER BY r.criado_em DESC LIMIT 200'),
+    pool.query('SELECT g.*, u.nome, u.email FROM grimorio_pessoal g JOIN usuarios u ON u.id=g.usuario_id ORDER BY g.criado_em DESC LIMIT 200'),
+    pool.query("SELECT a.*, u.nome, u.email FROM supervisao_alertas a JOIN usuarios u ON u.id=a.usuario_id WHERE a.status='aberto' ORDER BY a.criado_em DESC LIMIT 200")
+  ]);
+  res.json({ diarios: diarios.rows, cadernos: cadernos.rows, grimorios: grimorios.rows, alertas: alertas.rows });
+});
+
+app.get('/aluno/cadernos', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM aluno_cadernos WHERE usuario_id=$1 ORDER BY criado_em DESC', [req.user.id]);
+  res.json(rows);
+});
+app.post('/aluno/cadernos', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('INSERT INTO aluno_cadernos (usuario_id,titulo,materia_id,privacidade) VALUES ($1,$2,$3,$4) RETURNING *', [req.user.id, req.body?.titulo || 'Meu caderno', req.body?.materia_id || null, 'privado_supervisionado']);
+  res.status(201).json(rows[0]);
+});
+app.get('/aluno/cadernos/:id/registros', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM aluno_caderno_registros WHERE caderno_id=$1 AND usuario_id=$2 ORDER BY criado_em DESC', [Number(req.params.id), req.user.id]);
+  res.json(rows);
+});
+app.post('/aluno/cadernos/:id/registros', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const text = String(req.body?.conteudo_texto || '').trim();
+  if (!text) return res.status(400).json({ erro: 'Escreva o conteúdo do registro.' });
+  const detected = detectConcern(text);
+  const { rows } = await pool.query('INSERT INTO aluno_caderno_registros (caderno_id,usuario_id,titulo,conteudo_texto,tags,sinalizacao) VALUES ($1,$2,$3,$4,$5::jsonb,$6) RETURNING *', [Number(req.params.id), req.user.id, req.body?.titulo || null, text, JSON.stringify(req.body?.tags || []), detected.severity]);
+  await createConcernAlert(req.user.id, 'caderno', rows[0].id, text);
+  res.status(201).json(rows[0]);
+});
+
 app.get('/diario/pessoal', authenticateRequest, async (req, res) => {
   if (!pool) return res.json([]);
   await ensureCoreTables();
@@ -1584,7 +1734,10 @@ app.get('/diario/pessoal', authenticateRequest, async (req, res) => {
 app.post('/diario/pessoal', authenticateRequest, async (req, res) => {
   if (!pool) return noDbFallback(res, { entrada: req.body });
   await ensureCoreTables();
-  const { rows } = await pool.query('INSERT INTO diario_pessoal (usuario_id,titulo,conteudo_texto,sentimento) VALUES ($1,$2,$3,$4) RETURNING *', [req.user.id, req.body?.titulo || null, req.body?.conteudo_texto || '', req.body?.sentimento || null]);
+  const text = String(req.body?.conteudo_texto || '');
+  const detected = detectConcern(text);
+  const { rows } = await pool.query('INSERT INTO diario_pessoal (usuario_id,titulo,conteudo_texto,sentimento,sinalizacao,visivel_supervisao) VALUES ($1,$2,$3,$4,$5,true) RETURNING *', [req.user.id, req.body?.titulo || null, text, req.body?.sentimento || null, detected.severity]);
+  await createConcernAlert(req.user.id, 'diario', rows[0].id, text);
   res.status(201).json(rows[0]);
 });
 app.get('/grimorio/pessoal', authenticateRequest, async (req, res) => {
@@ -1596,7 +1749,11 @@ app.get('/grimorio/pessoal', authenticateRequest, async (req, res) => {
 app.post('/grimorio/pessoal', authenticateRequest, async (req, res) => {
   if (!pool) return noDbFallback(res, { registro: req.body });
   await ensureCoreTables();
-  const { rows } = await pool.query('INSERT INTO grimorio_pessoal (usuario_id,titulo,tipo_registro,conteudo_texto,tags) VALUES ($1,$2,$3,$4,$5::jsonb) RETURNING *', [req.user.id, req.body?.titulo || null, req.body?.tipo_registro || 'anotacao', req.body?.conteudo_texto || '', JSON.stringify(req.body?.tags || [])]);
+  const publish = Boolean(req.body?.publicar_publico);
+  const { rows } = await pool.query('INSERT INTO grimorio_pessoal (usuario_id,titulo,tipo_registro,conteudo_texto,tags,privado,publicar_publico) VALUES ($1,$2,$3,$4,$5::jsonb,true,$6) RETURNING *', [req.user.id, req.body?.titulo || null, req.body?.tipo_registro || 'anotacao', req.body?.conteudo_texto || '', JSON.stringify(req.body?.tags || []), publish]);
+  if (publish) {
+    await pool.query('INSERT INTO grimorio_publico (usuario_id,titulo,tipo_registro,conteudo_texto,tags,status) VALUES ($1,$2,$3,$4,$5::jsonb,$6)', [req.user.id, req.body?.titulo || 'Registro público', req.body?.tipo_registro || 'anotacao', req.body?.conteudo_texto || '', JSON.stringify(req.body?.tags || []), 'publicado']).catch(() => {});
+  }
   res.status(201).json(rows[0]);
 });
 

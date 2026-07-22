@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-22T02:55:05.895Z",
-  "html_count": 77,
+  "generated_at": "2026-07-22T03:05:26.021Z",
+  "html_count": 80,
   "js_count": 15,
-  "routes_count": 151,
+  "routes_count": 161,
   "html_files": [
     "frontend/html/acessibilidade-e-inclusao.html",
     "frontend/html/acompanhamento.html",
@@ -22,6 +22,7 @@
     "frontend/html/area-matricula.html",
     "frontend/html/area-professor-anexos.html",
     "frontend/html/arquivos.html",
+    "frontend/html/assistente-aulas.html",
     "frontend/html/biblioteca-livros.html",
     "frontend/html/biblioteca.html",
     "frontend/html/cadastro-fundadores-bootstrap.html",
@@ -33,6 +34,7 @@
     "frontend/html/cadastro-produtos.html",
     "frontend/html/cadastro-sabios.html",
     "frontend/html/cadastro-ti.html",
+    "frontend/html/cadernos.html",
     "frontend/html/carrinho-de-compra.html",
     "frontend/html/central-operacoes.html",
     "frontend/html/chat-alunos.html",
@@ -53,6 +55,7 @@
     "frontend/html/gerar-descontos.html",
     "frontend/html/grimorio-publico.html",
     "frontend/html/grimorio.html",
+    "frontend/html/importar-aulas.html",
     "frontend/html/index.html",
     "frontend/html/inscrição-finalizar.html",
     "frontend/html/live-center.html",
@@ -281,6 +284,26 @@
       "route": "/api/inscricao-checkout"
     },
     {
+      "method": "POST",
+      "route": "/academico/importar/classroom"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/importar/notion"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/assistente-aulas"
+    },
+    {
+      "method": "GET",
+      "route": "/academico/aprovacoes"
+    },
+    {
+      "method": "POST",
+      "route": "/academico/aprovacoes/:id/decidir"
+    },
+    {
       "method": "GET",
       "route": "/site-memory.json"
     },
@@ -419,6 +442,26 @@
     {
       "method": "GET",
       "route": "/aluno/gamificacao/top10"
+    },
+    {
+      "method": "GET",
+      "route": "/supervisao/registros"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/cadernos"
+    },
+    {
+      "method": "POST",
+      "route": "/aluno/cadernos"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/cadernos/:id/registros"
+    },
+    {
+      "method": "POST",
+      "route": "/aluno/cadernos/:id/registros"
     },
     {
       "method": "GET",
@@ -721,6 +764,7 @@
     "MICROSOFT_CLIENT_ID",
     "NEXTAUTH_SECRET",
     "NODE_ENV",
+    "NOTION_API_KEY",
     "POSTGRES_URL",
     "RESEND_API_KEY",
     "SENDGRID_API_KEY",
@@ -972,6 +1016,15 @@
       ]
     },
     {
+      "file": "frontend/html/assistente-aulas.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login",
+        "/academico/assistente-aulas"
+      ]
+    },
+    {
       "file": "frontend/html/biblioteca-livros.html",
       "links": [
         "./style-login-loja.css",
@@ -1097,6 +1150,14 @@
         "../css/app-shell.css",
         "../js/runtime-api.js",
         "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/cadernos.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login"
       ]
     },
     {
@@ -1282,6 +1343,8 @@
         "./central-operacoes.html",
         "/dashboard",
         "/dashboard-aluno",
+        "/importar-aulas",
+        "/assistente-aulas",
         "../js/runtime-api.js",
         "${s.link_sala || ",
         "${f.atestado_url}",
@@ -1358,6 +1421,14 @@
       ]
     },
     {
+      "file": "frontend/html/importar-aulas.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login"
+      ]
+    },
+    {
       "file": "frontend/html/index.html",
       "links": [
         "/js/compat-legacy.js",
@@ -1365,25 +1436,25 @@
         "/css/estilos.css",
         "/css/app-shell.css",
         "/manifest.webmanifest",
-        "frontend/img/ordo-caoti-icon.jpeg",
-        "./frontend/html/nosssos-mestres.html",
-        "./frontend/html/loja.html",
-        "./frontend/html/regras.html",
-        "./frontend/html/login.html",
+        "tela/img/ordo-caoti-icon.jpeg",
+        "./tela/html/nosssos-mestres.html",
+        "./tela/html/loja.html",
+        "./tela/html/regras.html",
+        "./tela/html/login.html",
         "https://youtube.com/ordocaoti",
         "https://www.instagram.com/ordocaoti/",
-        "./frontend/img/instagram-icon.png",
+        "./tela/img/instagram-icon.png",
         "https://www.tiktok.com/@ordo.caoti",
         "https://img.icons8.com/sf-regular-filled/48/FAB005/tiktok.png",
         "https://www.youtube.com/embed/hFQMyevCWyM",
         "//www.instagram.com/embed.js",
         "https://www.tiktok.com/@ordo.caoti?refer=embed",
         "https://www.tiktok.com/embed.js",
-        "./frontend/html/cadastro-neofitos.html",
-        "./frontend/html/cadastro-magos-n1.html",
-        "./frontend/html/cadastro-magos-n2.html",
+        "./tela/html/cadastro-neofitos.html",
+        "./tela/html/cadastro-magos-n1.html",
+        "./tela/html/cadastro-magos-n2.html",
         "/cadastro-magos-n3",
-        "./frontend/html/cadastro-mestres.html",
+        "./tela/html/cadastro-mestres.html",
         "/legal/politica-privacidade",
         "/legal/termos-de-uso",
         "/legal/acessibilidade",

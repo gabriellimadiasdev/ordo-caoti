@@ -448,3 +448,79 @@ CREATE TABLE IF NOT EXISTS loja_chat_mensagens (
   mensagem TEXT NOT NULL,
   criado_em TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Importações acadêmicas, assistente de aulas, aprovações e cadernos privados supervisionados
+CREATE TABLE IF NOT EXISTS importacoes_academicas (
+  id SERIAL PRIMARY KEY,
+  origem TEXT NOT NULL,
+  titulo TEXT,
+  conteudo_texto TEXT,
+  itens JSONB DEFAULT '[]'::jsonb,
+  status TEXT DEFAULT 'pendente_aprovacao',
+  importado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  aprovado_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS assistente_aulas (
+  id SERIAL PRIMARY KEY,
+  tema TEXT NOT NULL,
+  materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL,
+  turma_id INTEGER REFERENCES turmas(id) ON DELETE SET NULL,
+  nivel_codigo TEXT,
+  objetivo TEXT,
+  plano_aula JSONB DEFAULT '{}'::jsonb,
+  status TEXT DEFAULT 'pendente_aprovacao',
+  criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  aprovado_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS conteudos_aprovacao (
+  id SERIAL PRIMARY KEY,
+  tipo TEXT NOT NULL,
+  referencia_id INTEGER,
+  titulo TEXT,
+  conteudo JSONB DEFAULT '{}'::jsonb,
+  status TEXT DEFAULT 'pendente',
+  criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  comentario TEXT,
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  decidido_em TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS aluno_cadernos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  titulo TEXT NOT NULL,
+  materia_id INTEGER REFERENCES materias(id) ON DELETE SET NULL,
+  privacidade TEXT DEFAULT 'privado_supervisionado',
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS aluno_caderno_registros (
+  id SERIAL PRIMARY KEY,
+  caderno_id INTEGER REFERENCES aluno_cadernos(id) ON DELETE CASCADE,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  titulo TEXT,
+  conteudo_texto TEXT NOT NULL,
+  tags JSONB DEFAULT '[]'::jsonb,
+  sinalizacao TEXT DEFAULT 'normal',
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS supervisao_alertas (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  origem TEXT NOT NULL,
+  origem_id INTEGER,
+  severidade TEXT DEFAULT 'observacao',
+  termos_detectados JSONB DEFAULT '[]'::jsonb,
+  status TEXT DEFAULT 'aberto',
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  visto_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  visto_em TIMESTAMPTZ
+);
