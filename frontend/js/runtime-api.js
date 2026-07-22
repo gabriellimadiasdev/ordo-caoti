@@ -136,7 +136,9 @@
       '<a href="/chat-alunos">Chat</a>',
       '<a href="/grimorio-publico">Grimório público</a>',
       '<a href="/arquivos">Arquivos</a>',
-      '<a href="/dados-primeiro-acesso">Meus dados</a>'
+      '<a href="/dados-primeiro-acesso">Meus dados</a>',
+      '<a href="/login/loja/cliente">Login cliente</a>',
+      '<a href="/login/loja/lojista">Login lojista</a>'
     ].join('');
     document.body.appendChild(nav);
   }

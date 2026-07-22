@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-22T02:40:43.625Z",
-  "html_count": 73,
+  "generated_at": "2026-07-22T02:43:39.440Z",
+  "html_count": 74,
   "js_count": 15,
   "routes_count": 135,
   "html_files": [
@@ -42,6 +42,7 @@
     "frontend/html/dashboard-TI.html",
     "frontend/html/dashboard-aluno.html",
     "frontend/html/dashboard-cliente-reembolso.html",
+    "frontend/html/dashboard-cliente.html",
     "frontend/html/dashboard-lojista.html",
     "frontend/html/dashboard-professor.html",
     "frontend/html/diario.html",
@@ -1140,6 +1141,23 @@
     {
       "file": "frontend/html/dashboard-cliente-reembolso.html",
       "links": []
+    },
+    {
+      "file": "frontend/html/dashboard-cliente.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "/loja",
+        "/loja-checkout",
+        "/dashboard-cliente/reembolso",
+        "/chat-alunos",
+        "/login/loja/cliente",
+        "/login/loja/lojista",
+        "../js/runtime-api.js",
+        "/login/loja/cliente?next=/dashboard-cliente",
+        "../js/app-shell.js",
+        "/logout"
+      ]
     },
     {
       "file": "frontend/html/dashboard-lojista.html",

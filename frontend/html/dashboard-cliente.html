@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Cliente - Ordo Caoti</title>
+  <link rel="stylesheet" href="../css/responsivo.css">
+  <link rel="stylesheet" href="../css/app-shell.css">
+  <style>
+    body{margin:0;min-height:100vh;background:#07101a;color:#eef4ff;font-family:"Segoe UI",Tahoma,sans-serif;padding:1rem}.wrap{max-width:1180px;margin:0 auto;display:grid;gap:1rem}.top,.card{background:#132232;border:1px solid #35506f;border-radius:14px;padding:1rem}.top{display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap}h1,h2{color:#f3be49;margin:.2rem 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem}.btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid #3c5778;border-radius:9px;background:#0f1a2a;color:#eef4ff;text-decoration:none;padding:.7rem .9rem;font-weight:700;cursor:pointer}.btn.primary{background:#f3be49;color:#251a06}.muted{color:#adc4dd}.item{border-top:1px solid #2d4562;padding:.6rem 0}.status{min-height:1.2rem;color:#adc4dd;white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div><h1>Dashboard Cliente</h1><p id="who" class="muted">Carregando...</p></div>
+      <nav style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a class="btn" href="/loja">Ir para loja</a>
+        <a class="btn" href="/loja-checkout">Checkout interno</a>
+        <a class="btn" href="/dashboard-cliente/reembolso">Reembolso</a>
+        <a class="btn" href="/chat-alunos">Chat</a>
+        <button class="btn primary" id="logoutBtn" type="button">Sair</button>
+      </nav>
+    </header>
+    <section class="grid">
+      <article class="card"><h2>Meus pedidos</h2><div id="pedidos" class="status">Carregando...</div></article>
+      <article class="card"><h2>Minhas cobranças</h2><div id="cobrancas" class="status">Carregando...</div></article>
+      <article class="card"><h2>Atalhos</h2><p class="muted">Cliente compra e acompanha pedidos. Lojista vende e gerencia produtos em área separada.</p><a class="btn" href="/login/loja/cliente">Logar como cliente</a> <a class="btn" href="/login/loja/lojista">Logar como lojista</a></article>
+    </section>
+  </main>
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const rt=window.ordoRuntime,user=rt.getUser();
+    if(!rt.getToken()) location.href='/login/loja/cliente?next=/dashboard-cliente';
+    const tipo=String(user.tipo_usuario||user.tipo||'').toLowerCase();
+    const perfis=(user.perfis_disponiveis||[]).map(p=>p.id);
+    if(tipo!=='cliente'&&!perfis.includes('cliente')) location.href='/login/loja/cliente?next=/dashboard-cliente';
+    who.textContent=`${user.nome||'Cliente'} | ${user.email||''}`;
+    async function loadJson(path){const r=await rt.apiFetch(path);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.erro||'Falha');return d}
+    function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+    async function load(){try{const charges=await loadJson('/financeiro/cobrancas');cobrancas.innerHTML=charges.map(c=>`<div class="item"><strong>${c.descricao}</strong><br>${c.status} | ${money(c.valor_final)} | vence ${c.vencimento}</div>`).join('')||'Sem cobranças.'}catch(e){cobrancas.textContent=e.message}try{pedidos.textContent='Pedidos são exibidos após checkout interno ou compra na loja.'}catch(e){pedidos.textContent=e.message}}
+    logoutBtn.onclick=async()=>{try{await rt.apiFetch('/logout',{method:'POST'})}catch(_){}rt.clearSession();location.href='/login/loja/cliente'};
+    load();
+  </script>
+  <script src="../js/app-shell.js" defer></script>
+</body>
+</html>

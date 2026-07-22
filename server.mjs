@@ -69,7 +69,9 @@ const htmlRoutes = new Map([
   ['/login-ti', 'login-ti.html'],
   ['/login/ti', 'login-ti.html'],
   ['/login/loja/cliente', 'login-loja-cliente.html'],
+  ['/login-cliente', 'login-loja-cliente.html'],
   ['/login/loja/lojista', 'login-loja-lojista.html'],
+  ['/login-lojista', 'login-loja-lojista.html'],
   ['/inscricao', 'regras.html'],
   ['/registro', 'area-matricula.html'],
   ['/cadastro-membros', 'cadastro-membros.html'],
@@ -104,9 +106,13 @@ const protectedUserHtmlRoutes = new Map([
   ['/dashboard-professor', 'dashboard-professor.html'],
   ['/dashboard-mentor', 'dashboard-professor.html'],
   ['/dashboard-cliente', 'dashboard-cliente.html'],
+  ['/cliente', 'dashboard-cliente.html'],
+  ['/area-cliente', 'dashboard-cliente.html'],
   ['/dashboard-cliente/reembolso', 'dashboard-cliente-reembolso.html'],
   ['/cliente/reembolso', 'dashboard-cliente-reembolso.html'],
   ['/dashboard-lojista', 'dashboard-lojista.html'],
+  ['/lojista', 'dashboard-lojista.html'],
+  ['/area-lojista', 'dashboard-lojista.html'],
   ['/lojista/financeiro', 'lojista-financeiro.html'],
   ['/biblioteca', 'biblioteca-livros.html'],
   ['/biblioteca-livros', 'biblioteca-livros.html'],
@@ -1868,9 +1874,20 @@ app.get('/api/status', async (_req, res) => {
 
 app.use((req, res) => {
   if (req.method === 'GET' && !req.path.startsWith('/api')) {
-    return res.status(404).type('html').send(`<h1>Rota não encontrada</h1><p>${req.path}</p><p><a href="/">Voltar ao início</a></p>`);
+    const routeName = req.path.replace(/^\/+|\/+$/g, '');
+    const candidates = [
+      `${routeName}.html`,
+      `${routeName.replace(/^area-/, 'dashboard-')}.html`,
+      `${routeName.replace(/^dashboard-/, 'dashboard-')}.html`,
+      `${routeName.replace(/\//g, '-')}.html`,
+    ].filter(Boolean);
+    for (const fileName of candidates) {
+      const filePath = path.join(htmlDir, fileName);
+      if (fileName && fs.existsSync(filePath)) return res.status(200).sendFile(filePath);
+    }
+    return res.status(200).type('html').send(`<h1>Área em preparação</h1><p>A rota ${req.path} ainda não tem arquivo próprio. Crie ${routeName}.html ou adicione um alias no backend.</p><p><a href="/">Voltar ao início</a></p>`);
   }
-  res.status(404).json({ erro: 'Rota não encontrada.', route: req.path });
+  res.status(404).json({ erro: 'Rota de API não encontrada.', route: req.path });
 });
 
 export default app;

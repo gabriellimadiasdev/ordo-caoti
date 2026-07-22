@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loja MÃ­stica da Ordo Caoti</title>
+    <title>Loja Mística da Ordo Caoti</title>
     <link rel="stylesheet" href="../css/style-login-loja.css">
 
   <link rel="stylesheet" href="../css/responsivo.css">
@@ -15,10 +15,10 @@
     <main class="login-container">
         <section class="login-box">
             <header>
-                <h1>GrimÃ³rio de Vendas</h1>
-                <p>Identifique-se para comprar em nossa loja.</p>
+                <h1>Grimório de Vendas</h1>
+                <p>Identifique-se para acessar sua área de vendas.</p>
             </header>
-            
+
             <form id="lojistaLoginForm">
                 <div class="input-group">
                     <label for="email">E-mail </label>
@@ -32,7 +32,7 @@
 
                 <button type="submit" class="btn-login">Entrar na Loja</button>
                                 <p id="statusMsg" style="min-height:18px;color:#cdd8e6;margin-top:0.6rem;"></p>
-                
+
                 <div class="form-footer">
                     <a href="#">Esqueceu a senha?</a>
                     <p>Novo por aqui? <a href="../html/cadastro-loja-cliente.html">Criar conta</a></p>
@@ -69,12 +69,19 @@
                     const data = await response.json().catch(() => ({}));
                     if (!response.ok) throw new Error(data?.erro || 'Falha ao autenticar lojista.');
 
+                    const tipo = String(data?.user?.tipo_usuario || data?.user?.tipo || '').toLowerCase();
+                    const perfis = Array.isArray(data?.user?.perfis_disponiveis) ? data.user.perfis_disponiveis.map((p) => p.id) : [];
+                    if (tipo !== 'lojista' && !perfis.includes('lojista')) {
+                        throw new Error('Este login é exclusivo para lojistas. Use o acesso cliente ou o portal principal.');
+                    }
+
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
                     sessionStorage.removeItem('token');
                     sessionStorage.removeItem('user');
 
-                    window.location.href = runtime.appRoute('/dashboard-lojista', 'dashboard-lojista.html');
+                    const nextUrl = new URLSearchParams(window.location.search).get('next');
+                    window.location.href = nextUrl || runtime.appRoute('/dashboard-lojista', 'dashboard-lojista.html');
                 } catch (error) {
                     setStatus(String(error?.message || 'Erro inesperado.'), true);
                 }
