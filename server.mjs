@@ -80,6 +80,8 @@ const htmlRoutes = new Map([
   ['/login-cliente', 'login-loja-cliente.html'],
   ['/login/loja/lojista', 'login-loja-lojista.html'],
   ['/login-lojista', 'login-loja-lojista.html'],
+  ['/login-mentor', 'login-mentor.html'],
+  ['/login/mentor', 'login-mentor.html'],
   ['/inscricao', 'regras.html'],
   ['/registro', 'area-matricula.html'],
   ['/cadastro-membros', 'cadastro-membros.html'],
@@ -87,9 +89,8 @@ const htmlRoutes = new Map([
   ['/cadastro-neofitos', 'cadastro-neofitos.html'],
   ['/cadastro-magos-n1', 'cadastro-magos-n1.html'],
   ['/cadastro-magos-n2', 'cadastro-magos-n2.html'],
-  ['/cadastro-magos-n3', 'cadastro-sabios.html'],
-  ['/cadastro-mago-soberano', 'cadastro-sabios.html'],
-  ['/cadastro-sabios', 'cadastro-sabios.html'],
+  ['/cadastro-magos-n3', 'cadastro-magos-n3.html'],
+  ['/cadastro-mago-soberano', 'cadastro-magos-n3.html'],
   ['/cadastro-ti', 'cadastro-ti.html'],
   ['/solicitar-acesso', 'solicitar-acesso.html'],
   ['/recuperar-senha', 'recuperar-senha.html'],
@@ -263,7 +264,7 @@ function availableProfilesForUser(user = {}, nivelCodigo = 'neofito') {
   if (tipo === 'cliente') profiles.add('cliente');
   if (tipo === 'lojista') profiles.add('lojista');
   if (tipo === 'professor') profiles.add('professor');
-  if (tipo === 'mentor') profiles.add('mentor');
+  if (tipo === 'mentor') { profiles.add('mentor'); profiles.add('professor'); }
   if (tipo === 'admin') profiles.add('admin');
   if (tipo === 'ti') profiles.add('ti');
 
@@ -273,7 +274,8 @@ function availableProfilesForUser(user = {}, nivelCodigo = 'neofito') {
     hierarchyProfiles.slice(0, max + 1).forEach((profile) => profiles.add(profile));
   }
 
-  if (tipo === 'admin') profiles.add('ti');
+  if (tipo === 'admin') { profiles.add('ti'); profiles.add('mentor'); profiles.add('professor'); }
+  if (nivel === 'mestre_fundador') { profiles.add('mentor'); profiles.add('professor'); }
   if (tipo === 'ti') ['neofito', 'mago_n1', 'mago_n2', 'mago_n3'].forEach((profile) => profiles.add(profile));
 
   return [...profiles].filter((id) => profileCatalog[id]).map((id) => profileCatalog[id]);

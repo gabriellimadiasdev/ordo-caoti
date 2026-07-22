@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-22T03:48:17.081Z",
-  "html_count": 82,
-  "routes_count": 178,
+  "generated_at": "2026-07-22T04:49:24.688Z",
+  "html_count": 84,
+  "routes_count": 208,
   "html_files": [
     "frontend/html/acessibilidade-e-inclusao.html",
     "frontend/html/acompanhamento.html",
@@ -20,6 +20,7 @@
     "frontend/html/area-financeira-adm.html",
     "frontend/html/area-financeira-aluno.html",
     "frontend/html/area-matricula.html",
+    "frontend/html/area-mentores.html",
     "frontend/html/area-professor-anexos.html",
     "frontend/html/arquivos.html",
     "frontend/html/assistente-aulas.html",
@@ -29,10 +30,10 @@
     "frontend/html/cadastro-loja-cliente.html",
     "frontend/html/cadastro-magos-n1.html",
     "frontend/html/cadastro-magos-n2.html",
+    "frontend/html/cadastro-magos-n3.html",
     "frontend/html/cadastro-membros.html",
     "frontend/html/cadastro-neofitos.html",
     "frontend/html/cadastro-produtos.html",
-    "frontend/html/cadastro-sabios.html",
     "frontend/html/cadastro-ti.html",
     "frontend/html/cadernos.html",
     "frontend/html/carrinho-de-compra.html",
@@ -62,6 +63,7 @@
     "frontend/html/live-center.html",
     "frontend/html/login-loja-cliente.html",
     "frontend/html/login-loja-lojista.html",
+    "frontend/html/login-mentor.html",
     "frontend/html/login-ti.html",
     "frontend/html/login.html",
     "frontend/html/logistica.html",
@@ -266,6 +268,22 @@
     {
       "method": "POST",
       "route": "/api/inscricao-checkout"
+    },
+    {
+      "method": "GET",
+      "route": "/mentor/acesso-ti/status"
+    },
+    {
+      "method": "POST",
+      "route": "/mentor/acesso-ti/solicitar"
+    },
+    {
+      "method": "GET",
+      "route": "/mentor/acesso-ti/pendentes"
+    },
+    {
+      "method": "POST",
+      "route": "/mentor/acesso-ti/:id/decidir"
     },
     {
       "method": "POST",
@@ -544,6 +562,18 @@
       "route": "/live/salas/:id/encerrar"
     },
     {
+      "method": "POST",
+      "route": "/live/salas/:id/grupos"
+    },
+    {
+      "method": "GET",
+      "route": "/live/salas/:id/grupos"
+    },
+    {
+      "method": "POST",
+      "route": "/live/grupos/:id/participantes"
+    },
+    {
       "method": "GET",
       "route": "/api/daily/config"
     },
@@ -670,6 +700,98 @@
     {
       "method": "GET",
       "route": "/api/compatibilidade"
+    },
+    {
+      "method": "GET",
+      "route": "/api/acompanhamento"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/financeiro/historico/:usuarioId?"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/alternar-acesso"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/financeiro/gerar-cupom"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/loja/produtos-pendentes"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/loja/produtos/:id/aprovar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/loja/produtos/:id/reprovar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/disciplinar/aplicar"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/disciplinar/revogar/:id"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/anexos/:id"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/materias/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/avaliacoes-v2"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/aulas/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/professor/faltas/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/aulas/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/faltas/:id?"
+    },
+    {
+      "method": "GET",
+      "route": "/aluno/materias/:id?"
+    },
+    {
+      "method": "POST",
+      "route": "/api/recuperar-senha"
+    },
+    {
+      "method": "POST",
+      "route": "/api/redefinir-senha"
+    },
+    {
+      "method": "GET",
+      "route": "/api/correios/rastreio/:codigo"
+    },
+    {
+      "method": "GET",
+      "route": "/api/daily/rooms"
+    },
+    {
+      "method": "POST",
+      "route": "/api/daily/rooms"
+    },
+    {
+      "method": "POST",
+      "route": "/api/daily/rooms/:name/tokens"
     },
     {
       "method": "GET",
@@ -931,6 +1053,7 @@
         "/area-financeira-adm",
         "/gerar-descontos",
         "/admin/operacoes-avancadas",
+        "/area-mentores",
         "/dashboard-ti",
         "/area-anexar-arquivos",
         "/reembolso-e-logistica",
@@ -996,6 +1119,16 @@
         "../css/app-shell.css",
         "../manifest.webmanifest",
         "/",
+        "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/area-mentores.html",
+      "links": [
+        "../css/app-shell.css",
+        "/gestao-academica",
+        "../js/runtime-api.js",
+        "/login?next=/area-mentores",
         "../js/app-shell.js"
       ]
     },
@@ -1098,6 +1231,15 @@
       ]
     },
     {
+      "file": "frontend/html/cadastro-magos-n3.html",
+      "links": [
+        "../css/responsivo.css",
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "../js/app-shell.js"
+      ]
+    },
+    {
       "file": "frontend/html/cadastro-membros.html",
       "links": [
         "../css/responsivo.css",
@@ -1130,15 +1272,6 @@
         "../manifest.webmanifest",
         "./dashboard-lojista.html",
         "./loja.html",
-        "../js/runtime-api.js",
-        "../js/app-shell.js"
-      ]
-    },
-    {
-      "file": "frontend/html/cadastro-sabios.html",
-      "links": [
-        "../css/responsivo.css",
-        "../css/app-shell.css",
         "../js/runtime-api.js",
         "../js/app-shell.js"
       ]
@@ -1331,6 +1464,7 @@
         "/dashboard-aluno",
         "/gestao-academica",
         "../js/runtime-api.js",
+        "/dashboard-ti",
         "${s.link_sala || ",
         "${f.atestado_url}",
         "../js/app-shell.js"
@@ -1498,6 +1632,17 @@
         "../js/runtime-api.js",
         "../js/compat-legacy.js",
         "../js/app-shell.js"
+      ]
+    },
+    {
+      "file": "frontend/html/login-mentor.html",
+      "links": [
+        "../css/app-shell.css",
+        "/login",
+        "../js/runtime-api.js",
+        "/alterar-senha",
+        "/dados-primeiro-acesso",
+        "/dashboard-mentor"
       ]
     },
     {
