@@ -114,6 +114,11 @@
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('user');
 
+        if (data?.user?.must_change_password) {
+          window.location.href = runtime.appRoute('/alterar-senha', 'alterar-senha.html');
+          return;
+        }
+
         window.location.href = runtime.appRoute('/dashboard-TI', 'dashboard-TI.html');
       } catch (error) {
         setMessage(error.message, true);

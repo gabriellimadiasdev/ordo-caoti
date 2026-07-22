@@ -6,17 +6,45 @@
   <title>Criar Login - T.I.</title>
   <link rel="stylesheet" href="../css/responsivo.css" />
   <link rel="stylesheet" href="../css/app-shell.css" />
-  <style>body{margin:0;min-height:100vh;background:#07101a;color:#eef4ff;font-family:"Segoe UI",Tahoma,sans-serif;padding:1rem}.wrap{max-width:900px;margin:0 auto}.card{background:#132232;border:1px solid #35506f;border-radius:12px;padding:1rem;margin-bottom:1rem}h1,h2{color:#f3be49}label{display:block;margin:.6rem 0 .2rem;color:#adc4dd}input,select,button{width:100%;box-sizing:border-box;border:1px solid #3c5778;border-radius:8px;background:#0f1a2a;color:#eef4ff;padding:.65rem}button{margin-top:.8rem;background:#f3be49;color:#251a06;font-weight:700;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.7rem}.msg{margin-top:.7rem;color:#dbeafe}.list{font-size:.9rem;white-space:pre-wrap;background:#0f1a2a;border:1px solid #35506f;border-radius:8px;padding:.7rem;max-height:360px;overflow:auto}.btn-link{display:inline-block;color:#f3be49;margin-bottom:1rem}</style>
+  <style>body{margin:0;min-height:100vh;background:#07101a;color:#eef4ff;font-family:"Segoe UI",Tahoma,sans-serif;padding:1rem}.wrap{max-width:980px;margin:0 auto}.card{background:#132232;border:1px solid #35506f;border-radius:12px;padding:1rem;margin-bottom:1rem}h1,h2{color:#f3be49}label{display:block;margin:.6rem 0 .2rem;color:#adc4dd}input,select,button{width:100%;box-sizing:border-box;border:1px solid #3c5778;border-radius:8px;background:#0f1a2a;color:#eef4ff;padding:.65rem}button{margin-top:.8rem;background:#f3be49;color:#251a06;font-weight:700;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.7rem}.msg{margin-top:.7rem;color:#dbeafe}.list{font-size:.9rem;white-space:pre-wrap;background:#0f1a2a;border:1px solid #35506f;border-radius:8px;padding:.7rem;max-height:360px;overflow:auto}.btn-link{display:inline-block;color:#f3be49;margin-bottom:1rem}.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.45rem;margin-top:.35rem}.checks label{display:flex;gap:.5rem;align-items:center;margin:0;background:#0f1a2a;border:1px solid #35506f;border-radius:8px;padding:.55rem}.checks input{width:auto}.hint{color:#adc4dd;font-size:.9rem}</style>
 </head>
 <body>
   <main class="wrap">
     <a class="btn-link" href="/dashboard-ti">Voltar ao Dashboard T.I.</a>
     <section class="card">
       <h1>Criar login</h1>
-      <p>Área restrita a T.I./admin ativo. Cria ou atualiza login e permite troca posterior de cargos cumulativos.</p>
+      <p>Área restrita a T.I./admin ativo. Cria ou atualiza login e atribui todos os acessos marcados abaixo.</p>
       <form id="form">
-        <div class="grid"><div><label>Nome</label><input id="nome" required></div><div><label>Email</label><input id="email" type="email" required></div><div><label>Senha temporária</label><input id="senha" type="password" value="0000" required></div></div>
-        <div class="grid"><div><label>Tipo de usuário</label><select id="tipo"><option value="aluno">Membro/Aluno</option><option value="cliente">Cliente</option><option value="lojista">Lojista</option><option value="professor">Professor</option><option value="admin">Admin/Mestre</option><option value="ti">T.I.</option></select></div><div><label>Hierarquia</label><select id="nivel"><option value="neofito">Neófito</option><option value="mago_n1">Mago Iniciado</option><option value="mago_n2">Mago Elevado</option><option value="mago_n3">Mago Soberano</option><option value="mestre_fundador">Mestre</option><option value="ti">T.I.</option><option value="cliente">Cliente</option></select></div><div><label>Status</label><select id="ativo"><option value="true">Ativo</option><option value="false">Inativo</option></select></div></div>
+        <div class="grid">
+          <div><label for="nome">Nome</label><input id="nome" required></div>
+          <div><label for="email">Email</label><input id="email" type="email" required></div>
+          <div><label for="senha">Senha temporária</label><input id="senha" type="password" value="0000" required></div>
+        </div>
+        <div class="grid">
+          <div>
+            <label for="tipo">Tipo principal</label>
+            <select id="tipo"><option value="aluno">Membro/Aluno</option><option value="cliente">Cliente</option><option value="lojista">Lojista</option><option value="professor">Professor</option><option value="admin">Admin/Mestre</option><option value="ti">T.I.</option></select>
+          </div>
+          <div>
+            <label for="nivel">Hierarquia acadêmica</label>
+            <select id="nivel"><option value="neofito">Neófito</option><option value="mago_n1">Mago Iniciado</option><option value="mago_n2">Mago Elevado</option><option value="mago_n3">Mago Soberano</option><option value="mestre_fundador">Mestre</option><option value="ti">T.I.</option><option value="cliente">Cliente</option></select>
+          </div>
+          <div><label for="ativo">Status</label><select id="ativo"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+        </div>
+        <label>Acessos atribuídos</label>
+        <p class="hint">Marque todos os módulos/perfis que este usuário poderá acessar. Não é exclusivo de T.I.</p>
+        <div class="checks" id="perfisChecks">
+          <label><input type="checkbox" value="cliente"> Cliente</label>
+          <label><input type="checkbox" value="neofito"> Neófito</label>
+          <label><input type="checkbox" value="mago_n1"> Mago Iniciado</label>
+          <label><input type="checkbox" value="mago_n2"> Mago Elevado</label>
+          <label><input type="checkbox" value="mago_n3"> Mago Soberano</label>
+          <label><input type="checkbox" value="mestre_fundador"> Mestre</label>
+          <label><input type="checkbox" value="lojista"> Lojista</label>
+          <label><input type="checkbox" value="professor"> Professor</label>
+          <label><input type="checkbox" value="admin"> Admin</label>
+          <label><input type="checkbox" value="ti"> T.I.</label>
+        </div>
         <button type="submit">Criar/atualizar login</button>
       </form>
       <p class="msg" id="msg"></p>
@@ -28,10 +56,32 @@
     const runtime = window.ordoRuntime;
     const msg = document.getElementById('msg');
     const list = document.getElementById('list');
+    const tipo = document.getElementById('tipo');
+    const nivel = document.getElementById('nivel');
+    const senha = document.getElementById('senha');
+    const ativo = document.getElementById('ativo');
+    const checks = Array.from(document.querySelectorAll('#perfisChecks input[type="checkbox"]'));
     async function api(path, options={}){ const res=await runtime.apiFetch(path, options); const data=await res.json().catch(()=>({})); if(!res.ok) throw new Error(data?.erro||'Falha'); return data; }
-    async function load(){ try{ const rows=await api('/admin/usuarios-resumo'); list.textContent=rows.map(u=>`#${u.id} ${u.nome} <${u.email}> | ${u.tipo_usuario} | ${u.nivel_codigo||'-'} | ${u.ativo?'ativo':'inativo'}`).join('\n') || 'Nenhum usuário.'; }catch(e){ list.textContent=e.message; } }
-    document.getElementById('form').addEventListener('submit', async (event)=>{ event.preventDefault(); msg.textContent=''; try{ const body={nome:nome.value.trim(),email:email.value.trim().toLowerCase(),senha:senha.value,tipo_usuario:tipo.value,nivel_codigo:nivel.value,ativo:ativo.value==='true'}; const data=await api('/admin/criar-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); msg.textContent=`Login salvo: ${data.usuario.email}`; event.target.reset(); senha.value='0000'; await load(); }catch(e){ msg.textContent=e.message; } });
+    function selectedProfiles(){ return checks.filter(input=>input.checked).map(input=>input.value); }
+    function syncDefaultChecks(){
+      const defaults = new Set();
+      const t = tipo.value;
+      const n = nivel.value;
+      if (t === 'cliente') defaults.add('cliente');
+      if (t === 'lojista') defaults.add('lojista');
+      if (t === 'professor') defaults.add('professor');
+      if (t === 'admin') { defaults.add('admin'); defaults.add('ti'); defaults.add('mestre_fundador'); }
+      if (t === 'ti') { defaults.add('ti'); defaults.add('neofito'); defaults.add('mago_n1'); }
+      const hierarchy = ['neofito','mago_n1','mago_n2','mago_n3','mestre_fundador'];
+      if (['aluno','admin','ti'].includes(t)) hierarchy.slice(0, Math.max(0, hierarchy.indexOf(n)) + 1).forEach(p=>defaults.add(p));
+      checks.forEach(input=>{ input.checked = defaults.has(input.value); });
+    }
+    async function load(){ try{ const rows=await api('/admin/usuarios-resumo'); list.textContent=rows.map(u=>`#${u.id} ${u.nome} <${u.email}> | ${u.tipo_usuario} | ${u.nivel_codigo||'-'} | perfis: ${(u.perfis||[]).join(', ') || '-' } | ${u.must_change_password?'trocar senha':'senha ok'} | ${u.ativo?'ativo':'inativo'}`).join('\n') || 'Nenhum usuário.'; }catch(e){ list.textContent=e.message; } }
+    tipo.addEventListener('change', syncDefaultChecks);
+    nivel.addEventListener('change', syncDefaultChecks);
+    document.getElementById('form').addEventListener('submit', async (event)=>{ event.preventDefault(); msg.textContent=''; try{ const body={nome:nome.value.trim(),email:email.value.trim().toLowerCase(),senha:senha.value,tipo_usuario:tipo.value,nivel_codigo:nivel.value,ativo:ativo.value==='true',perfis:selectedProfiles()}; const data=await api('/admin/criar-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); msg.textContent=`Login salvo: ${data.usuario.email}. O usuário deverá trocar a senha no primeiro acesso.`; event.target.reset(); senha.value='0000'; syncDefaultChecks(); await load(); }catch(e){ msg.textContent=e.message; } });
     document.getElementById('refresh').addEventListener('click', load);
+    syncDefaultChecks();
     load();
   </script>
 </body>

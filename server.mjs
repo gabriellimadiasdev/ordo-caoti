@@ -83,10 +83,14 @@ const htmlRoutes = new Map([
   ['/recuperar-senha', 'recuperar-senha.html'],
   ['/recuperar-usuario', 'esqueci-minha-senha.html'],
   ['/redefinir-senha', 'redefinir-senha.html'],
-  ['/dashboard', 'dashboard.html'],
+  ['/alterar-senha', 'alterar-senha.html'],
+  ['/primeiro-acesso', 'alterar-senha.html'],
+  ['/dashboard', 'dashboard-aluno.html'],
   ['/dashboard-aluno', 'dashboard-aluno.html'],
   ['/dashboard-professor', 'dashboard-professor.html'],
   ['/dashboard-cliente', 'dashboard-cliente.html'],
+  ['/dashboard-cliente/reembolso', 'dashboard-cliente-reembolso.html'],
+  ['/cliente/reembolso', 'dashboard-cliente-reembolso.html'],
   ['/dashboard-lojista', 'dashboard-lojista.html'],
   ['/lojista/financeiro', 'lojista-financeiro.html'],
   ['/regras', 'regras.html'],
@@ -110,6 +114,14 @@ const protectedTiHtmlRoutes = new Map([
   ['/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
   ['/admin/aprovacao-de-registro', 'aprovacao-de-registro.html'],
   ['/ti/admin/aprovacao-registro', 'aprovacao-de-registro.html'],
+  ['/admin/biblioteca', 'admin-biblioteca.html'],
+  ['/admin/financeiro', 'admin-financeiro.html'],
+  ['/admin/inscricoes-ordem', 'admin-inscricoes-ordem.html'],
+  ['/admin/loja-produtos', 'admin-loja-produtos.html'],
+  ['/admin/aprovacao-financeira', 'aprovacao-financeira.html'],
+  ['/admin/area-financeira', 'area-financeira-adm.html'],
+  ['/admin/anexar-arquivos', 'area-anexar-arquivos.html'],
+  ['/ti/manutencao', 'manutencao-ti.html'],
 ]);
 
 const databaseUrl = String(process.env.DATABASE_URL || process.env.DATABASE1_URL || process.env.POSTGRES_URL || '').trim();
@@ -183,6 +195,8 @@ const hierarchyProfiles = ['neofito', 'mago_n1', 'mago_n2', 'mago_n3', 'mestre_f
 
 function availableProfilesForUser(user = {}, nivelCodigo = 'neofito') {
   const profiles = new Set();
+  const assigned = Array.isArray(user.perfis_atribuidos) ? normalizeProfileIds(user.perfis_atribuidos) : [];
+  if (assigned.length) return assigned.map((id) => profileCatalog[id]);
   const tipo = String(user.tipo_usuario || '').toLowerCase();
   const nivel = normalizeNivelCodigo(nivelCodigo);
 
@@ -211,6 +225,44 @@ function homeRouteForUser(user, nivelCodigo = 'neofito', requestedProfile = '') 
   return selected.home_route;
 }
 
+function normalizeProfileIds(values = []) {
+  return [...new Set((Array.isArray(values) ? values : [values])
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter((value) => profileCatalog[value]))];
+}
+
+function defaultProfileIdsForAccess(tipoUsuario = 'aluno', nivelCodigo = 'neofito') {
+  return availableProfilesForUser({ tipo_usuario: tipoUsuario }, nivelCodigo).map((profile) => profile.id);
+}
+
+async function getAssignedProfileIds(usuarioId, fallbackUser = {}, nivelCodigo = 'neofito') {
+  if (!pool || !usuarioId) return defaultProfileIdsForAccess(fallbackUser.tipo_usuario, nivelCodigo);
+  const { rows } = await pool.query('SELECT perfil_codigo FROM usuario_perfis WHERE usuario_id = $1 ORDER BY perfil_codigo', [usuarioId]).catch(() => ({ rows: [] }));
+  const stored = normalizeProfileIds(rows.map((row) => row.perfil_codigo));
+  return stored.length ? stored : defaultProfileIdsForAccess(fallbackUser.tipo_usuario, nivelCodigo);
+}
+
+async function assignUserProfiles(client, usuarioId, profiles = [], tipoUsuario = 'aluno', nivelCodigo = 'neofito') {
+  const selected = normalizeProfileIds(profiles);
+  const finalProfiles = selected.length ? selected : defaultProfileIdsForAccess(tipoUsuario, nivelCodigo);
+  await client.query('DELETE FROM usuario_perfis WHERE usuario_id = $1', [usuarioId]);
+  for (const profileId of finalProfiles) {
+    await client.query(
+      `INSERT INTO usuario_perfis (usuario_id, perfil_codigo, criado_em)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (usuario_id, perfil_codigo) DO NOTHING`,
+      [usuarioId, profileId]
+    );
+  }
+  return finalProfiles;
+}
+
+async function ensureUserHasProfiles(client, usuarioId, profiles = [], tipoUsuario = 'aluno', nivelCodigo = 'neofito') {
+  const existing = await client.query('SELECT 1 FROM usuario_perfis WHERE usuario_id = $1 LIMIT 1', [usuarioId]).catch(() => ({ rows: [] }));
+  if (existing.rows.length) return getAssignedProfileIds(usuarioId, { tipo_usuario: tipoUsuario }, nivelCodigo);
+  return assignUserProfiles(client, usuarioId, profiles, tipoUsuario, nivelCodigo);
+}
+
 async function ensureAuthSchema() {
   if (!pool) return;
   authSchemaReady ??= (async () => {
@@ -232,6 +284,14 @@ async function ensureAuthSchema() {
         usuario_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
         nivel_codigo VARCHAR(30) NOT NULL DEFAULT 'neofito',
         atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS usuario_perfis (
+        usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+        perfil_codigo VARCHAR(30) NOT NULL,
+        criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (usuario_id, perfil_codigo)
       )
     `);
     await pool.query(`
@@ -289,7 +349,7 @@ async function ensureAuthSchema() {
       `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
        VALUES ('Gabriel Lima Dias Rocha', $1, $2, 'ti', true, NOW(), true)
        ON CONFLICT (email) DO UPDATE
-       SET tipo_usuario = 'ti', ativo = true, senha_hash = EXCLUDED.senha_hash, must_change_password = true
+       SET nome = COALESCE(usuarios.nome, EXCLUDED.nome), tipo_usuario = 'ti', ativo = true
        RETURNING id`,
       [tiEmail, tiPasswordHash]
     );
@@ -299,6 +359,7 @@ async function ensureAuthSchema() {
        ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = 'ti', atualizado_em = NOW()`,
       [tiUser.rows[0].id]
     );
+    await ensureUserHasProfiles(pool, tiUser.rows[0].id, ['ti', 'neofito', 'mago_n1'], 'ti', 'ti');
 
     const masterPasswordHash = hashPassword('0000');
     const masterSeeds = [
@@ -310,7 +371,7 @@ async function ensureAuthSchema() {
         `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
          VALUES ($1, $2, $3, 'admin', true, NOW(), true)
          ON CONFLICT (email) DO UPDATE
-         SET tipo_usuario = 'admin', ativo = true, senha_hash = EXCLUDED.senha_hash, must_change_password = true
+         SET nome = COALESCE(usuarios.nome, EXCLUDED.nome), tipo_usuario = 'admin', ativo = true
          RETURNING id`,
         [master.nome, master.email, masterPasswordHash]
       );
@@ -320,6 +381,7 @@ async function ensureAuthSchema() {
          ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = 'mestre_fundador', atualizado_em = NOW()`,
         [savedMaster.rows[0].id]
       );
+      await ensureUserHasProfiles(pool, savedMaster.rows[0].id, ['admin', 'mestre_fundador', 'ti'], 'admin', 'mestre_fundador');
     }
   })();
   await authSchemaReady;
@@ -378,9 +440,9 @@ app.post('/api/inscricao-membro', async (req, res) => {
     const senhaHash = hashPassword(senha);
     const tipoUsuario = tipoUsuarioForNivel(nivelCodigo);
     const inserted = await client.query(
-      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro)
-       VALUES ($1, $2, $3, $4, true, NOW())
-       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro`,
+      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
+       VALUES ($1, $2, $3, $4, true, NOW(), true)
+       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password`,
       [nome, email, senhaHash, tipoUsuario]
     );
     const user = inserted.rows[0];
@@ -390,6 +452,7 @@ app.post('/api/inscricao-membro', async (req, res) => {
        ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = EXCLUDED.nivel_codigo, atualizado_em = NOW()`,
       [user.id, nivelCodigo]
     );
+    user.perfis_atribuidos = await assignUserProfiles(client, user.id, [], tipoUsuario, nivelCodigo);
     await client.query('COMMIT');
     res.status(201).json({ ok: true, usuario: publicUser(user, nivelCodigo) });
   } catch (error) {
@@ -425,6 +488,7 @@ app.post('/login', async (req, res) => {
     }
     const nivelResult = await pool.query('SELECT nivel_codigo FROM usuario_niveis WHERE usuario_id = $1', [user.id]).catch(() => ({ rows: [] }));
     const nivelCodigo = nivelResult.rows[0]?.nivel_codigo || (user.tipo_usuario === 'ti' ? 'ti' : 'neofito');
+    user.perfis_atribuidos = await getAssignedProfileIds(user.id, user, nivelCodigo);
     const jwtId = crypto.randomUUID();
     const maxAgeMs = sessionType === 'session' ? 12 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
     const token = jwt.sign({ id: user.id, jti: jwtId, session_type: sessionType }, jwtSecret, { expiresIn: sessionType === 'session' ? '12h' : '30d' });
@@ -467,6 +531,7 @@ async function verifyActiveUserFromRequest(req) {
   if (!user || user.ativo === false) return null;
   const nivelResult = await pool.query('SELECT nivel_codigo FROM usuario_niveis WHERE usuario_id = $1', [user.id]).catch(() => ({ rows: [] }));
   user.nivel_codigo = nivelResult.rows[0]?.nivel_codigo || (user.tipo_usuario === 'ti' ? 'ti' : 'neofito');
+  user.perfis_atribuidos = await getAssignedProfileIds(user.id, user, user.nivel_codigo);
   return user;
 }
 
@@ -584,11 +649,11 @@ app.post('/admin/solicitacoes-acesso/:id/aprovar', authenticateRequest, requireA
     }
     const { tipoUsuario, nivelCodigo } = resolveRequestedAccess(request);
     const inserted = await client.query(
-      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro)
-       VALUES ($1, $2, $3, $4, true, NOW())
+      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
+       VALUES ($1, $2, $3, $4, true, NOW(), true)
        ON CONFLICT (email) DO UPDATE
-       SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_usuario = EXCLUDED.tipo_usuario, ativo = true
-       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro`,
+       SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_usuario = EXCLUDED.tipo_usuario, ativo = true, must_change_password = true
+       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password`,
       [request.nome, request.email, request.senha_hash, tipoUsuario]
     );
     const user = inserted.rows[0];
@@ -598,6 +663,7 @@ app.post('/admin/solicitacoes-acesso/:id/aprovar', authenticateRequest, requireA
        ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = EXCLUDED.nivel_codigo, atualizado_em = NOW()`,
       [user.id, nivelCodigo]
     );
+    user.perfis_atribuidos = await assignUserProfiles(client, user.id, [], tipoUsuario, nivelCodigo);
     await client.query(
       `UPDATE solicitacoes_acesso
        SET status = 'aprovado', usuario_id = $2, decidido_por = $3, decidido_em = NOW()
@@ -667,11 +733,11 @@ app.post('/admin/aprovar-membro', authenticateRequest, requireAdminOrTi, async (
     }
     const { tipoUsuario, nivelCodigo } = resolveRequestedAccess(request);
     const inserted = await client.query(
-      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro)
-       VALUES ($1, $2, $3, $4, true, NOW())
+      `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
+       VALUES ($1, $2, $3, $4, true, NOW(), true)
        ON CONFLICT (email) DO UPDATE
-       SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_usuario = EXCLUDED.tipo_usuario, ativo = true
-       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro`,
+       SET nome = EXCLUDED.nome, senha_hash = EXCLUDED.senha_hash, tipo_usuario = EXCLUDED.tipo_usuario, ativo = true, must_change_password = true
+       RETURNING id, nome, email, tipo_usuario, ativo, data_cadastro, must_change_password`,
       [request.nome, request.email, request.senha_hash, tipoUsuario]
     );
     const user = inserted.rows[0];
@@ -681,6 +747,7 @@ app.post('/admin/aprovar-membro', authenticateRequest, requireAdminOrTi, async (
        ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo = EXCLUDED.nivel_codigo, atualizado_em = NOW()`,
       [user.id, nivelCodigo]
     );
+    user.perfis_atribuidos = await assignUserProfiles(client, user.id, [], tipoUsuario, nivelCodigo);
     await client.query(
       `UPDATE solicitacoes_acesso SET status = 'aprovado', usuario_id = $2, decidido_por = $3, decidido_em = NOW() WHERE id = $1`,
       [id, user.id, req.user.id]
@@ -752,6 +819,28 @@ app.post('/perfil/trocar', authenticateRequest, async (req, res) => {
     return res.status(403).json({ erro: 'Perfil indisponível para este usuário.', perfis_disponiveis: perfis });
   }
   res.json({ ok: true, user: publicUser(req.user, req.userNivel, selected.id), perfil_ativo: selected, perfis_disponiveis: perfis });
+});
+
+
+app.post('/me/alterar-senha', authenticateRequest, async (req, res) => {
+  const senhaAtual = String(req.body?.senha_atual || req.body?.senhaAtual || '');
+  const novaSenha = String(req.body?.nova_senha || req.body?.novaSenha || '');
+  if (!senhaAtual || !novaSenha) return res.status(400).json({ erro: 'Senha atual e nova senha são obrigatórias.' });
+  if (novaSenha.length < 6) return res.status(400).json({ erro: 'A nova senha precisa ter pelo menos 6 caracteres.' });
+  if (senhaAtual === novaSenha) return res.status(400).json({ erro: 'A nova senha precisa ser diferente da senha atual.' });
+  try {
+    await ensureAuthSchema();
+    const { rows } = await pool.query('SELECT senha_hash FROM usuarios WHERE id = $1 LIMIT 1', [req.user.id]);
+    if (!rows[0] || !(await verifyPassword(senhaAtual, rows[0].senha_hash))) {
+      return res.status(401).json({ erro: 'Senha atual inválida.' });
+    }
+    await pool.query('UPDATE usuarios SET senha_hash = $2, must_change_password = false WHERE id = $1', [req.user.id, hashPassword(novaSenha)]);
+    req.user.must_change_password = false;
+    res.json({ ok: true, user: publicUser(req.user, req.userNivel, req.user?.perfil_login) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Falha ao alterar senha.' });
+  }
 });
 
 
@@ -1177,13 +1266,16 @@ app.post('/admin/criar-login', authenticateRequest, requireAdminOrTi, async (req
   const email = normalizeEmail(req.body?.email);
   const senha = String(req.body?.senha || '');
   const ativo = req.body?.ativo !== false;
+  const requestedProfiles = normalizeProfileIds(req.body?.perfis || req.body?.profiles || []);
   const { tipoUsuario, nivelCodigo } = coerceUserTypeAndLevel(req.body || {});
   if (!nome || !email || !senha) return res.status(400).json({ erro: 'nome, email e senha são obrigatórios.' });
   if (senha.length < 4) return res.status(400).json({ erro: 'A senha precisa ter pelo menos 4 caracteres.' });
+  const client = await pool.connect();
   try {
     await ensureAuthSchema();
+    await client.query('BEGIN');
     const senhaHash = hashPassword(senha);
-    const { rows } = await pool.query(
+    const { rows } = await client.query(
       `INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, ativo, data_cadastro, must_change_password)
        VALUES ($1,$2,$3,$4,$5,NOW(),true)
        ON CONFLICT (email) DO UPDATE
@@ -1192,16 +1284,21 @@ app.post('/admin/criar-login', authenticateRequest, requireAdminOrTi, async (req
       [nome, email, senhaHash, tipoUsuario, ativo]
     );
     const user = rows[0];
-    await pool.query(
+    await client.query(
       `INSERT INTO usuario_niveis (usuario_id, nivel_codigo, atualizado_em)
        VALUES ($1,$2,NOW())
        ON CONFLICT (usuario_id) DO UPDATE SET nivel_codigo=EXCLUDED.nivel_codigo, atualizado_em=NOW()`,
       [user.id, nivelCodigo]
     );
+    user.perfis_atribuidos = await assignUserProfiles(client, user.id, requestedProfiles, tipoUsuario, nivelCodigo);
+    await client.query('COMMIT');
     res.status(201).json({ ok: true, usuario: publicUser(user, nivelCodigo) });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error(error);
     res.status(500).json({ erro: 'Falha ao criar login.' });
+  } finally {
+    client.release();
   }
 });
 
@@ -1209,8 +1306,12 @@ app.get('/admin/usuarios-resumo', authenticateRequest, requireAdminOrTi, async (
   if (!pool) return res.json([]);
   await ensureAuthSchema();
   const { rows } = await pool.query(
-    `SELECT u.id,u.nome,u.email,u.tipo_usuario,u.ativo,u.must_change_password,n.nivel_codigo,u.data_cadastro
-     FROM usuarios u LEFT JOIN usuario_niveis n ON n.usuario_id=u.id
+    `SELECT u.id,u.nome,u.email,u.tipo_usuario,u.ativo,u.must_change_password,n.nivel_codigo,u.data_cadastro,
+            COALESCE(json_agg(up.perfil_codigo ORDER BY up.perfil_codigo) FILTER (WHERE up.perfil_codigo IS NOT NULL), '[]'::json) AS perfis
+     FROM usuarios u
+     LEFT JOIN usuario_niveis n ON n.usuario_id=u.id
+     LEFT JOIN usuario_perfis up ON up.usuario_id=u.id
+     GROUP BY u.id,n.nivel_codigo
      ORDER BY u.data_cadastro DESC LIMIT 200`
   );
   res.json(rows);

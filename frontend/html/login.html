@@ -197,7 +197,7 @@
       if (type === 'admin') return runtime.appRoute('/admin/master', 'area-adm-1.html');
       if (type === 'professor') return runtime.appRoute('/dashboard-professor', 'dashboard-professor.html');
       if (type === 'aluno') return runtime.appRoute('/dashboard-aluno', 'dashboard-aluno.html');
-      return runtime.appRoute('/dashboard', 'dashboard.html');
+      return runtime.appRoute('/dashboard-aluno', 'dashboard-aluno.html');
     }
 
     function showError(message) {
@@ -243,6 +243,11 @@
           localStorage.removeItem('user');
         }
 
+        if (data?.user?.must_change_password) {
+          window.location.href = runtime.appRoute('/alterar-senha', 'alterar-senha.html');
+          return;
+        }
+
         const serverHome = String(data?.user?.home_route || '').trim();
         if (serverHome) {
           const isBackendRoute = runtime.isBackendRouteMode && runtime.isBackendRouteMode();
@@ -257,7 +262,7 @@
             '/dashboard-cliente': 'dashboard-cliente.html',
             '/dashboard-lojista': 'dashboard-lojista.html',
             '/dashboard-TI': 'dashboard-TI.html',
-            '/dashboard': 'dashboard.html'
+            '/dashboard': 'dashboard-aluno.html'
           };
           if (Object.prototype.hasOwnProperty.call(staticMap, serverHome)) {
             window.location.href = runtime.appRoute(serverHome, staticMap[serverHome]);

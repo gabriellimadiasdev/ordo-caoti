@@ -84,6 +84,16 @@
     return data.user;
   }
 
+  function enforcePasswordChange() {
+    const token = getToken();
+    const user = getUser();
+    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    const allowed = ['/alterar-senha', '/primeiro-acesso', '/login', '/login-ti', '/login/ti'];
+    if (token && user?.must_change_password && !allowed.includes(path)) {
+      window.location.href = '/alterar-senha';
+    }
+  }
+
   function renderProfileSwitcher() {
     const token = getToken();
     const user = getUser();
@@ -153,12 +163,14 @@
     apiFetch,
     switchProfile,
     renderProfileSwitcher,
+    enforcePasswordChange,
     checkSiteVersion,
     isBackendRouteMode: () => true,
   };
 
   document.addEventListener('DOMContentLoaded', () => {
     bindAppRoutes();
+    enforcePasswordChange();
     renderProfileSwitcher();
     checkSiteVersion();
     setInterval(checkSiteVersion, 60000);
