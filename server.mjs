@@ -122,6 +122,8 @@ const protectedUserHtmlRoutes = new Map([
   ['/grimorio', 'grimorio.html'],
   ['/grimorio-publico', 'grimorio-publico.html'],
   ['/chat-alunos', 'chat-alunos.html'],
+  ['/chat-loja', 'chat-loja.html'],
+  ['/loja/chat', 'chat-loja.html'],
   ['/arquivos', 'arquivos.html'],
   ['/dados-primeiro-acesso', 'dados-primeiro-acesso.html'],
   ['/aulas', 'live-center.html'],
@@ -226,9 +228,9 @@ const profileCatalog = {
 const hierarchyProfiles = ['neofito', 'mago_n1', 'mago_n2', 'mago_n3', 'mestre_fundador'];
 
 function availableProfilesForUser(user = {}, nivelCodigo = 'neofito') {
-  const profiles = new Set();
+  const profiles = new Set(['cliente']);
   const assigned = Array.isArray(user.perfis_atribuidos) ? normalizeProfileIds(user.perfis_atribuidos) : [];
-  if (assigned.length) return assigned.map((id) => profileCatalog[id]);
+  assigned.forEach((profile) => profiles.add(profile));
   const tipo = String(user.tipo_usuario || '').toLowerCase();
   const nivel = normalizeNivelCodigo(nivelCodigo);
 
@@ -294,6 +296,10 @@ async function ensureUserHasProfiles(client, usuarioId, profiles = [], tipoUsuar
   const existing = await client.query('SELECT 1 FROM usuario_perfis WHERE usuario_id = $1 LIMIT 1', [usuarioId]).catch(() => ({ rows: [] }));
   if (existing.rows.length) return getAssignedProfileIds(usuarioId, { tipo_usuario: tipoUsuario }, nivelCodigo);
   return assignUserProfiles(client, usuarioId, profiles, tipoUsuario, nivelCodigo);
+}
+
+function canBeSellerByLevel(nivelCodigo = 'neofito') {
+  return ['mago_n1', 'mago_n2', 'mago_n3', 'mestre_fundador'].includes(normalizeNivelCodigo(nivelCodigo));
 }
 
 async function ensureAuthSchema() {
@@ -838,6 +844,12 @@ async function ensureCoreTables() {
   await pool.query(`CREATE TABLE IF NOT EXISTS lojista_saldos (lojista_id INTEGER PRIMARY KEY, saldo_disponivel NUMERIC(12,2) DEFAULT 0, saldo_pendente NUMERIC(12,2) DEFAULT 0, atualizado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS repasses_lojista (id SERIAL PRIMARY KEY, lojista_id INTEGER, valor NUMERIC(12,2) NOT NULL, metodo TEXT NOT NULL, destino TEXT, status TEXT DEFAULT 'pendente', criado_em TIMESTAMPTZ DEFAULT NOW(), processado_em TIMESTAMPTZ)`);
   await pool.query(`CREATE TABLE IF NOT EXISTS produto_assistente_memoria (id SERIAL PRIMARY KEY, lojista_id INTEGER, produto_id INTEGER, pergunta TEXT, resposta TEXT, sugestao JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS lojista_autorizacoes (id SERIAL PRIMARY KEY, usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, email TEXT, nome TEXT, origem TEXT DEFAULT 'externo', status TEXT DEFAULT 'pendente', motivo TEXT, autorizado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, decidido_em TIMESTAMPTZ, criado_em TIMESTAMPTZ DEFAULT NOW(), UNIQUE(email))`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS vendas_rastreio_eventos (id SERIAL PRIMARY KEY, pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL, produto_id INTEGER REFERENCES produtos(id) ON DELETE SET NULL, lojista_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, cliente_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, tipo TEXT NOT NULL, valor NUMERIC(12,2) DEFAULT 0, metadata JSONB DEFAULT '{}'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS estoque_movimentos (id SERIAL PRIMARY KEY, produto_id INTEGER REFERENCES produtos(id) ON DELETE CASCADE, lojista_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, tipo TEXT NOT NULL, quantidade INTEGER NOT NULL DEFAULT 0, estoque_antes INTEGER, estoque_depois INTEGER, motivo TEXT, criado_por INTEGER, criado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS lojista_notificacoes_venda (id SERIAL PRIMARY KEY, lojista_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE, pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL, canal TEXT NOT NULL, mensagem TEXT NOT NULL, status TEXT DEFAULT 'pendente', provider_configurado BOOLEAN DEFAULT false, criado_em TIMESTAMPTZ DEFAULT NOW(), enviada_em TIMESTAMPTZ)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS loja_chats (id SERIAL PRIMARY KEY, cliente_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, lojista_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL, status TEXT DEFAULT 'aberto', criado_em TIMESTAMPTZ DEFAULT NOW(), atualizado_em TIMESTAMPTZ DEFAULT NOW())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS loja_chat_mensagens (id SERIAL PRIMARY KEY, chat_id INTEGER REFERENCES loja_chats(id) ON DELETE CASCADE, autor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, mensagem TEXT NOT NULL, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS pedidos (id SERIAL PRIMARY KEY, usuario_id INTEGER, descricao TEXT, total NUMERIC(12,2) DEFAULT 0, status TEXT DEFAULT 'pendente', data_pedido TIMESTAMPTZ DEFAULT NOW(), metadata JSONB DEFAULT '{}'::jsonb)`);
   await pool.query(`CREATE TABLE IF NOT EXISTS diario_pessoal (id SERIAL PRIMARY KEY, usuario_id INTEGER, titulo TEXT, conteudo_texto TEXT, sentimento TEXT, criado_em TIMESTAMPTZ DEFAULT NOW())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS grimorio_pessoal (id SERIAL PRIMARY KEY, usuario_id INTEGER, titulo TEXT, tipo_registro TEXT DEFAULT 'anotacao', conteudo_texto TEXT, tags JSONB DEFAULT '[]'::jsonb, criado_em TIMESTAMPTZ DEFAULT NOW())`);
@@ -1509,6 +1521,10 @@ app.post('/loja/checkout', authenticateRequest, async (req, res) => {
     );
     const vencimento = req.body?.vencimento || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0,10);
     const cobranca = await createCharge({ usuarioId: req.user.id, pedidoId: pedido.rows[0].id, origem: 'loja', descricao: `Pedido loja #${pedido.rows[0].id}`, valor: total, vencimento, metadata: { metodo, itens }, criadoPor: req.user.id });
+    for (const item of itens) {
+      await traceSaleEvent({ pedidoId: pedido.rows[0].id, produtoId: item.produto_id || null, lojistaId: item.lojista_id || item.vendedor_id || null, clienteId: req.user.id, tipo: 'checkout_item', valor: Number(item.preco || item.valor || 0) * Number(item.quantidade || 1), metadata: item });
+      await enqueueSellerNotifications(item.lojista_id || item.vendedor_id || null, pedido.rows[0].id, `Nova venda no pedido #${pedido.rows[0].id}`);
+    }
     await auditEvent(req, 'store_checkout_created', 'pedido', pedido.rows[0].id, { total, metodo });
     res.status(201).json({ ok: true, pedido_id: pedido.rows[0].id, pedido: pedido.rows[0], cobranca, pagamento_interno: { metodo, status: 'aguardando_pagamento' }, mercado_pago: { configured: Boolean(process.env.MERCADO_PAGO_ACCESS_TOKEN) } });
   } catch (error) { res.status(500).json({ erro: 'Falha no checkout.', detalhe: error.message }); }
@@ -1608,26 +1624,169 @@ app.get('/api/daily/config', authenticateRequest, (_req, res) => res.json({ enab
 app.get('/api/meetings/providers', authenticateRequest, (_req, res) => res.json({ daily: Boolean(process.env.DAILY_API_KEY), google_meet: Boolean(process.env.GOOGLE_CLIENT_ID), zoom: Boolean(process.env.ZOOM_CLIENT_ID), teams: Boolean(process.env.MICROSOFT_CLIENT_ID), fallback: 'internal_link' }));
 
 
-app.get('/lojista/meus-produtos', authenticateRequest, async (req, res) => {
+
+async function isSellerAuthorized(user, nivelCodigo) {
+  const profiles = availableProfilesForUser(user, nivelCodigo).map((p) => p.id);
+  if (profiles.includes('lojista') && canBeSellerByLevel(nivelCodigo)) return true;
+  if (['admin','ti'].includes(String(user.tipo_usuario).toLowerCase())) return true;
+  if (!pool) return false;
+  const { rows } = await pool.query("SELECT id FROM lojista_autorizacoes WHERE (usuario_id=$1 OR lower(email)=lower($2)) AND status='aprovado' LIMIT 1", [user.id, user.email]);
+  return rows.length > 0;
+}
+function sellerNotificationConfigured(channel) {
+  const c = String(channel || '').toLowerCase();
+  if (c === 'email') return Boolean(process.env.SMTP_URL || process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY);
+  if (c === 'whatsapp') return Boolean(process.env.WHATSAPP_API_TOKEN || process.env.TWILIO_ACCOUNT_SID);
+  if (c === 'sms') return Boolean(process.env.TWILIO_ACCOUNT_SID || process.env.SMS_API_TOKEN);
+  if (c === 'instagram') return Boolean(process.env.INSTAGRAM_ACCESS_TOKEN);
+  if (c === 'tiktok') return Boolean(process.env.TIKTOK_ACCESS_TOKEN);
+  return false;
+}
+async function requireSeller(req, res, next) {
+  if (await isSellerAuthorized(req.user, req.userNivel)) return next();
+  return res.status(403).json({ erro: 'Acesso lojista exige Mago Iniciado ou superior, ou autorização prévia dos mestres.' });
+}
+async function traceSaleEvent({ pedidoId=null, produtoId=null, lojistaId=null, clienteId=null, tipo='evento', valor=0, metadata={} }) {
+  if (!pool) return;
+  await pool.query('INSERT INTO vendas_rastreio_eventos (pedido_id,produto_id,lojista_id,cliente_id,tipo,valor,metadata) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb)', [pedidoId, produtoId, lojistaId, clienteId, tipo, money(valor), JSON.stringify(metadata || {})]).catch(() => {});
+}
+async function enqueueSellerNotifications(lojistaId, pedidoId, message) {
+  if (!pool || !lojistaId) return;
+  for (const canal of ['whatsapp','instagram','tiktok','email','sms']) {
+    await pool.query('INSERT INTO lojista_notificacoes_venda (lojista_id,pedido_id,canal,mensagem,provider_configurado) VALUES ($1,$2,$3,$4,$5)', [lojistaId, pedidoId, canal, message, sellerNotificationConfigured(canal)]).catch(() => {});
+  }
+}
+
+app.post('/lojista/autorizacoes', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const nivel = req.userNivel || req.user.nivel_codigo || 'neofito';
+  if (canBeSellerByLevel(nivel)) {
+    await pool.query("INSERT INTO usuario_perfis (usuario_id, perfil_codigo) VALUES ($1,'lojista') ON CONFLICT DO NOTHING", [req.user.id]);
+    return res.status(201).json({ ok: true, status: 'aprovado_por_nivel', mensagem: 'Perfil lojista liberado para mago iniciado ou superior.' });
+  }
+  const { rows } = await pool.query(
+    `INSERT INTO lojista_autorizacoes (usuario_id,email,nome,origem,motivo,status)
+     VALUES ($1,$2,$3,$4,$5,'pendente')
+     ON CONFLICT (email) DO UPDATE SET motivo=EXCLUDED.motivo, usuario_id=EXCLUDED.usuario_id, nome=EXCLUDED.nome RETURNING *`,
+    [req.user.id, req.user.email, req.user.nome, req.body?.origem || 'aluno_neofito_ou_externo', req.body?.motivo || null]
+  );
+  await auditEvent(req, 'seller_authorization_requested', 'lojista_autorizacao', rows[0].id);
+  res.status(201).json({ ok: true, autorizacao: rows[0] });
+});
+
+app.get('/admin/lojista/autorizacoes', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM lojista_autorizacoes ORDER BY criado_em DESC LIMIT 200');
+  res.json(rows);
+});
+
+app.post('/admin/lojista/autorizacoes/:id/decidir', authenticateRequest, requireAdminOrTi, async (req, res) => {
+  await ensureCoreTables();
+  const status = req.body?.status === 'rejeitado' ? 'rejeitado' : 'aprovado';
+  const { rows } = await pool.query('UPDATE lojista_autorizacoes SET status=$2, autorizado_por=$3, decidido_em=NOW() WHERE id=$1 RETURNING *', [Number(req.params.id), status, req.user.id]);
+  if (!rows.length) return res.status(404).json({ erro: 'Autorização não encontrada.' });
+  if (status === 'aprovado' && rows[0].usuario_id) await pool.query("INSERT INTO usuario_perfis (usuario_id, perfil_codigo) VALUES ($1,'lojista') ON CONFLICT DO NOTHING", [rows[0].usuario_id]);
+  await auditEvent(req, 'seller_authorization_decided', 'lojista_autorizacao', rows[0].id, { status });
+  res.json({ ok: true, autorizacao: rows[0] });
+});
+
+
+app.post('/lojista/produtos/:id/estoque', authenticateRequest, requireSeller, async (req, res) => {
+  await ensureCoreTables();
+  const produtoId = Number(req.params.id);
+  const quantidade = Number(req.body?.quantidade || 0);
+  const tipo = String(req.body?.tipo || 'ajuste').toLowerCase();
+  const product = await pool.query('SELECT * FROM produtos WHERE id=$1 AND (vendedor_id=$2 OR $3=ANY($4::text[]))', [produtoId, req.user.id, req.user.tipo_usuario, ['admin','ti']]);
+  const item = product.rows[0];
+  if (!item) return res.status(404).json({ erro: 'Produto não encontrado.' });
+  const before = Number(item.estoque || 0);
+  const after = tipo === 'saida' ? before - Math.abs(quantidade) : tipo === 'entrada' ? before + Math.abs(quantidade) : quantidade;
+  await pool.query('UPDATE produtos SET estoque=$2 WHERE id=$1', [produtoId, after]);
+  const move = await pool.query('INSERT INTO estoque_movimentos (produto_id,lojista_id,tipo,quantidade,estoque_antes,estoque_depois,motivo,criado_por) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *', [produtoId, item.vendedor_id || req.user.id, tipo, quantidade, before, after, req.body?.motivo || null, req.user.id]);
+  await traceSaleEvent({ produtoId, lojistaId: item.vendedor_id || req.user.id, tipo: 'estoque_movimento', valor: 0, metadata: move.rows[0] });
+  res.status(201).json({ ok: true, movimento: move.rows[0] });
+});
+
+app.get('/lojista/produtos/:id/estoque', authenticateRequest, requireSeller, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query('SELECT * FROM estoque_movimentos WHERE produto_id=$1 ORDER BY criado_em DESC LIMIT 100', [Number(req.params.id)]);
+  res.json(rows);
+});
+
+app.get('/loja/chats', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const { rows } = await pool.query(`SELECT lc.*, cu.nome AS cliente_nome, lu.nome AS lojista_nome FROM loja_chats lc LEFT JOIN usuarios cu ON cu.id=lc.cliente_id LEFT JOIN usuarios lu ON lu.id=lc.lojista_id WHERE lc.cliente_id=$1 OR lc.lojista_id=$1 ORDER BY lc.atualizado_em DESC`, [req.user.id]);
+  res.json(rows);
+});
+
+app.post('/loja/chats', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const lojistaId = Number(req.body?.lojista_id || 0);
+  if (!lojistaId) return res.status(400).json({ erro: 'lojista_id obrigatório.' });
+  const { rows } = await pool.query(`INSERT INTO loja_chats (cliente_id,lojista_id,pedido_id) VALUES ($1,$2,$3) RETURNING *`, [req.user.id, lojistaId, req.body?.pedido_id || null]);
+  res.status(201).json({ ok: true, chat: rows[0] });
+});
+
+app.get('/loja/chats/:id/mensagens', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const chat = await pool.query('SELECT * FROM loja_chats WHERE id=$1 AND (cliente_id=$2 OR lojista_id=$2)', [Number(req.params.id), req.user.id]);
+  if (!chat.rows.length) return res.status(404).json({ erro: 'Chat não encontrado.' });
+  const { rows } = await pool.query('SELECT m.*, u.nome AS autor_nome FROM loja_chat_mensagens m LEFT JOIN usuarios u ON u.id=m.autor_id WHERE chat_id=$1 ORDER BY criado_em ASC', [Number(req.params.id)]);
+  res.json(rows);
+});
+
+app.post('/loja/chats/:id/mensagens', authenticateRequest, async (req, res) => {
+  await ensureCoreTables();
+  const chat = await pool.query('SELECT * FROM loja_chats WHERE id=$1 AND (cliente_id=$2 OR lojista_id=$2)', [Number(req.params.id), req.user.id]);
+  if (!chat.rows.length) return res.status(404).json({ erro: 'Chat não encontrado.' });
+  const mensagem = String(req.body?.mensagem || '').trim();
+  if (!mensagem) return res.status(400).json({ erro: 'Mensagem obrigatória.' });
+  const { rows } = await pool.query('INSERT INTO loja_chat_mensagens (chat_id,autor_id,mensagem) VALUES ($1,$2,$3) RETURNING *', [Number(req.params.id), req.user.id, mensagem.slice(0,4000)]);
+  await pool.query('UPDATE loja_chats SET atualizado_em=NOW() WHERE id=$1', [Number(req.params.id)]);
+  const targetSeller = chat.rows[0].lojista_id;
+  if (req.user.id !== targetSeller) await enqueueSellerNotifications(targetSeller, chat.rows[0].pedido_id || null, `Nova mensagem de cliente no chat #${req.params.id}`);
+  res.status(201).json({ ok: true, mensagem: rows[0] });
+});
+
+app.get('/admin/vendas/fundadores-resumo', authenticateRequest, requireAdminOrTi, async (_req, res) => {
+  await ensureCoreTables();
+  const founders = await pool.query("SELECT id,nome,email FROM usuarios WHERE lower(email) IN ('contatocaiozanoni@gmail.com','dayeekennedy@gmail.com') ORDER BY nome");
+  const sales = await pool.query(`SELECT lojista_id, COUNT(*)::int eventos, COALESCE(SUM(valor),0)::numeric total FROM vendas_rastreio_eventos GROUP BY lojista_id`);
+  const inventory = await pool.query('SELECT COUNT(*)::int produtos, COALESCE(SUM(estoque),0)::int estoque_total FROM produtos WHERE deleted_at IS NULL');
+  const cash = await pool.query("SELECT status, COALESCE(SUM(total),0)::numeric total, COUNT(*)::int pedidos FROM pedidos GROUP BY status");
+  res.json({ ok: true, fundadores: founders.rows, vendas_por_lojista: sales.rows, inventario: inventory.rows[0], fluxo_caixa: cash.rows });
+});
+
+app.get('/lojista/vendas-resumo', authenticateRequest, requireSeller, async (req, res) => {
+  await ensureCoreTables();
+  const [produtos, eventos, notificacoes] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int total, COALESCE(SUM(estoque),0)::int estoque_total FROM produtos WHERE vendedor_id=$1 AND deleted_at IS NULL', [req.user.id]),
+    pool.query('SELECT tipo, COUNT(*)::int total, COALESCE(SUM(valor),0)::numeric valor FROM vendas_rastreio_eventos WHERE lojista_id=$1 GROUP BY tipo', [req.user.id]),
+    pool.query('SELECT * FROM lojista_notificacoes_venda WHERE lojista_id=$1 ORDER BY criado_em DESC LIMIT 50', [req.user.id])
+  ]);
+  res.json({ ok: true, produtos: produtos.rows[0], eventos: eventos.rows, notificacoes: notificacoes.rows });
+});
+
+app.get('/lojista/meus-produtos', authenticateRequest, requireSeller, async (req, res) => {
   if (!pool) return res.json([]);
   await ensureCoreTables();
   const { rows } = await pool.query('SELECT * FROM produtos WHERE vendedor_id = $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 100', [req.user.id]);
   res.json(rows);
 });
-app.post('/lojista/produtos', authenticateRequest, async (req, res) => {
+app.post('/lojista/produtos', authenticateRequest, requireSeller, async (req, res) => {
   if (!pool) return noDbFallback(res, { produto: req.body });
   await ensureCoreTables();
   const { rows } = await pool.query('INSERT INTO produtos (nome,descricao,preco,tipo,estoque,ativo,vendedor_id) VALUES ($1,$2,$3,$4,$5,true,$6) RETURNING *', [req.body?.nome || 'Produto', req.body?.descricao || null, Number(req.body?.preco || 0), req.body?.tipo || 'digital', Number(req.body?.estoque || 0), req.user.id]);
   res.status(201).json(rows[0]);
 });
-app.put('/lojista/produtos/:id', authenticateRequest, async (req, res) => {
+app.put('/lojista/produtos/:id', authenticateRequest, requireSeller, async (req, res) => {
   if (!pool) return noDbFallback(res, { produto: { id: Number(req.params.id), ...req.body } });
   await ensureCoreTables();
   const { rows } = await pool.query('UPDATE produtos SET nome=COALESCE($2,nome), descricao=COALESCE($3,descricao), preco=COALESCE($4,preco), tipo=COALESCE($5,tipo), estoque=COALESCE($6,estoque) WHERE id=$1 AND (vendedor_id=$7 OR $8 = ANY($9::text[])) RETURNING *', [Number(req.params.id), req.body?.nome || null, req.body?.descricao || null, req.body?.preco ?? null, req.body?.tipo || null, req.body?.estoque ?? null, req.user.id, req.user.tipo_usuario, ['admin','ti']]);
   if (!rows.length) return res.status(404).json({ erro: 'Produto não encontrado.' });
   res.json(rows[0]);
 });
-app.delete('/lojista/produtos/:id', authenticateRequest, async (req, res) => {
+app.delete('/lojista/produtos/:id', authenticateRequest, requireSeller, async (req, res) => {
   if (pool) { await ensureCoreTables(); await pool.query('UPDATE produtos SET deleted_at=NOW(), ativo=false WHERE id=$1 AND (vendedor_id=$2 OR $3 = ANY($4::text[]))', [Number(req.params.id), req.user.id, req.user.tipo_usuario, ['admin','ti']]); }
   res.json({ ok: true });
 });
@@ -1678,7 +1837,7 @@ function buildProductAssistantSuggestion(input = {}) {
   };
 }
 
-app.post('/lojista/produtos/assistente', authenticateRequest, async (req, res) => {
+app.post('/lojista/produtos/assistente', authenticateRequest, requireSeller, async (req, res) => {
   const sugestao = buildProductAssistantSuggestion(req.body || {});
   if (pool) {
     await ensureCoreTables();
@@ -1687,11 +1846,11 @@ app.post('/lojista/produtos/assistente', authenticateRequest, async (req, res) =
   res.json({ ok: true, sugestao });
 });
 
-app.get('/lojista/marketplaces', authenticateRequest, (_req, res) => {
+app.get('/lojista/marketplaces', authenticateRequest, requireSeller, (_req, res) => {
   res.json({ ok: true, channels: marketplaceChannels.map((id) => ({ id, configured: Boolean(process.env[id.toUpperCase() + '_ACCESS_TOKEN'] || process.env[id.toUpperCase() + '_API_KEY']), checkout_policy: 'redirect_to_ordocaoti' })) });
 });
 
-app.post('/lojista/produtos/:id/publicar-marketplaces', authenticateRequest, async (req, res) => {
+app.post('/lojista/produtos/:id/publicar-marketplaces', authenticateRequest, requireSeller, async (req, res) => {
   const produtoId = Number(req.params.id);
   const canais = Array.isArray(req.body?.canais) && req.body.canais.length ? req.body.canais : marketplaceChannels;
   const checkout = productCheckoutUrl(req, produtoId);
@@ -1707,14 +1866,14 @@ app.post('/lojista/produtos/:id/publicar-marketplaces', authenticateRequest, asy
   res.json({ ok: true, checkout_url: checkout, publicacoes });
 });
 
-app.get('/lojista/saldo', authenticateRequest, async (req, res) => {
+app.get('/lojista/saldo', authenticateRequest, requireSeller, async (req, res) => {
   if (!pool) return res.json({ saldo_disponivel: 0, saldo_pendente: 0, offline: true });
   await ensureCoreTables();
   const { rows } = await pool.query('INSERT INTO lojista_saldos (lojista_id) VALUES ($1) ON CONFLICT (lojista_id) DO UPDATE SET atualizado_em=NOW() RETURNING *', [req.user.id]);
   res.json(rows[0]);
 });
 
-app.post('/lojista/repasses', authenticateRequest, async (req, res) => {
+app.post('/lojista/repasses', authenticateRequest, requireSeller, async (req, res) => {
   const valor = Number(req.body?.valor || 0);
   const metodo = String(req.body?.metodo || 'pix').toLowerCase();
   const destino = String(req.body?.destino || '').trim();
@@ -1726,7 +1885,7 @@ app.post('/lojista/repasses', authenticateRequest, async (req, res) => {
   res.status(201).json({ ok: true, repasse: rows[0] });
 });
 
-app.get('/lojista/repasses', authenticateRequest, async (req, res) => {
+app.get('/lojista/repasses', authenticateRequest, requireSeller, async (req, res) => {
   if (!pool) return res.json([]);
   await ensureCoreTables();
   const { rows } = await pool.query('SELECT * FROM repasses_lojista WHERE lojista_id=$1 ORDER BY criado_em DESC LIMIT 100', [req.user.id]);

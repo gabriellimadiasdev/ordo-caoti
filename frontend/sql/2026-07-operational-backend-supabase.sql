@@ -378,3 +378,73 @@ CREATE TABLE IF NOT EXISTS vendas_resolucao_movimentos (
   metadata JSONB DEFAULT '{}'::jsonb,
   criado_em TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Autorização lojista, rastreabilidade de vendas, estoque, notificações e chat loja
+CREATE TABLE IF NOT EXISTS lojista_autorizacoes (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  email TEXT,
+  nome TEXT,
+  origem TEXT DEFAULT 'externo',
+  status TEXT DEFAULT 'pendente',
+  motivo TEXT,
+  autorizado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  decidido_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(email)
+);
+
+CREATE TABLE IF NOT EXISTS vendas_rastreio_eventos (
+  id SERIAL PRIMARY KEY,
+  pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL,
+  produto_id INTEGER REFERENCES produtos(id) ON DELETE SET NULL,
+  lojista_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  cliente_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  tipo TEXT NOT NULL,
+  valor NUMERIC(12,2) DEFAULT 0,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS estoque_movimentos (
+  id SERIAL PRIMARY KEY,
+  produto_id INTEGER REFERENCES produtos(id) ON DELETE CASCADE,
+  lojista_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  tipo TEXT NOT NULL,
+  quantidade INTEGER NOT NULL DEFAULT 0,
+  estoque_antes INTEGER,
+  estoque_depois INTEGER,
+  motivo TEXT,
+  criado_por INTEGER,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lojista_notificacoes_venda (
+  id SERIAL PRIMARY KEY,
+  lojista_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL,
+  canal TEXT NOT NULL,
+  mensagem TEXT NOT NULL,
+  status TEXT DEFAULT 'pendente',
+  provider_configurado BOOLEAN DEFAULT false,
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  enviada_em TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS loja_chats (
+  id SERIAL PRIMARY KEY,
+  cliente_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  lojista_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  pedido_id INTEGER REFERENCES pedidos(id) ON DELETE SET NULL,
+  status TEXT DEFAULT 'aberto',
+  criado_em TIMESTAMPTZ DEFAULT NOW(),
+  atualizado_em TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS loja_chat_mensagens (
+  id SERIAL PRIMARY KEY,
+  chat_id INTEGER REFERENCES loja_chats(id) ON DELETE CASCADE,
+  autor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+  mensagem TEXT NOT NULL,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);

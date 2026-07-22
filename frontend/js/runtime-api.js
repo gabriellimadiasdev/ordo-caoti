@@ -133,7 +133,8 @@
     nav.innerHTML = [
       '<a href="/agenda">Agenda</a>',
       '<a href="/aulas">Aulas</a>',
-      '<a href="/chat-alunos">Chat</a>',
+      '<a href="/chat-alunos">Chat alunos</a>',
+      '<a href="/chat-loja">Chat loja</a>',
       '<a href="/grimorio-publico">Grimório público</a>',
       '<a href="/arquivos">Arquivos</a>',
       '<a href="/dados-primeiro-acesso">Meus dados</a>',

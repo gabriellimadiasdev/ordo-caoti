@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-22T02:48:57.136Z",
-  "html_count": 76,
+  "generated_at": "2026-07-22T02:55:05.895Z",
+  "html_count": 77,
   "js_count": 15,
-  "routes_count": 140,
+  "routes_count": 151,
   "html_files": [
     "frontend/html/acessibilidade-e-inclusao.html",
     "frontend/html/acompanhamento.html",
@@ -37,6 +37,7 @@
     "frontend/html/central-operacoes.html",
     "frontend/html/chat-alunos.html",
     "frontend/html/chat-cliente.html",
+    "frontend/html/chat-loja.html",
     "frontend/html/compra-aprovada.html",
     "frontend/html/compra-recusada.html",
     "frontend/html/dados-primeiro-acesso.html",
@@ -492,6 +493,50 @@
       "route": "/api/meetings/providers"
     },
     {
+      "method": "POST",
+      "route": "/lojista/autorizacoes"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/lojista/autorizacoes"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/lojista/autorizacoes/:id/decidir"
+    },
+    {
+      "method": "POST",
+      "route": "/lojista/produtos/:id/estoque"
+    },
+    {
+      "method": "GET",
+      "route": "/lojista/produtos/:id/estoque"
+    },
+    {
+      "method": "GET",
+      "route": "/loja/chats"
+    },
+    {
+      "method": "POST",
+      "route": "/loja/chats"
+    },
+    {
+      "method": "GET",
+      "route": "/loja/chats/:id/mensagens"
+    },
+    {
+      "method": "POST",
+      "route": "/loja/chats/:id/mensagens"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/vendas/fundadores-resumo"
+    },
+    {
+      "method": "GET",
+      "route": "/lojista/vendas-resumo"
+    },
+    {
       "method": "GET",
       "route": "/lojista/meus-produtos"
     },
@@ -668,6 +713,7 @@
     "DATABASE_URL",
     "GOOGLE_CLIENT_ID",
     "GOOGLE_SERVICE_ACCOUNT_JSON",
+    "INSTAGRAM_ACCESS_TOKEN",
     "IT_SESSION_SECRET",
     "JWT_SECRET",
     "MERCADO_PAGO_ACCESS_TOKEN",
@@ -683,6 +729,7 @@
     "SUPABASE_ENCRYPTION_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
     "SUPABASE_URL",
+    "TIKTOK_ACCESS_TOKEN",
     "TWILIO_ACCOUNT_SID",
     "VERCEL_DEPLOYMENT_ID",
     "VERCEL_GIT_COMMIT_SHA",
@@ -1096,6 +1143,14 @@
       ]
     },
     {
+      "file": "frontend/html/chat-loja.html",
+      "links": [
+        "../css/app-shell.css",
+        "../js/runtime-api.js",
+        "/login"
+      ]
+    },
+    {
       "file": "frontend/html/compra-aprovada.html",
       "links": [
         "../css/responsivo.css",
@@ -1189,6 +1244,7 @@
         "/dashboard-cliente/reembolso",
         "/cliente/resolucao",
         "/chat-alunos",
+        "/chat-loja",
         "/login/loja/cliente",
         "/login/loja/lojista",
         "../js/runtime-api.js",
@@ -1207,6 +1263,7 @@
         "./cadastro-produtos.html",
         "./lojista-financeiro.html",
         "./loja.html",
+        "/chat-loja",
         "./live-center.html",
         "./dashboard-professor.html",
         "./central-operacoes.html",
