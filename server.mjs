@@ -15,6 +15,14 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 const rootDir = __dirname;
 const frontendDir = path.join(rootDir, 'frontend');
 const htmlDir = path.join(frontendDir, 'html');
+
+const pageRoutes = new Map();
+for (const fileName of fs.readdirSync(htmlDir).filter((name) => name.endsWith('.html'))) {
+  const base = fileName.slice(0, -5);
+  const normalized = base.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  pageRoutes.set(`/${base}`, fileName);
+  pageRoutes.set(`/${normalized}`, fileName);
+}
 const siteMemoryPath = path.join(rootDir, 'site-memory.json');
 const siteMemory = fs.existsSync(siteMemoryPath) ? JSON.parse(fs.readFileSync(siteMemoryPath, 'utf8')) : { routes: [] };
 const deployVersion = process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || Date.now().toString();
@@ -135,6 +143,9 @@ const protectedUserHtmlRoutes = new Map([
   ['/financeiro-escolar', 'financeiro-escolar.html'],
   ['/area-financeira-aluno', 'area-financeira-aluno.html'],
   ['/loja-checkout', 'loja-checkout.html'],
+  ['/loja/carrinho', 'carrinho-de-compra.html'],
+  ['/live/central', 'live-center.html'],
+  ['/lojista/produtos', 'cadastro-produtos.html'],
   ['/agenda', 'agenda.html'],
 ]);
 
@@ -2403,11 +2414,12 @@ app.get('/admin/usuarios-resumo', authenticateRequest, requireAdminOrTi, async (
 });
 
 app.use((req, res, next) => {
-  if (req.method !== 'GET') return next();
-  if (req.path.startsWith('/api') || req.path.startsWith('/admin') || req.path.startsWith('/ti') || req.path.includes('.')) return next();
-  const route = siteMemory.routes.find((item) => item.route === req.path && item.file && fs.existsSync(path.join(rootDir, item.file)));
-  if (route) return res.sendFile(path.join(rootDir, route.file));
-  return next();
+  if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.includes('.')) return next();
+  const fileName = pageRoutes.get(req.path);
+  if (!fileName) return next();
+  const restricted = /^(admin-|area-adm|area-financeira-adm|aprovacao-|dashboard|manutencao|ti-)/i.test(fileName);
+  if (restricted) return res.redirect(`/login?next=${encodeURIComponent(req.path)}`);
+  return sendHtml(res, fileName);
 });
 
 app.get('/api/status', async (_req, res) => {
@@ -2428,7 +2440,7 @@ app.use((req, res) => {
       const filePath = path.join(htmlDir, fileName);
       if (fileName && fs.existsSync(filePath)) return res.status(200).sendFile(filePath);
     }
-    return res.status(200).type('html').send(`<h1>Área em preparação</h1><p>A rota ${req.path} ainda não tem arquivo próprio. Crie ${routeName}.html ou adicione um alias no backend.</p><p><a href="/">Voltar ao início</a></p>`);
+    return res.status(200).sendFile(path.join(htmlDir, 'offline.html'));
   }
   res.status(404).json({ erro: 'Rota de API não encontrada.', route: req.path });
 });

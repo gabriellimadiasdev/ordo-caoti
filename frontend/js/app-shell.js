@@ -126,5 +126,6 @@
     document.body.classList.add('oc-fade-in');
     setupRevealAnimations();
     ensureA11yToolbar();
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 })();

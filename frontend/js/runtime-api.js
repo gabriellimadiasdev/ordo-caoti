@@ -80,12 +80,43 @@
     document.cookie = 'oc_session=; Max-Age=0; path=/';
   }
 
+  function offlineQueue() {
+    try { return JSON.parse(localStorage.getItem('oc_offline_queue') || '[]'); } catch { return []; }
+  }
+
+  function enqueueOfflineRequest(path, options) {
+    const queue = offlineQueue();
+    queue.push({ path, method: options.method || 'POST', headers: options.headers || {}, body: options.body || null, createdAt: new Date().toISOString() });
+    localStorage.setItem('oc_offline_queue', JSON.stringify(queue.slice(-100)));
+  }
+
+  async function flushOfflineQueue() {
+    const queue = offlineQueue();
+    if (!queue.length || !navigator.onLine) return;
+    const remaining = [];
+    for (const request of queue) {
+      try {
+        const response = await fetch(apiUrl(request.path), { method: request.method, headers: request.headers, body: request.body });
+        if (!response.ok) remaining.push(request);
+      } catch (_) { remaining.push(request); }
+    }
+    localStorage.setItem('oc_offline_queue', JSON.stringify(remaining));
+  }
+
   async function apiFetch(path, options = {}) {
     const headers = { ...(options.headers || {}) };
     const token = getToken();
     if (token && !headers.Authorization) headers.Authorization = `Bearer ${token}`;
-    const response = await fetch(apiUrl(path), { ...options, headers });
-    return response;
+    try {
+      return await fetch(apiUrl(path), { ...options, headers });
+    } catch (error) {
+      const method = String(options.method || 'GET').toUpperCase();
+      if (method !== 'GET') {
+        enqueueOfflineRequest(path, { ...options, headers });
+        return new Response(JSON.stringify({ ok: true, queued: true, mensagem: 'Salvo neste dispositivo. Será enviado quando a conexão voltar.' }), { status: 202, headers: { 'Content-Type': 'application/json' } });
+      }
+      throw error;
+    }
   }
 
   function profilesFromUser(user) {
@@ -254,6 +285,7 @@
     saveSession,
     logout,
     apiFetch,
+    flushOfflineQueue,
     switchProfile,
     renderProfileSwitcher,
     renderGlobalQuickLinks,
@@ -271,7 +303,9 @@
     renderDashboardAgenda();
     renderProfileSwitcher();
     auditPageView();
+    flushOfflineQueue();
     checkSiteVersion();
     setInterval(checkSiteVersion, 60000);
   });
+  window.addEventListener('online', flushOfflineQueue);
 })();
