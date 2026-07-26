@@ -197,7 +197,7 @@
       if (type === 'admin') return runtime.appRoute('/admin/master', 'area-adm-1.html');
       if (type === 'professor') return runtime.appRoute('/dashboard-professor', 'dashboard-professor.html');
       if (type === 'aluno') return runtime.appRoute('/dashboard-aluno', 'dashboard-aluno.html');
-      return runtime.appRoute('/dashboard', 'dashboard.html');
+      return runtime.appRoute('/dashboard-aluno', 'dashboard-aluno.html');
     }
 
     function showError(message) {
@@ -214,6 +214,8 @@
       event.preventDefault();
       hideError();
 
+      const params = new URLSearchParams(window.location.search);
+      const nextUrl = params.get('next');
       const perfilLogin = perfilSelect.value;
       const email = emailInput.value.trim().toLowerCase();
       const senha = senhaInput.value;
@@ -232,22 +234,32 @@
         }
 
         if (sessionType === 'persistent') {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
+          if (runtime.saveSession) runtime.saveSession(data.token, data.user, data.expiresAt, true);
+          else { localStorage.setItem('token', data.token); localStorage.setItem('user', JSON.stringify(data.user)); }
           sessionStorage.removeItem('token');
           sessionStorage.removeItem('user');
         } else {
-          sessionStorage.setItem('token', data.token);
-          sessionStorage.setItem('user', JSON.stringify(data.user));
+          if (runtime.saveSession) runtime.saveSession(data.token, data.user, data.expiresAt, false);
+          else { sessionStorage.setItem('token', data.token); sessionStorage.setItem('user', JSON.stringify(data.user)); }
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+        }
+
+        if (data?.user?.must_change_password) {
+          window.location.href = runtime.appRoute('/alterar-senha', 'alterar-senha.html');
+          return;
+        }
+
+        if (data?.user?.must_complete_profile) {
+          window.location.href = runtime.appRoute('/dados-primeiro-acesso', 'dados-primeiro-acesso.html');
+          return;
         }
 
         const serverHome = String(data?.user?.home_route || '').trim();
         if (serverHome) {
           const isBackendRoute = runtime.isBackendRouteMode && runtime.isBackendRouteMode();
           if (isBackendRoute) {
-            window.location.href = serverHome;
+            window.location.href = nextUrl || serverHome;
             return;
           }
           const staticMap = {
@@ -257,15 +269,15 @@
             '/dashboard-cliente': 'dashboard-cliente.html',
             '/dashboard-lojista': 'dashboard-lojista.html',
             '/dashboard-TI': 'dashboard-TI.html',
-            '/dashboard': 'dashboard.html'
+            '/dashboard': 'dashboard-aluno.html'
           };
           if (Object.prototype.hasOwnProperty.call(staticMap, serverHome)) {
-            window.location.href = runtime.appRoute(serverHome, staticMap[serverHome]);
+            window.location.href = nextUrl || runtime.appRoute(serverHome, staticMap[serverHome]);
             return;
           }
         }
 
-        window.location.href = routeForProfile(data?.user?.perfil_login || perfilLogin, data?.user?.tipo || data?.user?.tipo_usuario);
+        window.location.href = nextUrl || routeForProfile(data?.user?.perfil_login || perfilLogin, data?.user?.tipo || data?.user?.tipo_usuario);
       } catch (error) {
         showError(error.message || 'Erro ao conectar com o servidor.');
       }

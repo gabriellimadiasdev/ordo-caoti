@@ -152,30 +152,26 @@
     </div>
 
     <div id="form-area">
-      <h2>Dados de Cadastro</h2>
-      <p class="instrucao">Preencha o formulário abaixo para concluir sua inscrição. Em seguida, escolha seu cadastro interno para registrar o usuário e sua posição hierárquica no backend administrativo.</p>
-
-      <div class="form-wrapper">
-        <div class="form-loading" id="formLoading">Carregando formulário…</div>
-        <iframe id="googleFormFrame" title="Formulário de Cadastro - Ordo Caoti" src="" data-src="https://docs.google.com/forms/d/e/1cfjFcL-Y3XCDEe_tlsBnuY7nFi_G6048otbPx4dWjRA/viewform?embedded=true" onload="document.getElementById('formLoading').style.display='none';">Carregando…</iframe>
-      </div>
-
-      <h2>Registro Interno e Hierarquia</h2>
-      <p class="instrucao">Use estes cadastros para gravar seu usuário no sistema, com o nível correto para acompanhamento e aprovação administrativa.</p>
-      <div class="cadastro-grid">
-        <a class="btn-choice" href="/cadastro-neofitos">Neófito</a>
-        <a class="btn-choice" href="/cadastro-magos-n1">Mago Iniciado</a>
-        <a class="btn-choice" href="/cadastro-magos-n2">Mago Elevado</a>
-        <a class="btn-choice" href="/cadastro-magos-n3">Mago Soberano</a>
-        <a class="btn-choice" href="/cadastro-fundadores">Mestre</a>
-        <a class="btn-choice secondary" href="/cadastro-ti">T.I.</a>
-      </div>
-
-      <div style="text-align:center;">
-        <button class="btn-voltar" onclick="voltarParaTermo()">Voltar ao Termo</button>
-      </div>
-    </div>
-  </div>
+      <h2>Dados de Cadastro e Pagamento</h2>
+      <p class="instrucao">Preencha os dados para registrar a inscrição e gerar o checkout da taxa inicial de R$ 80,00.</p>
+      <form id="inscricaoForm" style="display:grid;gap:.75rem;">
+        <input id="nome" required placeholder="Nome completo" />
+        <input id="email" type="email" required placeholder="E-mail" />
+        <input id="whatsapp" required placeholder="WhatsApp" />
+        <input id="cpf" required placeholder="CPF" />
+        <input id="data_nascimento" type="date" required />
+        <textarea id="endereco" required placeholder="Endereço completo"></textarea>
+        <select id="nivel_codigo" required>
+          <option value="neofito">Neófito</option>
+          <option value="mago_n1">Mago Iniciado</option>
+          <option value="mago_n2">Mago Elevado</option>
+          <option value="mago_n3">Mago Soberano</option>
+        </select>
+        <button class="btn-next" type="submit">Gerar inscrição e ir para pagamento</button>
+      </form>
+      <div class="aviso-erro" id="checkoutErro"></div>
+      <div style="text-align:center;"><button class="btn-voltar" onclick="voltarParaTermo()">Voltar ao Termo</button></div>
+    </div>  </div>
 
   <script>
     function prosseguir() {
@@ -199,6 +195,36 @@
       document.getElementById('contrato-texto').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    document.getElementById('inscricaoForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const erro = document.getElementById('checkoutErro');
+      erro.style.display = 'none';
+      const body = {
+        nome: nome.value.trim(),
+        email: email.value.trim().toLowerCase(),
+        whatsapp: whatsapp.value.trim(),
+        cpf: cpf.value.trim(),
+        data_nascimento: data_nascimento.value,
+        endereco: endereco.value.trim(),
+        nivel_codigo: nivel_codigo.value,
+        aceite_termo: true,
+        aceite_privacidade: true,
+        valor: 80
+      };
+      try {
+        const response = await fetch('/api/inscricao-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || 'Falha ao gerar checkout.');
+        window.location.href = data.checkout_url;
+      } catch (error) {
+        erro.textContent = error.message;
+        erro.style.display = 'block';
+      }
+    });
   </script>
   <script src="../js/app-shell.js" defer></script>
 </body>

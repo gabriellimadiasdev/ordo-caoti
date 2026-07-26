@@ -109,12 +109,23 @@
           throw new Error('Perfil sem permissão para painel técnico.');
         }
 
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        if (runtime.saveSession) runtime.saveSession(data.token, data.user, data.expiresAt, true);
+        else { localStorage.setItem('token', data.token); localStorage.setItem('user', JSON.stringify(data.user)); }
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('user');
 
-        window.location.href = runtime.appRoute('/dashboard-TI', 'dashboard-TI.html');
+        if (data?.user?.must_change_password) {
+          window.location.href = runtime.appRoute('/alterar-senha', 'alterar-senha.html');
+          return;
+        }
+
+        if (data?.user?.must_complete_profile) {
+          window.location.href = runtime.appRoute('/dados-primeiro-acesso', 'dados-primeiro-acesso.html');
+          return;
+        }
+
+        const nextUrl = new URLSearchParams(window.location.search).get('next');
+        window.location.href = nextUrl || runtime.appRoute('/dashboard-TI', 'dashboard-TI.html');
       } catch (error) {
         setMessage(error.message, true);
       }

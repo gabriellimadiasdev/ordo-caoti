@@ -1,11 +1,17 @@
 const crypto = require('crypto');
-const { MercadoPagoConfig, Order } = require('mercadopago');
 
 function createOrderClient(accessToken) {
   if (!accessToken) {
     throw new Error('MERCADO_PAGO_ACCESS_TOKEN nao configurado.');
   }
 
+  let MercadoPagoConfig;
+  let Order;
+  try {
+    ({ MercadoPagoConfig, Order } = require('mercadopago'));
+  } catch (_error) {
+    throw new Error('Pacote mercadopago nao instalado. Use o checkout interno ou instale dependencias.');
+  }
   const client = new MercadoPagoConfig({ accessToken });
   return new Order(client);
 }

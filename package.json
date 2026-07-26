@@ -11,7 +11,9 @@
     "local": "node server.mjs",
     "dev": "node server.mjs",
     "env:pull": "vercel env pull .env.local --scope ordo-caoti",
-    "smoke": "node scripts/smoke-test.mjs"
+    "smoke": "node scripts/smoke-test.mjs",
+    "test:routes": "node scripts/route-contract.mjs",
+    "test:api-contract": "node scripts/api-contract.cjs"
   },
   "engines": {
     "node": "24.x"

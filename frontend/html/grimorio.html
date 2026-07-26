@@ -155,8 +155,12 @@
           <small class="muted">Este registro deve permanecer visivel para supervisao.</small>
         </div>
 
+        <div class="field">
+          <label><input id="publicarPublico" type="checkbox" style="width:auto"> Também publicar no grimório público</label>
+          <small class="muted">Se marcado, o registro ficará visível para a comunidade após salvar.</small>
+        </div>
         <div class="actions">
-          <button class="btn primary" type="submit">Salvar no grimorio</button>
+          <button class="btn primary" type="submit">Salvar no grimório</button>
           <a class="btn secondary" href="/dashboard-aluno">Voltar ao dashboard</a>
         </div>
 
@@ -234,6 +238,7 @@
         tipo_registro: form.tipo.value,
         conteudo_texto: form.conteudo.value.trim(),
         visivel_para_supervisao: true,
+        publicar_publico: document.getElementById('publicarPublico').checked,
         tags
       };
 
