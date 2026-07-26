@@ -1704,6 +1704,10 @@ function htmlPage(title, body) {
     table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: 10px; border-bottom: 1px solid #233047; }
     .muted { color: #94a3b8; }
   </style>
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body><main>${body}</main></body>
 </html>`;
