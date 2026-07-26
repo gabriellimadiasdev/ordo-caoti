@@ -155,6 +155,8 @@
       </div>
       <div class="actions">
         <a data-app-route="/manutencao-ti" data-app-file="manutencao-ti.html" href="./manutencao-ti.html" class="btn">Painel de manutencao</a>
+        <a data-app-route="/admin/aprovacao-registro" data-app-file="aprovacao-de-registro.html" href="./aprovacao-de-registro.html" class="btn warn">Aprovar acessos</a>
+        <a data-app-route="/ti/criar-login" data-app-file="ti-criar-login.html" href="./ti-criar-login.html" class="btn warn">Criar logins</a>
         <a data-app-route="/login" data-app-file="login.html" href="./login.html" class="btn">Login</a>
         <button id="refreshBtn" type="button" class="btn">Atualizar</button>
         <button id="logoutBtn" type="button" class="btn bad">Logout</button>
@@ -217,6 +219,21 @@
         <pre id="diagOutput">Aguardando diagnostico...</pre>
       </article>
 
+
+      <article class="panel">
+        <h2>Testar qualquer página do site</h2>
+        <div class="field">
+          <label for="pageTesterPath">Caminho da página</label>
+          <input id="pageTesterPath" value="/" placeholder="/frontend/html/regras.html ou /loja">
+        </div>
+        <div class="actions">
+          <button id="openPageBtn" type="button" class="btn warn">Abrir página</button>
+          <button id="previewPageBtn" type="button" class="btn">Pré-visualizar aqui</button>
+          <button id="checkPageBtn" type="button" class="btn">Testar status</button>
+        </div>
+        <iframe id="pagePreview" title="Pré-visualização da página" style="width:100%;height:420px;margin-top:.7rem;border:1px solid #35506f;border-radius:9px;background:white;"></iframe>
+      </article>
+
       <article class="panel">
         <h2>Webhook observabilidade</h2>
         <div class="actions">
@@ -259,6 +276,37 @@
 
     whoami.textContent = `Sessao: ${user?.nome || 'Equipe TI'} (${user?.tipo || user?.tipo_usuario || 'ti'})`;
     kpiMode.textContent = isLocalMode ? 'LOCAL (sem backend)' : 'ONLINE (backend)';
+
+
+    function normalizePagePath() {
+      const raw = document.getElementById('pageTesterPath').value.trim() || '/';
+      if (/^https?:\/\//i.test(raw)) return raw;
+      return raw.startsWith('/') ? raw : `/${raw}`;
+    }
+
+    function openTestPage() {
+      window.open(normalizePagePath(), '_blank', 'noopener,noreferrer');
+    }
+
+    function previewTestPage() {
+      document.getElementById('pagePreview').src = normalizePagePath();
+    }
+
+    async function checkTestPage() {
+      const path = normalizePagePath();
+      try {
+        const response = await fetch(path, { method: 'GET', credentials: 'same-origin' });
+        writeDiag(`Teste da página ${path}`, {
+          status: response.status,
+          ok: response.ok,
+          contentType: response.headers.get('content-type'),
+          redirected: response.redirected,
+          url: response.url,
+        });
+      } catch (error) {
+        writeDiag(`Falha ao testar ${path}`, { erro: error.message });
+      }
+    }
 
     function authHeaders(includeJson = false) {
       const headers = { Authorization: `Bearer ${token}` };
@@ -469,6 +517,9 @@
     document.getElementById('refreshBtn').addEventListener('click', refreshAll);
     document.getElementById('pauseGlobalBtn').addEventListener('click', createGlobalMaintenance);
     document.getElementById('createRouteBtn').addEventListener('click', createRouteMaintenance);
+    document.getElementById('openPageBtn').addEventListener('click', openTestPage);
+    document.getElementById('previewPageBtn').addEventListener('click', previewTestPage);
+    document.getElementById('checkPageBtn').addEventListener('click', checkTestPage);
     document.getElementById('checkRouteBtn').addEventListener('click', checkRouteStatus);
     document.getElementById('sessionDumpBtn').addEventListener('click', dumpSession);
     document.getElementById('refreshWebhookBtn').addEventListener('click', loadWebhookSummary);

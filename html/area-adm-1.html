@@ -464,15 +464,15 @@
         <a href="#suprema">Setores da Ordem</a>
         <a href="#rastreio">Rastreio de Acessos</a>
         <a href="#disciplinar">Disciplina Escolar</a>
-        <a href="./admin-inscricoes-ordem.html">Inscricoes da Ordem</a>
-        <a href="./area-professor-anexos.html">Avaliacoes Simples</a>
-        <a href="./aprovacao-de-registro.html">Aprovar Inscricoes</a>
-        <a href="./admin-financeiro.html">Gestao Financeira</a>
-        <a href="./aprovacao-financeira.html">Aprovacao Financeira</a>
-        <a href="./area-financeira-adm.html">Area Financeira ADM</a>
-        <a href="./gerar-descontos.html">Gerar Descontos</a>
+        <a href="/admin-inscricoes-ordem">Inscricoes da Ordem</a>
+        <a href="/area-professor-anexos">Avaliacoes Simples</a>
+        <a href="/admin/aprovacao-registro">Aprovar Inscricoes</a>
+        <a href="/admin-financeiro">Gestao Financeira</a>
+        <a href="/aprovacao-financeira">Aprovacao Financeira</a>
+        <a href="/area-financeira-adm">Area Financeira ADM</a>
+        <a href="/gerar-descontos">Gerar Descontos</a>
         <a href="./area-adm-2.html">Operacoes Avancadas</a>
-        <a href="./dashboard-TI.html">Voltar ao Dashboard</a>
+        <a href="/dashboard-ti">Voltar ao Dashboard</a>
         <button class="warn" id="logoutBtn" type="button">Encerrar Sessao</button>
       </nav>
     </aside>
@@ -672,39 +672,39 @@
           <span class="muted">Operacional e em construcao no mesmo painel</span>
         </div>
         <div class="actions-grid">
-          <a class="action-card" href="./admin-inscricoes-ordem.html">
+          <a class="action-card" href="/admin-inscricoes-ordem">
             <strong>Inscricao e Aprovacao da Ordem</strong>
             <span>Fluxo simples para cadastro interno e aprovacao em poucos cliques.</span>
           </a>
-          <a class="action-card" href="./area-professor-anexos.html">
+          <a class="action-card" href="/area-professor-anexos">
             <strong>Avaliacoes Sem JSON</strong>
             <span>Criar questoes, pesos e estrutura da prova sem programacao.</span>
           </a>
-          <a class="action-card" href="./aprovacao-de-registro.html">
+          <a class="action-card" href="/admin/aprovacao-registro">
             <strong>Aprovacao de Registro</strong>
             <span>Visualizar e decidir inscricoes de novos candidatos.</span>
           </a>
-          <a class="action-card" href="./admin-financeiro.html">
+          <a class="action-card" href="/admin-financeiro">
             <strong>Financeiro Admin</strong>
             <span>Bloqueio de acesso por inadimplencia, historico e cupons.</span>
           </a>
-          <a class="action-card" href="./aprovacao-financeira.html">
+          <a class="action-card" href="/aprovacao-financeira">
             <strong>Aprovacao Financeira</strong>
             <span>Pagina minima pronta para evolucao de workflow financeiro.</span>
           </a>
-          <a class="action-card" href="./area-anexar-arquivos.html">
+          <a class="action-card" href="/area-anexar-arquivos">
             <strong>Anexar Arquivos</strong>
             <span>Painel academico para turmas, materias e moderacao de anexos.</span>
           </a>
-          <a class="action-card" href="./area-financeira-adm.html">
+          <a class="action-card" href="/area-financeira-adm">
             <strong>Area Financeira ADM</strong>
             <span>Direcionamentos taticos de cobranca e acompanhamento.</span>
           </a>
-          <a class="action-card" href="./gerar-descontos.html">
+          <a class="action-card" href="/gerar-descontos">
             <strong>Descontos e Bolsas</strong>
             <span>Espaco minimo para politica de descontos da escola.</span>
           </a>
-          <a class="action-card" href="./reembolso-e-logistica.html">
+          <a class="action-card" href="/reembolso-e-logistica">
             <strong>Reembolsos</strong>
             <span>Canal de governanca para pedidos de reembolso.</span>
           </a>
@@ -712,11 +712,11 @@
             <strong>Vendas e Loja</strong>
             <span>Area preparatoria para analise comercial da ordem.</span>
           </a>
-          <a class="action-card" href="./admin-loja-produtos.html">
+          <a class="action-card" href="/admin-loja-produtos">
             <strong>Moderacao de Produtos</strong>
             <span>Aprovar/reprovar produtos de lojistas antes de publicar na loja.</span>
           </a>
-          <a class="action-card" href="./admin-biblioteca.html">
+          <a class="action-card" href="/admin-biblioteca">
             <strong>Biblioteca de Livros</strong>
             <span>Gerenciar acervo de livros esotéricos e temas educacionais.</span>
           </a>
@@ -841,12 +841,12 @@
     const gateSessionKey = 'adminGateValidatedAt';
 
     if (!token && !window.location.hostname.includes('localhost')) {
-      window.location.href = './login.html';
+      window.location.href = '/login';
     }
 
     if (!isTiLocal && (user.tipo !== 'admin' || !isFounderAccount)) {
       alert('Acesso permitido apenas aos dois Mestres Fundadores da Ordem.');
-      window.location.href = './dashboard-TI.html';
+      window.location.href = '/dashboard-ti';
     }
 
     document.getElementById('whoami').textContent = isTiLocal
@@ -881,7 +881,7 @@
       const senhaAcesso = prompt('Senha adicional da Area Administrativa:');
       if (!senhaAcesso) {
         alert('Senha administrativa obrigatoria para abrir o painel.');
-        window.location.href = './login.html';
+        window.location.href = '/login';
         return false;
       }
 
@@ -894,7 +894,7 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         alert(data.erro || 'Senha administrativa invalida.');
-        window.location.href = './login.html';
+        window.location.href = '/login';
         return false;
       }
 

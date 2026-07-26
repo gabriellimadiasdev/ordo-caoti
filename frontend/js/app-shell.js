@@ -46,66 +46,12 @@
     document.head.appendChild(link);
   }
 
-  function ensureA11yToolbar() {
-    if (document.querySelector('.a11y-toolbar')) return;
 
-    const toolbar = document.createElement('aside');
-    toolbar.className = 'a11y-toolbar';
-    toolbar.setAttribute('aria-expanded', 'false');
-    toolbar.innerHTML = [
-      '<div class="a11y-toolbar__header">',
-      '<strong>Acessibilidade</strong>',
-      '<button type="button" class="a11y-toolbar__toggle" aria-label="Abrir acessibilidade">Abrir</button>',
-      '</div>',
-      '<div class="a11y-toolbar__body">',
-      '<label><input type="checkbox" data-a11y="contrast"> Alto contraste</label>',
-      '<label><input type="checkbox" data-a11y="motion"> Reduzir animações</label>',
-      '<div class="a11y-toolbar__actions"><button type="button" data-a11y="reset">Resetar</button></div>',
-      '</div>'
-    ].join('');
-
-    document.body.appendChild(toolbar);
-
-    const toggleBtn = toolbar.querySelector('.a11y-toolbar__toggle');
-    const contrastInput = toolbar.querySelector('[data-a11y="contrast"]');
-    const motionInput = toolbar.querySelector('[data-a11y="motion"]');
-    const resetBtn = toolbar.querySelector('[data-a11y="reset"]');
-
-    toggleBtn.addEventListener('click', function () {
-      const expanded = toolbar.getAttribute('aria-expanded') === 'true';
-      toolbar.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-      toggleBtn.textContent = expanded ? 'Abrir' : 'Fechar';
-    });
-
-    function persist() {
-      localStorage.setItem('oc_a11y_contrast', String(contrastInput.checked));
-      localStorage.setItem('oc_a11y_motion', String(motionInput.checked));
-    }
-
-    function apply() {
-      document.body.classList.toggle('a11y-high-contrast', contrastInput.checked);
-      document.body.classList.toggle('a11y-reduce-motion', motionInput.checked);
-      persist();
-    }
-
-    contrastInput.checked = localStorage.getItem('oc_a11y_contrast') === 'true';
-    motionInput.checked = localStorage.getItem('oc_a11y_motion') === 'true';
-    apply();
-
-    contrastInput.addEventListener('change', apply);
-    motionInput.addEventListener('change', apply);
-
-    resetBtn.addEventListener('click', function () {
-      contrastInput.checked = false;
-      motionInput.checked = false;
-      apply();
-    });
-  }
 
   onReady(function () {
     ensureGlobalStyles();
     document.body.classList.add('oc-fade-in');
     setupRevealAnimations();
-    ensureA11yToolbar();
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 })();

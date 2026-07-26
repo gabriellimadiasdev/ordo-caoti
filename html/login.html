@@ -126,9 +126,9 @@
         <select id="perfil_login" name="perfil_login">
           <option value="cliente">Cliente (Loja)</option>
           <option value="neofito">Neofito</option>
-          <option value="mago_n1">Mago N1</option>
-          <option value="mago_n2">Mago N2</option>
-          <option value="sabio">Sabio (professor autorizado)</option>
+          <option value="mago_n1">Mago Iniciado</option>
+          <option value="mago_n2">Mago Elevado</option>
+          <option value="mago_n3">Mago Soberano</option>
           <option value="mestre">Mestre (administrador)</option>
         </select>
       </div>
@@ -158,9 +158,9 @@
       <a data-app-route="/manutencao-ti" data-app-file="manutencao-ti.html" href="./manutencao-ti.html">Manutencao de T.I.</a>
       <a href="./cadastro-fundadores-bootstrap.html">Bootstrap dos Fundadores</a>
       <a href="./cadastro-neofitos.html">Cadastro rapido de Neofitos</a>
-      <a href="./cadastro-magos-n1.html">Cadastro rapido de Magos N1</a>
-      <a href="./cadastro-magos-n2.html">Cadastro rapido de Magos N2</a>
-      <a href="./cadastro-sabios.html">Cadastro rapido de Sabios</a>
+      <a href="./cadastro-magos-n1.html">Cadastro rapido de Magos Iniciados</a>
+      <a href="./cadastro-magos-n2.html">Cadastro rapido de Magos Elevados</a>
+      <a href="/cadastro-magos-n3">Cadastro rápido de Mago Soberano</a>
       <a href="./cadastro-ti.html">Cadastro rapido de TI</a>
       <a href="./biblioteca-livros.html">📚 Biblioteca de Livros</a>
       <a data-app-route="/regras" data-app-file="regras.html" href="./regras.html">Nao tem conta? Cadastre-se</a>
@@ -191,11 +191,7 @@
 
       if (selected === 'cliente') return runtime.appRoute('/dashboard-cliente', 'dashboard-cliente.html');
       if (selected === 'mestre') return runtime.appRoute('/admin/master', 'area-adm-1.html');
-      if (selected === 'sabio') {
-        if (type === 'admin') return runtime.appRoute('/admin/master', 'area-adm-1.html');
-        return runtime.appRoute('/dashboard-professor', 'dashboard-professor.html');
-      }
-      if (['mago_n2', 'mago_n1', 'neofito'].includes(selected)) {
+      if (['mago_n3', 'mago_n2', 'mago_n1', 'neofito'].includes(selected)) {
         return runtime.appRoute('/dashboard-aluno', 'dashboard-aluno.html');
       }
       if (type === 'admin') return runtime.appRoute('/admin/master', 'area-adm-1.html');

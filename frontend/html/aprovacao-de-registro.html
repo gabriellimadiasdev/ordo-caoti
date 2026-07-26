@@ -1,296 +1,67 @@
-﻿<!DOCTYPE html>
-<html lang="pt-br">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Ordo Caoti</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: #f0f0f0;
-            margin: 0;
-            padding: 2rem;
-        }
-        h1 {
-            color: #c8a2c8;
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .table-container {
-            overflow-x: auto;
-            background-color: #2a2a2a;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            padding: 1rem;
-        }
-        /* Estilo Excel */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-            font-size: 0.9rem;
-        }
-        th, td {
-            border: 1px solid #444;
-            padding: 8px 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #333;
-            color: #c8a2c8;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-        }
-        tr:nth-child(even) {
-            background-color: #252525;
-        }
-        tr:hover {
-            background-color: #303030;
-        }
-        .status-pendente { color: #ffd700; font-weight: bold; }
-        .status-aprovado { color: #4cd137; font-weight: bold; }
-        .status-negado { color: #e84118; font-weight: bold; }
-
-        .actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        button {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: opacity 0.2s;
-        }
-        button:hover { opacity: 0.8; }
-        .btn-approve { background-color: #4cd137; color: #1a1a1a; }
-        .btn-approve-member { background-color: #ffc400; color: #1a1a1a; }
-        .btn-reject { background-color: #e84118; color: #fff; }
-        
-        .loading { text-align: center; padding: 2rem; color: #888; }
-        h2 { color: #aaa; font-size: 1.2rem; margin-top: 2rem; border-bottom: 1px solid #444; padding-bottom: 0.5rem; }
-    </style>
-    <link rel="stylesheet" href="/css/estilos.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aprovação de Acessos - Ordo Caoti</title>
   <link rel="stylesheet" href="../css/responsivo.css">
   <link rel="stylesheet" href="../css/app-shell.css">
-  <link rel="manifest" href="../manifest.webmanifest">
-  <meta name="theme-color" content="#0b0f16">
+  <style>
+    body{font-family:'Segoe UI',Tahoma,sans-serif;background:#1a1a1a;color:#f0f0f0;margin:0;padding:2rem}h1{color:#c8a2c8;text-align:center}.top{max-width:1100px;margin:0 auto 1rem;display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap}.table-container{max-width:1100px;margin:0 auto;overflow-x:auto;background:#2a2a2a;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,.5);padding:1rem}table{width:100%;border-collapse:collapse;min-width:850px;font-size:.9rem}th,td{border:1px solid #444;padding:8px 12px;text-align:left;vertical-align:top}th{background:#333;color:#c8a2c8;text-transform:uppercase;font-size:.85rem}tr:nth-child(even){background:#252525}.status-pendente{color:#ffd700;font-weight:bold}.actions{display:flex;gap:.5rem;flex-wrap:wrap}button,.btn{padding:7px 12px;border:0;border-radius:4px;cursor:pointer;font-weight:bold;text-decoration:none;display:inline-block}.btn-approve{background:#4cd137;color:#111}.btn-reject{background:#e84118;color:#fff}.btn-refresh{background:#ffc400;color:#111}.msg{max-width:1100px;margin:1rem auto;color:#ccc}.muted{color:#999}
+  </style>
 </head>
 <body>
-
-    <h1>Painel de Inscrições - Ordo Caoti</h1>
-
-    <h2>Novos Candidatos (Processo Seletivo)</h2>
-    <div class="table-container">
-        <table id="inscricoesTable">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Data</th>
-                    <th>Nome</th>
-                    <th>E-mail</th>
-                    <th>Telefone</th>
-                    <th>Respostas / Motivação</th>
-                    <th>Endereço</th>
-                    <th>Arquivos</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Linhas serão inseridas via JS -->
-            </tbody>
-        </table>
-        <div id="loading" class="loading">Carregando inscrições...</div>
-    </div>
-
-    <h2>Membros da Ordem (Solicitação de Acesso)</h2>
-    <div class="table-container">
-        <table id="membrosTable">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>E-mail</th>
-                    <th>Categoria/Nível</th>
-                    <th>Data Solicitação</th>
-                    <th>Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Membros pendentes via JS -->
-            </tbody>
-        </table>
-        <div id="loadingMembros" class="loading">Carregando membros...</div>
-    </div>
-
-
-                const inscricoes = await response.json();
-                const tbody = document.querySelector('#inscricoesTable tbody');
-                document.getElementById('loading').style.display = 'none';
-                tbody.innerHTML = '';
-
-                inscricoes.forEach(insc => {
-                    const tr = document.createElement('tr');
-                    const dataFormatada = new Date(insc.data_inscricao).toLocaleDateString('pt-BR');
-                    
-                    let botoes = '';
-                    if (insc.status === 'pendente') {
-                        botoes = `
-                            <div class="actions">
-                                <button class="btn-approve" onclick="processarInscricao(${insc.id}, 'aprovado', &quot;${insc.nome}&quot;, &quot;${insc.email}&quot;, &quot;${insc.telefone}&quot;)">Aprovar</button>
-                                <button class="btn-reject" onclick="processarInscricao(${insc.id}, 'negado', &quot;${insc.nome}&quot;, &quot;${insc.email}&quot;, &quot;${insc.telefone}&quot;)">Recusar</button>
-                            </div>`;
-                    } else {
-                        botoes = '<span style="color:#888; font-size:0.8rem;">Processado</span>';
-                    }
-                    
-                    const endereco = `${insc.tipo_logradouro} ${insc.logradouro}, ${insc.numero} ${insc.complemento || ''} - ${insc.municipio}/${insc.estado}`;
-                    const arquivos = `
-                        <a href="${insc.comprovante_url}" target="_blank" style="color:#ffc400; display:block;">ðŸ“„ Comprovante</a>
-                        <a href="${insc.termo_assinado_url}" target="_blank" style="color:#c8a2c8; display:block;">ðŸ–‹ï¸ Termo</a>
-                    `;
-
-                    tr.innerHTML = `
-                        <td>${insc.id}</td>
-                        <td>${dataFormatada}</td>
-                        <td>${insc.nome}</td>
-                        <td>${insc.email}</td>
-                        <td>${insc.telefone || '-'}</td>
-                        <td style="max-width: 300px; word-wrap: break-word;">${insc.respostas || '-'}</td>
-                        <td style="font-size:0.8rem;">${endereco}</td>
-                        <td>${arquivos}</td>
-                        <td class="status-${insc.status}">${insc.status.toUpperCase()}</td>
-                        <td>${botoes}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (err) {
-                console.error(err);
-                document.getElementById('loading').textContent = 'Erro ao carregar dados.';
-            }
-        }
-
-        async function carregarMembrosPendentes() {
-            document.getElementById('loadingMembros').style.display = 'block';
-            try {
-                const response = await fetch('/admin/membros-pendentes', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const membros = await response.json();
-                const tbody = document.querySelector('#membrosTable tbody');
-                document.getElementById('loadingMembros').style.display = 'none';
-                tbody.innerHTML = '';
-
-                if (membros.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">Nenhum membro pendente.</td></tr>';
-                    return;
-                }
-
-                membros.forEach(m => {
-                    const tr = document.createElement('tr');
-                    const dataCad = new Date(m.data_cadastro).toLocaleDateString('pt-BR');
-                    tr.innerHTML = `
-                        <td>${m.id}</td>
-                        <td>${m.nome}</td>
-                        <td>${m.email}</td>
-                        <td style="color: #ffc400; font-weight: bold;">${(m.nivel_codigo || 'N/A').toUpperCase()}</td>
-                        <td>${dataCad}</td>
-                        <td>
-                            <button class="btn-approve-member" onclick="ativarMembro(${m.id}, '${m.nome}')">Liberar Acesso</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (err) {
-                console.error(err);
-                document.getElementById('loadingMembros').textContent = 'Erro ao carregar membros.';
-            }
-        }
-
-        async function processarInscricao(id, decisao, nome, email, telefone) {
-            if (!confirm(`Tem certeza que deseja marcar como ${decisao.toUpperCase()}?`)) return;
-
-            try {
-                const response = await fetch('/admin/decisao-inscricao', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ id, status: decisao })
-                });
-
-                if (response.ok) {
-                    alert(`Inscrição ${decisao} com sucesso!`);
-                    
-                    // Preparar mensagens
-                    const linkRegistro = `${window.location.origin}/registro?email=${encodeURIComponent(email)}`;
-                    let mensagem = '';
-                    
-                    if (decisao === 'aprovado') {
-                        mensagem = `Saudações, ${nome}. Sua inscrição na Ordo Caoti foi APROVADA. Seja bem-vindo(a) ao início da jornada. Para finalizar seu cadastro e acessar o portal, utilize este link exclusivo: ${linkRegistro}`;
-                    } else {
-                        mensagem = `Saudações, ${nome}. Agradecemos seu interesse na Ordo Caoti. Após análise, informamos que sua inscrição não foi aprovada neste momento.`;
-                    }
-
-                    // Abrir WhatsApp (se tiver telefone)
-                    if (telefone) {
-                        // Remove caracteres não numéricos para o link
-                        const telClean = telefone.replace(/\D/g, '');
-                        const urlZap = `https://wa.me/${telClean}?text=${encodeURIComponent(mensagem)}`;
-                        window.open(urlZap, '_blank');
-                    }
-
-                    // Abrir Cliente de E-mail (mailto)
-                    const assunto = decisao === 'aprovado' ? 'Aprovação Ordo Caoti' : 'Atualização Inscrição Ordo Caoti';
-                    const urlMail = `mailto:${email}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(mensagem)}`;
-                    
-                    // Pequeno delay para garantir que o navegador não bloqueie o segundo popup se possível, 
-                    // ou o usuário foca em um de cada vez.
-                    setTimeout(() => {
-                        window.open(urlMail, '_blank');
-                    }, 500);
-
-                    // Recarrega a tabela
-                    carregarInscricoes();
-                } else {
-                    alert('Erro ao atualizar status.');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Erro de conexão. Tente novamente mais tarde.');
-            }
-        }
-
-        async function ativarMembro(id, nome) {
-            if (!confirm(`Deseja ativar o acesso do membro ${nome}? Ele já possui login criado.`)) return;
-
-            try {
-                const response = await fetch('/admin/aprovar-membro', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` 
-                    },
-                    body: JSON.stringify({ id })
-                });
-
-                if (response.ok) {
-                    alert('Membro ativado com sucesso!');
-                    carregarMembrosPendentes();
-                } else { alert('Erro ao ativar membro.'); }
-            } catch (err) { console.error(err); }
-        }
-
-        // Carregar ao iniciar
-        carregarInscricoes();
-        carregarMembrosPendentes();
-    </script>
-
+  <h1>Aprovação de Acessos</h1>
+  <div class="top">
+    <a class="btn btn-refresh" href="/dashboard-ti">Voltar ao Dashboard T.I.</a>
+    <button class="btn-refresh" type="button" id="refreshBtn">Atualizar</button>
+  </div>
+  <p class="msg" id="msg">Carregando solicitações pendentes...</p>
+  <div class="table-container">
+    <table>
+      <thead><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Nível</th><th>Observação</th><th>Data</th><th>Ações</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="8">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+  <script src="../js/runtime-api.js"></script>
+  <script>
+    const runtime = window.ordoRuntime || { apiUrl: (p) => p, appRoute: (_r,f)=>`./${f}` };
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    const tbody = document.getElementById('tbody');
+    const msg = document.getElementById('msg');
+    if (!token) window.location.href = runtime.appRoute('/login-ti', 'login-ti.html');
+    const headers = () => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' });
+    function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    async function load(){
+      msg.textContent = 'Carregando solicitações pendentes...';
+      try {
+        const res = await fetch(runtime.apiUrl('/admin/solicitacoes-acesso?status=pendente'), { headers: headers() });
+        const rows = await res.json().catch(() => []);
+        if (!res.ok) throw new Error(rows?.erro || 'Falha ao carregar solicitações.');
+        if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" class="muted">Nenhuma solicitação pendente.</td></tr>'; msg.textContent = 'Sem pendências.'; return; }
+        tbody.innerHTML = rows.map(r => `<tr><td>${r.id}</td><td>${esc(r.nome)}</td><td>${esc(r.email)}</td><td>${esc(r.tipo_solicitado)}</td><td>${esc(r.nivel_codigo)}</td><td>${esc(r.observacao || '-')}</td><td>${new Date(r.criado_em).toLocaleString('pt-BR')}</td><td><div class="actions"><button class="btn-approve" onclick="approve(${r.id})">Aprovar</button><button class="btn-reject" onclick="rejectReq(${r.id})">Rejeitar</button></div></td></tr>`).join('');
+        msg.textContent = `${rows.length} solicitação(ões) pendente(s).`;
+      } catch (e) { tbody.innerHTML = '<tr><td colspan="8">Erro ao carregar.</td></tr>'; msg.textContent = e.message; }
+    }
+    async function approve(id){
+      if (!confirm('Aprovar e criar/ativar este acesso?')) return;
+      const res = await fetch(runtime.apiUrl(`/admin/solicitacoes-acesso/${id}/aprovar`), { method:'POST', headers: headers(), body:'{}' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(data?.erro || 'Falha ao aprovar.');
+      await load();
+    }
+    async function rejectReq(id){
+      const motivo = prompt('Motivo da rejeição (opcional):') || '';
+      const res = await fetch(runtime.apiUrl(`/admin/solicitacoes-acesso/${id}/rejeitar`), { method:'POST', headers: headers(), body: JSON.stringify({ motivo }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(data?.erro || 'Falha ao rejeitar.');
+      await load();
+    }
+    document.getElementById('refreshBtn').addEventListener('click', load);
+    window.approve = approve;
+    window.rejectReq = rejectReq;
+    load();
+  </script>
   <script src="../js/app-shell.js" defer></script>
 </body>
 </html>

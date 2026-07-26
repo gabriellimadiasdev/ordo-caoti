@@ -231,6 +231,17 @@
         <p id="formStatus" class="status"></p>
       </article>
 
+
+      <article class="panel">
+        <h2>Assistente de produto com IA</h2>
+        <p class="small">Descreva custos, materiais, categoria e dúvidas do cliente. O assistente sugere descrição, perguntas e preço com lucro 80% lojista / 20% Ordo Caoti.</p>
+        <div class="field"><label for="assistenteCusto">Custo estimado</label><input id="assistenteCusto" type="number" step="0.01" min="0" placeholder="0.00" /></div>
+        <div class="field"><label for="assistenteGastos">Gastos extras</label><input id="assistenteGastos" type="number" step="0.01" min="0" placeholder="embalagem, tempo, taxa" /></div>
+        <div class="field"><label for="assistenteCategoria">Categoria</label><input id="assistenteCategoria" placeholder="Ex: curso, livro, ritual, produto físico" /></div>
+        <div class="field"><label for="assistentePerguntas">Dúvidas comuns do cliente</label><textarea id="assistentePerguntas" placeholder="Liste objeções, perguntas e detalhes importantes"></textarea></div>
+        <div class="toolbar"><button type="button" class="btn primary" id="assistenteBtn">Gerar sugestão</button></div>
+        <pre id="assistenteOutput" class="small" style="white-space:pre-wrap;background:#0f1a2a;border:1px solid #3c5778;border-radius:8px;padding:.7rem;max-height:360px;overflow:auto;">Aguardando dados do produto...</pre>
+      </article>
       <article class="panel">
         <h2>Meus produtos</h2>
         <div class="table-wrap">
@@ -395,6 +406,29 @@
       });
     }
 
+
+    async function runAssistant() {
+      const payload = {
+        nome: document.getElementById("nome").value.trim(),
+        preco: Number(document.getElementById("preco").value || 0),
+        tipo: document.getElementById("tipo").value,
+        estoque: Number(document.getElementById("estoque").value || 0),
+        custo: Number(document.getElementById("assistenteCusto").value || 0),
+        gastos: Number(document.getElementById("assistenteGastos").value || 0),
+        categoria: document.getElementById("assistenteCategoria").value.trim(),
+        perguntas: document.getElementById("assistentePerguntas").value.trim()
+      };
+      const output = document.getElementById("assistenteOutput");
+      output.textContent = "Gerando sugestão...";
+      try {
+        const response = await fetch(runtime.apiUrl("/lojista/produtos/assistente"), { method:"POST", headers: authHeaders(true), body: JSON.stringify(payload) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.erro || "Falha no assistente.");
+        output.textContent = JSON.stringify(data.sugestao, null, 2);
+        if (data?.sugestao?.precificacao?.preco_sugerido && !document.getElementById("preco").value) document.getElementById("preco").value = data.sugestao.precificacao.preco_sugerido;
+        if (data?.sugestao?.descricao_melhorada && !document.getElementById("descricao").value) document.getElementById("descricao").value = data.sugestao.descricao_melhorada;
+      } catch (error) { output.textContent = error.message; }
+    }
     async function loadProducts() {
       if (isLocalMode) {
         state.products = [
@@ -524,6 +558,7 @@
     });
 
     cancelEditBtn.addEventListener("click", clearForm);
+    document.getElementById("assistenteBtn").addEventListener("click", runAssistant);
     document.getElementById("refreshBtn").addEventListener("click", loadProducts);
 
     clearForm();
