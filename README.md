@@ -4,6 +4,7 @@ Backend Node.js/Express pronto para deploy na Vercel, usando Neon Postgres via `
 
 ## Rotas principais
 
+- `GET /` — mostra uma página operacional do backend quando o `index.html` original ainda não foi enviado.
 - `GET /health` — verifica se a API está online e se o banco foi configurado.
 - `GET /usuarios` — lista usuários.
 - `POST /usuarios` — cria usuário com `name`, `email` e `role` opcional.
@@ -58,7 +59,7 @@ Quando `DATABASE_URL` estiver configurada, a primeira chamada a `/usuarios`, `/u
 
 Obrigatória:
 
-- `DATABASE_URL` — criada pela integração Neon no Vercel Marketplace.
+- `DATABASE_URL` — criada pela integração Neon no Vercel Marketplace. O backend também aceita `DATABASE1_URL` ou `POSTGRES_URL` como fallback para bancos já conectados com outro nome.
 
 Recomendadas para OAuth:
 
